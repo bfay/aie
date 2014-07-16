@@ -1,0 +1,24 @@
+-------------------------------------------------------------------------------------------------------------------
+Version 0.9.1
+   - New: New listing page
+   - New: Show layout hierarchy in listing page
+   - New: Post content cell allows creation and editing of Content Templates
+   - New: New Views Content Grid cell with close Views integation
+   - Fix: WP 3.9 support
+   - Fix: support quotes in CSS file
+   - Fix: use quotes in Layout names
+   - Fix: loading css resources
+   - Fix: hierachical layouts on BS3 theme
+   - Fix: codemirror conflicts with Views
+   - Fix: bulk actions on listing page
+   - Fix: don't allow parents to be assigned to post types or individual posts
+   - Fix: handling of class names in CSS editor
+   - Fix: many PHP warnings
+   - Fix: importing of CSS from themes
+   
+
+
+-------------------------------------------------------------------------------------------------------------------
+Version 0.9.0
+
+First Beta release

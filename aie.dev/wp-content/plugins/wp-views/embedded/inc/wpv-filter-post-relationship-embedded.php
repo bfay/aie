@@ -21,7 +21,7 @@
 add_filter('wpv_filter_query', 'wpv_filter_post_relationship', 11, 2); // run after post types filter
 function wpv_filter_post_relationship($query, $view_settings) {
     
-    global $WP_Views, $wpdb;
+    global $WP_Views, $wpdb, $sitepress;
     
     if (isset($view_settings['post_relationship_mode'][0])) {
         
@@ -54,7 +54,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
 				if (isset($view_attrs[$post_relationship_shortcode])) {
 					$post_owner_id = (int) $view_attrs[$post_relationship_shortcode];
 					$post_type = $wpdb->get_var( $wpdb->prepare( "SELECT post_type FROM {$wpdb->posts} WHERE ID = %d", $post_owner_id ) );
-					if (function_exists('icl_object_id')) {
+					if (isset($sitepress) && function_exists('icl_object_id')) {
 						if ($post_type) {
 							$post_owner_id = icl_object_id($post_owner_id, $post_type, true);
 						}
@@ -69,9 +69,10 @@ function wpv_filter_post_relationship($query, $view_settings) {
         if ($view_settings['post_relationship_mode'][0] == 'url_parameter') {
             if (isset($view_settings['post_relationship_url_parameter']) && '' != $view_settings['post_relationship_url_parameter']) {
 				$post_relationship_url_parameter = $view_settings['post_relationship_url_parameter'];
-				if ( isset( $_GET[$post_relationship_url_parameter] ) && $_GET[$post_relationship_url_parameter] != array(0) ) {
-				//	$post_owner_id = (int) esc_attr( $_GET[$post_relationship_url_parameter] );
-					
+				if ( isset( $_GET[$post_relationship_url_parameter] ) 
+					&& $_GET[$post_relationship_url_parameter] != array(0) 
+					&& $_GET[$post_relationship_url_parameter] != 0 
+				) {
 					
 					$post_owner_ids_from_url = $_GET[$post_relationship_url_parameter];
 					$post_owner_ids_sanitized = array();
@@ -93,7 +94,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
 					//	print_r($post_types_from_url);
 						foreach ( $post_types_from_url as $ptfu_key => $ptfu_values ) {
 							$post_owner_id_item = $ptfu_values->ID;
-							if ( function_exists( 'icl_object_id' ) ) {
+							if ( isset($sitepress) && function_exists('icl_object_id') ) {
 								$post_owner_id_item = icl_object_id( $post_owner_id_item, $ptfu_values->post_type, true );
 							}
 							if ( $post_owner_id_item > 0 ) {
@@ -115,7 +116,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
 						$post_owner_data[$post_type][] = $post_owner_id;
 					}
 					*/
-				} else {
+				} else if ( function_exists( 'wpcf_pr_get_belongs' ) ) {
 					// TODO here we need to handle the case when the url param is not set BUT it's set for any of the parents
 					// We might need recursive queries on the postmeta table
 					/*
@@ -156,7 +157,12 @@ function wpv_filter_post_relationship($query, $view_settings) {
 					$tree_root = end( $relationship_tree_array );
 					$tree_ground = reset( $relationship_tree_array );
 					
-					if ( $tree_root && $tree_ground && isset( $_GET[$post_relationship_url_parameter . '-' . $tree_root] ) && !empty( $_GET[$post_relationship_url_parameter . '-' . $tree_root] ) && $_GET[$post_relationship_url_parameter . '-' . $tree_root] != array( 0 ) ) {
+					if ( $tree_root && $tree_ground 
+						&& isset( $_GET[$post_relationship_url_parameter . '-' . $tree_root] ) 
+						&& !empty( $_GET[$post_relationship_url_parameter . '-' . $tree_root] ) 
+						&& $_GET[$post_relationship_url_parameter . '-' . $tree_root] != array( 0 ) 
+						&& $_GET[$post_relationship_url_parameter . '-' . $tree_root] != 0  
+					) {
 						// There are influencer values: let's get the last one
 						$ancestor_influence = array();
 						$starting_key = 0;
@@ -230,7 +236,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
 							}
 							if ( $no_results ) {
 								// Along the intermediate filters, no posts were returned
-								$query['post__in'] = array(-1);
+								$query['post__in'] = array('0');
 							} else {
 								$real_parent_filter = end( $ancestor_influence );
 								$query_here = array();
@@ -251,7 +257,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
 									$post_owner_data[$tree_ground] = $aux_relationship_query->posts;
 								} else {
 									// Just on the late filter, no posts were returned
-									$query['post__in'] = array(-1);
+									$query['post__in'] = array('0');
 								}
 							}
 						}
@@ -268,7 +274,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
         if ($view_settings['post_relationship_mode'][0] == 'this_page') {
             if (isset($view_settings['post_relationship_id']) && $view_settings['post_relationship_id'] > 0) {
                 $post_owner_id = $view_settings['post_relationship_id'];
-                if (function_exists('icl_object_id')) {
+                if (isset($sitepress) && function_exists('icl_object_id')) {
                     $post_type = $wpdb->get_var( $wpdb->prepare( "SELECT post_type FROM {$wpdb->posts} WHERE ID = %d", $post_owner_id ) );
                     if ($post_type) {
                         $post_owner_id = icl_object_id($post_owner_id, $post_type, true);
@@ -314,7 +320,7 @@ function wpv_filter_post_relationship($query, $view_settings) {
 					$query['pr_filter_post__in'] = $aux_relationship_query->posts;
 				}
 				else {
-					$query['post__in'] = array(-1);
+					$query['post__in'] = array('0');
 				}
 			}
         }

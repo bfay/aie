@@ -2,9 +2,9 @@
 /*
  * Fields and groups form functions.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/includes/fields-form.php $
- * $LastChangedDate: 2014-05-27 10:35:12 +0000 (Tue, 27 May 2014) $
- * $LastChangedRevision: 22805 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/includes/fields-form.php $
+ * $LastChangedDate: 2014-07-10 15:25:28 +0000 (Thu, 10 Jul 2014) $
+ * $LastChangedRevision: 24854 $
  * $LastChangedBy: marcin $
  *
  */
@@ -261,7 +261,8 @@ function wpcf_admin_fields_form() {
             '#type' => 'markup',
             '#markup' => '<a href="' . admin_url( 'admin-ajax.php'
                     . '?action=wpcf_ajax&amp;wpcf_action=fields_insert'
-                    . '&amp;field=' . basename( $filename, '.php' ) )
+                    . '&amp;field=' . basename( $filename, '.php' )
+                    . '&amp;page=wpcf-edit' )
             . '&amp;_wpnonce=' . wp_create_nonce( 'fields_insert' ) . '" '
             . 'class="wpcf-fields-add-ajax-link button-secondary">' . $data['title'] . '</a> ',
         );
@@ -315,6 +316,7 @@ function wpcf_admin_fields_form() {
                 '#markup' => '<div id="wpcf-user-created-fields-wrapper-' . $field['id'] . '" style="float:left; margin-right: 10px;"><a href="' . admin_url( 'admin-ajax.php'
                         . '?action=wpcf_ajax'
                         . '&amp;wpcf_action=fields_insert_existing'
+                        . '&amp;page=wpcf-edit'
                         . '&amp;field=' . $field['id'] ) . '&amp;_wpnonce='
                 . wp_create_nonce( 'fields_insert_existing' ) . '" '
                 . 'class="wpcf-fields-add-ajax-link button-secondary" onclick="jQuery(this).parent().fadeOut();">'
@@ -807,7 +809,7 @@ function wpcf_admin_fields_form() {
         $preview_profile = wpcf_admin_post_meta_box_preview( $post, $update, 1 );
         $group = $update;
         $group['fields'] = wpcf_admin_post_process_fields( $post, $group['fields'], true, false );
-        $edit_profile = wpcf_admin_post_meta_box( $post, $group, 1 );
+        $edit_profile = wpcf_admin_post_meta_box( $post, $group, 1, true );
         add_action( 'admin_enqueue_scripts', 'wpcf_admin_fields_form_fix_styles', PHP_INT_MAX  );
     }
 
@@ -986,15 +988,6 @@ function wpcf_admin_fields_form() {
     return $form;
 }
 
-function wpcf_admin_fields_form_fix_styles()
-{
-    $suffix = SCRIPT_DEBUG ? '' : '.min';
-    wp_enqueue_style(
-        'wpcf-dashicons',
-        site_url( "/wp-includes/css/dashicons$suffix.css" )
-    );
-}
-
 /**
  * Dynamically adds new field on AJAX call.
  * 
@@ -1028,9 +1021,28 @@ function wpcf_fields_insert_existing_ajax() {
 function wpcf_fields_get_field_form( $type, $form_data = array() ) {
     $form = wpcf_fields_get_field_form_data( $type, $form_data );
     if ( $form ) {
-        return '<div class="ui-draggable">'
+        $return = '<div class="ui-draggable">'
                 . wpcf_form_simple( $form )
                 . '</div>';
+
+        /**
+         * add extra condition check if this is checkbox
+         */
+        foreach( $form as $key => $value ) {
+            if (
+                !array_key_exists('value', $value )
+                || !array_key_exists('#attributes', $value['value'] )
+                || !array_key_exists('data-wpcf-type', $value['value']['#attributes'] )
+                || 'checkbox' != $value['value']['#attributes']['data-wpcf-type']
+            ) {
+                continue;
+            }
+            echo '<script type="text/javascript">';
+            printf('jQuery(document).ready(function($){wpcf_checkbox_value_zero(jQuery(\'[name="%s"]\'));});', $value['value']['#name'] );
+            echo '</script>';
+        }
+
+        return $return;
     }
     return '<div>' . __( 'Wrong field requested', 'wpcf' ) . '</div>';
 }
@@ -1260,7 +1272,7 @@ function wpcf_fields_get_field_form_data( $type, $form_data = array() ) {
         }
 
         // WPML Translation Preferences
-        if ( function_exists( 'wpml_cf_translation_preferences' ) && defined('WPML_TM_VERSION') ) {
+        if ( function_exists( 'wpml_cf_translation_preferences' ) ) {
             $custom_field = !empty( $form_data['slug'] ) ? wpcf_types_get_meta_prefix( $form_data ) . $form_data['slug'] : false;
             $suppress_errors = $custom_field == false ? true : false;
             $translatable = array('textfield', 'textarea', 'wysiwyg');
@@ -1270,11 +1282,14 @@ function wpcf_fields_get_field_form_data( $type, $form_data = array() ) {
                 '#title' => __( 'Translation preferences', 'wpcf' ),
                 '#collapsed' => true,
             );
+            $wpml_prefs = wpml_cf_translation_preferences( $id,
+                        $custom_field, 'wpcf', false, $action, false,
+                        $suppress_errors );
+            $wpml_prefs = str_replace('<span style="color:#FF0000;">', '<span class="wpcf-form-error">', $wpml_prefs);
+            
             $form['wpcf-' . $id]['wpml-preferences']['form'] = array(
                 '#type' => 'markup',
-                '#markup' => wpml_cf_translation_preferences( $id,
-                        $custom_field, 'wpcf', false, $action, false,
-                        $suppress_errors ),
+                '#markup' => $wpml_prefs,
             );
         }
 

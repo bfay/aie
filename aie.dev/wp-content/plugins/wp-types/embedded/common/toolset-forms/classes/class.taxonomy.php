@@ -2,10 +2,10 @@
 
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.taxonomy.php $
- * $LastChangedDate: 2014-06-12 16:01:42 +0000 (Thu, 12 Jun 2014) $
- * $LastChangedRevision: 23567 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.taxonomy.php $
+ * $LastChangedDate: 2014-07-19 09:54:04 +0000 (Sat, 19 Jul 2014) $
+ * $LastChangedRevision: 25122 $
+ * $LastChangedBy: gen $
  *
  */
 
@@ -27,27 +27,13 @@ class WPToolset_Field_Taxonomy extends WPToolset_Field_Textfield
             $i++;
         }
 
-        wp_register_style('wptoolset-taxonomy',
-                WPTOOLSET_FORMS_RELPATH.'/css/taxonomy.css');
-
         wp_register_script( 'wptoolset-jquery-autocompleter',
                 WPTOOLSET_FORMS_RELPATH . '/js/jquery.autocomplete.js',
-                array('jquery'), WPTOOLSET_FORMS_VERSION );
+                array('jquery'), WPTOOLSET_FORMS_VERSION, true );
 
         wp_register_style('wptoolset-autocompleter', WPTOOLSET_FORMS_RELPATH.'/css/autocompleter.css');
-
-        add_action( 'wp_footer', array($this, 'javascript_autocompleter') );
-    }
-
-    public function enqueueScripts() {
-        wp_enqueue_script('jquery');
         wp_enqueue_script('wptoolset-jquery-autocompleter');
-    }
-
-    public function enqueueStyles() {
-        wp_enqueue_style('wptoolset-taxonomy');
-        wp_enqueue_style('wptoolset-autocompleter');
-        wp_print_styles();
+        add_action( 'wp_footer', array($this, 'javascript_autocompleter') );
     }
 
     public function javascript_autocompleter() {
@@ -80,6 +66,7 @@ class WPToolset_Field_Taxonomy extends WPToolset_Field_Textfield
     public function metaform()
     {
         $use_bootstrap = array_key_exists( 'use_bootstrap', $this->_data ) && $this->_data['use_bootstrap'];
+        $attributes = $this->getAttr();
         $metaform = array();
         $metaform[] = array(
             '#type' => 'hidden',
@@ -97,7 +84,7 @@ class WPToolset_Field_Taxonomy extends WPToolset_Field_Textfield
             '#title' => '',
             '#description' => '',
             '#name' => "tmp_".$this->getName(),
-            '#value' => '',
+            '#value' => $this->getValue(),
             '#attributes' => array(
                 'style' => 'float:left'
             ),
@@ -114,7 +101,7 @@ class WPToolset_Field_Taxonomy extends WPToolset_Field_Textfield
             '#title' => '',
             '#description' => '',
             '#name' => "btn_".$this->getName(),
-            '#value' => 'add',
+            '#value' => $attributes['add_text'],
             '#attributes' => array(
                 'style' => 'float:left',
                 'onclick' => 'setTaxonomy(\''.$this->getName().'\', this)'
@@ -125,33 +112,38 @@ class WPToolset_Field_Taxonomy extends WPToolset_Field_Textfield
             '#after' => $use_bootstrap? '</div>':'',
         );
 
-        /**
-         * show popular button
-         */
-        $before = sprintf(
-            '<div style="clear:both;"></div><div class="tagchecklist-%s"><span><a class="ntdelbutton" id="post_tag-check-num-0" onclick="del(this);">X</a>&nbsp;test</span></div><div style="clear:both;"></div>',
-            $this->getName()
-        );
-        $after = '<div style="clear:both;"></div>'.$this->getMostPopularTerms().'<div style="clear:both;"></div>';
-        if ( $use_bootstrap ) {
-            $before = '<div class="form-group">'.$before;
-            $after .= '</div>';
-        }
-        $metaform[] = array(
-            '#type' => 'button',
-            '#title' => '',
-            '#description' => '',
-            '#name' => "sh_".$this->getName(),
-            '#value' => 'show popular',
-            '#attributes' => array(
-                'class' => 'popular',
-                'onclick' => 'showHideMostPopularTaxonomy(this)',
-                'data-taxonomy' => $this->getName(),
-            ),
-            '#before' => $before,
-            '#after' => $after,
-        );
-
+		$before = sprintf(
+			'<div style="clear:both;"></div><div class="tagchecklist tagchecklist-%s"></div><div style="clear:both;"></div>',
+			$this->getName()
+		);
+		$after = '<div class="js-show-popular-after" style="clear:both;"></div>'.$this->getMostPopularTerms().'<div class="js-show-popular-after" style="clear:both;"></div>';
+		if ( $use_bootstrap ) {
+			$before = '<div class="form-group">'.$before;
+			$after .= '</div>';
+		}
+		$show = isset($attributes['show_popular']) && $attributes['show_popular'] == 'true';
+		/**
+		 * show popular button
+		 */
+		$metaform[] = array(
+			'#type' => 'button',
+			'#title' => '',
+			'#description' => '',
+			'#name' => "sh_".$this->getName(),
+			'#value' => $attributes['show_popular_text'],
+			'#attributes' => array(
+				'class' => 'popular',
+				'onclick' => 'showHideMostPopularTaxonomy(this)',
+				'data-taxonomy' => $this->getName(),
+				'data-show-popular-text' => $attributes['show_popular_text'],
+				'data-hide-popular-text' => $attributes['hide_popular_text'],
+				'data-after-selector' => '.js-show-popular-after',
+				'style' => $show ? '' : 'display:none;'
+			),
+			'#before' => $before,
+			'#after' => $after,
+		);
+		
         $this->set_metaform($metaform);
         return $metaform;
     }
@@ -215,7 +207,7 @@ class WPToolset_Field_Taxonomy extends WPToolset_Field_Textfield
         }
         $add_sizes = $max > $min;
         $content = sprintf(
-            '<div class="shmpt-%s" style="margin:5px;float:left;width:250px;display:none;">',
+            '<div class="shmpt-%s js-show-popular-after" style="margin:5px;float:left;width:250px;display:none;">',
             $this->getName()
         );
 

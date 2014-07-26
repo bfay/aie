@@ -133,16 +133,27 @@ function wpv_filter_query_post_in_and_not_in_fix($query, $view_settings) {
 	if ( isset( $query['post__in'] ) && isset( $query['post__not_in'] ) ) {
 		$query['post__in'] = array_diff( (array) $query['post__in'], (array) $query['post__not_in'] );
 		unset( $query['post__not_in'] );
+		if ( empty( $query['post__in'] ) ) {
+			$query['post__in'] = array( '0' );
+		}
 	}
 
 	return $query;
 }
 
-add_filter('wpv_filter_query_post_process', 'wpv_filter_extend_query_for_parametric', 999, 3);
+/**
+* wpv_filter_extend_query_for_parametric_and_counters
+*
+* Creates the additional cached data for parametric search dependency and counters
+*
+* @since 1.6.0
+*/
 
-function wpv_filter_extend_query_for_parametric($post_query, $view_settings, $id ) {
-	remove_filter('wpv_filter_query_post_process', 'wpv_filter_extend_query_for_parametric', 999, 2);
+add_filter( 'wpv_filter_query_post_process', 'wpv_filter_extend_query_for_parametric_and_counters', 999, 3 );
+
+function wpv_filter_extend_query_for_parametric_and_counters( $post_query, $view_settings, $id ) {
 	$dps_enabled = false;
+	$counters_enabled = false;
 	if ( !isset( $view_settings['dps'] ) || !is_array( $view_settings['dps'] ) ) {
 		$view_settings['dps'] = array();
 	}
@@ -171,9 +182,15 @@ function wpv_filter_extend_query_for_parametric($post_query, $view_settings, $id
 			$dps_enabled = false;
 		}
 	}
+	if ( !isset( $view_settings['filter_meta_html'] ) ) {
+		$view_settings['filter_meta_html'] = '';
+	}
+	if ( strpos( $view_settings['filter_meta_html'], '%%COUNT%%' ) !== false ) {
+		$counters_enabled = true;
+	}
 	
 	global $WP_Views;
-	if ( !$dps_enabled ) {
+	if ( !$dps_enabled && !$counters_enabled ) {
 		// Set the force value
 		$WP_Views->set_force_disable_dependant_parametric_search( true );
 		return $post_query;

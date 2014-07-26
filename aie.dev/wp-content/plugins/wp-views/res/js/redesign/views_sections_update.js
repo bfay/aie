@@ -16,6 +16,9 @@ jQuery(document).ready(function(){
 			}
 		}
 	});
+	wpv_show_no_posts_message();
+	wpv_show_no_taxonomy_message();
+	wpv_display_missing_filters_message();
 });
 
 // Collection of previous values
@@ -64,6 +67,16 @@ codemirror_views_layout_js = icl_editor.codemirror('wpv_layout_meta_html_js', tr
 codemirror_views_layout_js_val = codemirror_views_layout_js.getValue(),
 codemirror_views_content = icl_editor.codemirror('wpv_content', true),
 codemirror_views_content_val = codemirror_views_content.getValue();
+
+jQuery(document).ready(function(){
+	codemirror_views_query.refresh();
+	codemirror_views_query_css.refresh();
+	codemirror_views_query_js.refresh();
+	codemirror_views_layout.refresh();
+	codemirror_views_layout_css.refresh();
+	codemirror_views_layout_js.refresh();
+	codemirror_views_content.refresh();
+});
 
 // Description update
 
@@ -159,6 +172,8 @@ jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 
 jQuery(document).on('change', '.js-wpv-query-type', function(){
 	jQuery('.js-wpv-query-type-update').parent().find('.toolset-alert-error').remove();
+	wpv_show_no_posts_message();
+	wpv_show_no_taxonomy_message();
 	if (view_settings['.js-wpv-query-type'] != jQuery('input:radio.js-wpv-query-type:checked').val()) {
 		jQuery('.js-wpv-query-type-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
@@ -181,6 +196,9 @@ jQuery(document).on('change', '.js-wpv-query-type', function(){
 });
 jQuery(document).on('change', '.js-wpv-query-post-type, .js-wpv-query-taxonomy-type, .js-wpv-query-users-type', function(){
 	jQuery('.js-wpv-query-type-update').parent().find('.toolset-alert-error').remove();
+	
+	wpv_show_no_posts_message();
+	wpv_show_no_taxonomy_message();
 	var wpv_query_post_items = [];
 	jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked, .js-wpv-query-users-type:checked').each(function(){
 		wpv_query_post_items.push(jQuery(this).val());
@@ -226,6 +244,7 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 		wpv_query_users_items.push(jQuery(this).val());
 		view_settings['.js-wpv-query-post-items'].push(jQuery(this).val());
 	});
+
 	jQuery(this).parent().find('.toolset-alert-error').remove();
 	jQuery('.js-wpv-query-type-update').prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
 	var data = {
@@ -243,6 +262,7 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 		url:ajaxurl,
 		data:data,
 		success:function(response){
+			//wpv_show_no_posts_message();
 			if ( (typeof(response) !== 'undefined') ) {
 				decoded_response = jQuery.parseJSON(response);
 				if ( decoded_response.success === data.id ) {
@@ -257,7 +277,7 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 					}
 					jQuery('.js-wpv-dps-settings').html(decoded_response.wpv_dps_settings_structure);
 					view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
-					jQuery('.js-wpv-query-type-update').parent().wpvToolsetMessage({
+					jQuery('.js-wpv-content-section-button-wrap').wpvToolsetMessage({
 						text:update_message,
 						type:'success',
 						inline:true,
@@ -268,7 +288,7 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 					}
 				}
 			} else {
-				jQuery('.js-wpv-query-type-update').parent().wpvToolsetMessage({
+				jQuery('.js-wpv-content-section-button-wrap').wpvToolsetMessage({
 					text:unsaved_message,
 					type:'error',
 					inline:true,
@@ -278,7 +298,7 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 			}
 		},
 		error: function (ajaxContext) {
-			jQuery('.js-wpv-query-type-update').parent().wpvToolsetMessage({
+			jQuery('.js-wpv-content-section-button-wrap').wpvToolsetMessage({
 				text:unsaved_message,
 				type:'error',
 				inline:true,
@@ -765,6 +785,7 @@ jQuery(document).on('click', '.js-wpv-filter-extra-update', function(e) {
 		data_view_id = jQuery('.js-post_ID').val();
 	jQuery(this).parent().find('.toolset-alert-error').remove();
 	jQuery('.js-wpv-filter-extra-update').prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
+	jQuery( '.js-wpv-missing-filter-container' ).remove();// In case we have a missing filters message, remove it (it will be added again if needed)
 	var data = {
 		action: 'wpv_update_filter_extra',
 		id: data_view_id,
@@ -795,6 +816,7 @@ jQuery(document).on('click', '.js-wpv-filter-extra-update', function(e) {
 						inline:true,
 						stay:false
 					});
+					wpv_display_missing_filters_message();
 				}
 			} else {
 				jQuery('.js-wpv-filter-extra-update').parent().wpvToolsetMessage({
@@ -932,6 +954,12 @@ function wpv_update_parametric_search_section() {
 				
 			}
 	});
+}
+
+function wpv_display_missing_filters_message() {
+	if ( jQuery( '.js-wpv-missing-filter-container' ).length > 0 ) {
+		jQuery( '.js-wpv-missing-filter-container' ).detach().insertAfter( '.js-wpv-settings-filter-extra .wpv-settings-header' ).fadeIn( 'fast' );
+	}
 }
 
 // Layout Extra update
@@ -1219,12 +1247,15 @@ jQuery('.js-wpv-view-save-all').click(function(e){
 		jQuery(this).click();
 	});
 	spinnerContainerAll.remove();
+		
 	jQuery(this).parent().wpvToolsetMessage({
 		text:update_message,
 		type:'success',
 		inline:true,
 		stay:false
 	});
+	wpv_show_no_posts_message();
+	wpv_show_no_taxonomy_message();
 });
 
 // Confirmation dialog - prevent users to navigate away if there is unsaved data
@@ -1256,6 +1287,24 @@ function setConfirmUnload(on) {
 	} else {
 		window.onbeforeunload = null;
 		jQuery('.js-wpv-view-save-all').prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
+	}
+}
+
+// This controls a warning when no post type has been selected
+function wpv_show_no_posts_message(){
+	if ( (jQuery('.js-wpv-query-post-type:checked').length == 0 && jQuery('.js-wpv-query-type:checked').val() === 'posts') ){	
+		jQuery('.js-wpv-no-post-type-warning').fadeIn('fast');
+	} else {
+		jQuery('.js-wpv-no-post-type-warning').hide();
+	}
+}
+
+// This controls a warning when no taxonomy has been selected
+function wpv_show_no_taxonomy_message(){
+	if ( (jQuery('.js-wpv-query-taxonomy-type:checked').length == 0 && jQuery('.js-wpv-query-type:checked').val() === 'taxonomy') ){	
+		jQuery('.js-wpv-no-taxonomy-warning').fadeIn('fast');
+	} else {
+		jQuery('.js-wpv-no-taxonomy-warning').hide();
 	}
 }
 

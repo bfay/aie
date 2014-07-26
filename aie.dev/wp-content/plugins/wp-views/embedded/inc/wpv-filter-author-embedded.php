@@ -16,6 +16,13 @@ function wpv_filter_post_author($query, $view_settings) {
 		$show_author_array = array();
 		$author_shortcode = '';
         
+		if ( $view_settings['author_mode'][0] == 'current_page' ) {
+			$current_page = $WP_Views->get_current_page();
+			if ( $current_page ) {
+				$show_author_array[] = $current_page->post_author;
+			}
+		}
+		
 		if ($view_settings['author_mode'][0] == 'current_user') {
 			global $current_user;
 			if (is_user_logged_in()) {
@@ -134,7 +141,32 @@ function wpv_filter_post_author($query, $view_settings) {
 				$query['post__in'] = array('0');
 			}
 		}
-        }
+    }
     
 	return $query;
+}
+
+/**
+* wpv_filter_author_requires_current_page
+*
+* Whether the current View requires the current page data for the filter by author
+*
+* @param $state (boolean) the state of this need until this filter is applied
+* @param $view_settings
+*
+* @return $state (boolean)
+*
+* @since 1.6.2
+*/
+
+add_filter( 'wpv_filter_requires_current_page', 'wpv_filter_author_requires_current_page', 20, 2 );
+
+function wpv_filter_author_requires_current_page( $state, $view_settings ) {
+	if ( $state ) {
+		return $state; // Already set
+	}
+	if ( isset( $view_settings['author_mode'] ) && isset( $view_settings['author_mode'][0] ) && $view_settings['author_mode'][0] == 'current_page' ) {
+		$state = true;
+	}
+	return $state;
 }

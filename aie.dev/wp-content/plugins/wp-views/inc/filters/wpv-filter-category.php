@@ -42,6 +42,7 @@ if(is_admin()){
 
 	function wpv_add_filter_category_list_item($view_settings) {
 		
+		global $sitepress;
 		if (!isset($view_settings['taxonomy_relationship'])) {
 			$view_settings['taxonomy_relationship'] = 'AND';
 		}
@@ -66,7 +67,7 @@ if(is_admin()){
 					$view_settings[$save_name] = array();
 				}
 				
-				if (function_exists('icl_object_id')) {
+				if (isset($sitepress) && function_exists('icl_object_id')) {
 					// Adjust for WPML support
 					$trans_term_ids = array();
 					foreach ( $view_settings[$save_name] as $untrans_term_id ) {
@@ -373,133 +374,15 @@ if(is_admin()){
 	}
 }
 
-function wpv_get_taxonomy_summary($type, $view_settings, $category_selected) {
-	// find the matching category/taxonomy
-	$taxonomy = 'category';
-	$taxonomy_name = __('Categories', 'wpv-views');
-	$taxonomies = get_taxonomies('', 'objects');
-	foreach ($taxonomies as $category_slug => $category) {
-		$name = ( $category->name == 'category' ) ? 'post_category' : 'tax_input[' . $category->name . ']';
-		
-		if ($name == $type) {
-			// it's a category type.
-			$taxonomy = $category->name;
-			$taxonomy_name = $category->label;
-			break;
-		}
-	}
-	
-	if (!isset($view_settings['tax_' . $taxonomy . '_relationship'])) {
-		$view_settings['tax_' . $taxonomy . '_relationship'] = 'IN';
-	}
-	if (!isset($view_settings['taxonomy-' . $taxonomy . '-attribute-url'])) {
-		$view_settings['taxonomy-' . $taxonomy . '-attribute-url'] = '';
-	}
-	if (!isset($view_settings['taxonomy-' . $taxonomy . '-attribute-operator'])) {
-		$view_settings['taxonomy-' . $taxonomy . '-attribute-operator'] = 'IN';
-	}
-	
-	$relationship = __('is <strong>One</strong> of these', 'wpv-views');
-	switch($view_settings['tax_' . $taxonomy . '_relationship']) {
-		case "AND":
-			$relationship = __('is <strong>All</strong> of these', 'wpv-views');
-			break;
-		
-		case "NOT IN":
-			$relationship = __('is <strong>Not one</strong> of these', 'wpv-views');
-			break;
-
-		case "FROM PAGE":
-			$relationship = __('the same as the <strong>current page</strong>', 'wpv-views');
-			break;
-
-		case "FROM ATTRIBUTE":
-			$relationship = __('set by the View shortcode attribute ', 'wpv-views');
-			break;
-
-		case "FROM URL":
-			$relationship = __('set by the URL parameter ', 'wpv-views');
-			break;
-
-		case "FROM PARENT VIEW":
-			$relationship = ', ' . __('set by the parent view.', 'wpv-views');
-			break;
-	}
-	
-	ob_start();
-	echo '<span class="wpv-filter-multiple-summary-item">';
-	if ($view_settings['tax_' . $taxonomy . '_relationship'] == "FROM PAGE") {
-		echo '<strong>' . $taxonomy_name . ' </strong>' . $relationship;
-	} else if ($view_settings['tax_' . $taxonomy . '_relationship'] == "FROM ATTRIBUTE" || $view_settings['tax_' . $taxonomy . '_relationship'] == "FROM URL") {
-		echo '<strong>' . $taxonomy_name . ' </strong>' . $relationship;
-		echo '<strong>"' . $view_settings['taxonomy-' . $taxonomy . '-attribute-url'] . '"</strong> ';
-		echo __('using the operator', 'wpv-views') . ' <strong>' . $view_settings['taxonomy-' . $taxonomy . '-attribute-operator'] .  '</strong> ';
-		if ($view_settings['tax_' . $taxonomy . '_relationship'] == "FROM ATTRIBUTE") {
-			echo '<br /><code>' . sprintf(__('eg. [wpv-view name="view-name" <strong>%s="xxxx"</strong>]', 'wpv-views'), $view_settings['taxonomy-' . $taxonomy . '-attribute-url']) . '</code>';
-		} else {
-			echo '<br /><code>' . sprintf(__('eg. http://www.example.com/page/?<strong>%s=xxxx</strong>', 'wpv-views'), $view_settings['taxonomy-' . $taxonomy . '-attribute-url']) . '</code>';
-		}
-	} else if ($view_settings['tax_' . $taxonomy . '_relationship'] == "FROM PARENT VIEW") {
-		echo '<strong>' . $taxonomy_name . ' </strong>' . $relationship;
-	} else {
-		?>
-		<strong><?php echo $taxonomy_name . ' </strong>' . $relationship . ' <strong>(';
-		$cat_text = '';
-		foreach($category_selected as $cat) {
-			$term = get_term($cat, $taxonomy);
-			if ($term) {
-				if ($cat_text != '') {
-					$cat_text .= ', ';
-				}
-				$cat_text .= $term->name;
-			}
-		}
-		echo $cat_text;
-		?>)</strong>
-		
-		<?php
-	}
-	echo '</span>';
-	$buffer = ob_get_clean();
-	
-	return $buffer;
-}
-
-
 add_filter('wpv-view-get-summary', 'wpv_category_summary_filter', 6, 3);
 
 function wpv_category_summary_filter($summary, $post_id, $view_settings) {
 	$result = '';
-	$taxonomies = get_taxonomies('', 'objects');
-	foreach ($taxonomies as $category_slug => $category) {
-		$save_name = ( $category->name == 'category' ) ? 'post_category' : 'tax_input_' . $category->name;
-		$relationship_name = ( $category->name == 'category' ) ? 'tax_category_relationship' : 'tax_' . $category->name . '_relationship';
-		
-		if (isset($view_settings[$relationship_name])) {
-			
-			if (!isset($view_settings[$save_name])) {
-				$view_settings[$save_name] = array();
-			}
-	
-			$name = ( $category->name == 'category' ) ? 'post_category' : 'tax_input[' . $category->name . ']';
-			if ($result != '') {
-				if ($view_settings['taxonomy_relationship'] == 'OR') {
-					$result .= __(' OR ', 'wpv-views');
-				} else {
-					$result .= __(' AND ', 'wpv-views');
-				}
-			}
-			
-			$result .= wpv_get_taxonomy_summary($name, $view_settings, $view_settings[$save_name]);
-				
-		}
-	}
-
+	$result = wpv_get_filter_taxonomy_summary_txt( $view_settings );
 	if ($result != '' && $summary != '') {
 		$summary .= '<br />';
 	}
 	$summary .= $result;
-	
 	return $summary;
 }
 

@@ -256,6 +256,11 @@
 			.wpv-dialog-parametric-filter .filter-preview>p:first-child {
 				font-weight: bold;
 			}
+			
+	.wpv-dialog-parametric-filter .label-alignleft {
+		display: inline-block;
+		width: 40%;
+	}
 
 /* wpv-dialog-parametric-filter END */
 
@@ -421,4 +426,12 @@
     color: #CCC;
     background: transparent;
     cursor: pointer;
+}
+
+/* Disalog trash Content Template*/
+.wpv-dialog-trash-ct{
+	width:550px;
+}
+.wpv-dialog-trash-ct select{
+	max-width:200px;
 }

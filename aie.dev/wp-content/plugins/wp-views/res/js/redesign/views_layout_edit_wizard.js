@@ -124,6 +124,12 @@ jQuery(document).ready(function($){
 				if (typeof(data.bootstrap_grid_container) != 'undefined' && data.bootstrap_grid_container === 'true' ) {
 					$('input[name="bootstrap_grid_container"]').prop('checked',true);
 				}
+				if ( data.wpv_bootstrap_version == 3 ){
+					$('input[name="bootstrap_grid_row_class"]').prop('disabled',true);
+				}
+				if (typeof(data.bootstrap_grid_row_class) != 'undefined' && data.bootstrap_grid_row_class === 'true' ) {
+					$('input[name="bootstrap_grid_row_class"]').prop('checked',true);
+				}
 				$('#bootstrap_grid_individual_yes').prop('checked',true);
 				if (typeof(data.bootstrap_grid_individual) != 'undefined' ) {
 					$('input[name="bootstrap_grid_individual"]').prop('checked',false);
@@ -278,6 +284,7 @@ jQuery(document).ready(function($){
 			//data.bootstrap_grid_style = wpv_layout_settings_from_wizard.bootstrap_grid_style;
 			data.bootstrap_grid_cols = wpv_layout_settings_from_wizard.bootstrap_grid_cols;
 			data.bootstrap_grid_container = wpv_layout_settings_from_wizard.bootstrap_grid_container;
+			data.bootstrap_grid_row_class = wpv_layout_settings_from_wizard.bootstrap_grid_row_class;
 			data.bootstrap_grid_individual = wpv_layout_settings_from_wizard.bootstrap_grid_individual;
 			//data.bootstrap_grid_cols_width = wpv_layout_settings_from_wizard.bootstrap_grid_cols_width;
 			
@@ -383,6 +390,7 @@ jQuery(document).ready(function($){
 			//bootstrap_grid_style = $('[name="bootstrap_grid_style"]').val();
 			//bootstrap_grid_cols_width = $('[name="bootstrap_grid_cols_width"]').val();
 			bootstrap_grid_container = $('[name="bootstrap_grid_container"]').prop('checked');
+			bootstrap_grid_row_class = $('[name="bootstrap_grid_row_class"]').prop('checked');
 			bootstrap_grid_individual = $('[name="bootstrap_grid_individual"]:checked').val();
 			include_headers = ($('[name="include_field_names"]').attr('checked')) ? true : false;
 			$(this).prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
@@ -407,7 +415,7 @@ jQuery(document).ready(function($){
 					break;
 				
 				case "bootstrap-grid":
-					data = wpv_render_bootstrap_grid_layout(fields, bootstrap_grid_cols, bootstrap_grid_container, bootstrap_grid_individual);
+					data = wpv_render_bootstrap_grid_layout(fields, bootstrap_grid_cols, bootstrap_grid_container, bootstrap_grid_individual, bootstrap_grid_row_class);
 					break;
 				
 				case "table_of_fields":
@@ -476,6 +484,7 @@ jQuery(document).ready(function($){
 				bootstrap_grid_cols: bootstrap_grid_cols,
 				//bootstrap_grid_cols_width: bootstrap_grid_cols_width,
 				bootstrap_grid_container: bootstrap_grid_container,
+				bootstrap_grid_row_class: bootstrap_grid_row_class,
 				bootstrap_grid_individual: bootstrap_grid_individual,
 				inc_headers: include_headers,
 				layout_content: codemirror_views.getValue()
@@ -801,7 +810,7 @@ jQuery(document).ready(function($){
     /*
      * Render Bootstrap grid
      */
-    function wpv_render_bootstrap_grid_layout(fields, cols, container, individual) {
+    function wpv_render_bootstrap_grid_layout(fields, cols, container, individual, row_class) {
         var body = "";
         for ( var i = 0; i < fields.length; i++ ) {
             body += fields[i][0];
@@ -813,6 +822,7 @@ jQuery(document).ready(function($){
 		var output = '';
 		var row_style = '';
 		var col_style = 'col-sm-';
+		var row = '';
 		//Row style and cols class for bootstrap 2.0
 		if ( data.wpv_bootstrap_version == 2){
 			row_style = ' row-fluid';
@@ -820,6 +830,9 @@ jQuery(document).ready(function($){
 		}	
 		if ( container === true ){
 			output += "   <div class=\"container\">\n";	
+		}
+		if ( row_class === true || data.wpv_bootstrap_version == 3 ){
+			row = "row";	
 		}
 		output += "   <wpv-loop wrap=\"" + cols + "\" pad=\"true\">\n";
 		ifone = '';
@@ -829,7 +842,7 @@ jQuery(document).ready(function($){
         }
         if ( individual == 1 ){
         	output += "         [wpv-item index=1]\n";
-        	output += "            <div class=\"row"+row_style+"\"><div class=\""+ col_style + col_num +"\">" + body + "</div>"+ifone+"\n";
+        	output += "            <div class=\""+row+row_style+"\"><div class=\""+ col_style + col_num +"\">" + body + "</div>"+ifone+"\n";
         	for(i=2;i<cols;i++){
         		output += "         [wpv-item index="+i+"]\n";
         		output += "           <div class=\""+ col_style + col_num +"\">" + body + "</div>\n";	
@@ -838,7 +851,7 @@ jQuery(document).ready(function($){
         //
         else{
         	output += "         [wpv-item index=1]\n";
-        	output += "            <div class=\"row"+row_style+"\"><div class=\""+ col_style + col_num +"\">" + body + "</div>"+ifone+"\n";
+        	output += "            <div class=\""+row+row_style+"\"><div class=\""+ col_style + col_num +"\">" + body + "</div>"+ifone+"\n";
 	        output += "         [wpv-item index=other]\n";
 	        output += "            <div class=\""+ col_style + col_num +"\">" + body + "</div>\n";
 	    }

@@ -1,7 +1,15 @@
 <?php
 
-/*
+/**
+* wpv_show_hide_pagination
+*
 * We can enable this to hide the Pagination section
+*
+* @param $sections (array) sections on the editor screen
+*
+* @return $sections
+*
+* @since unknown
 */
 
 add_filter('wpv_sections_filter_show_hide', 'wpv_show_hide_pagination', 1,1);
@@ -12,6 +20,19 @@ function wpv_show_hide_pagination($sections) {
 		);
 	return $sections;
 }
+
+/**
+* add_view_pagination
+*
+* Creates the pagination section in the edit screen
+*
+* @param $view_settings
+* @param $view_id
+*
+* @uses $views_edit_help (global)
+*
+* @since unknown
+*/
 
 add_action('view-editor-section-filter', 'add_view_pagination', 10, 2);
 
@@ -402,22 +423,14 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 *
 * @returns (string) $summary
 *
+* @uses wpv_get_pagination_summary
+*
 * @since unknown
 */
 
 add_filter( 'wpv-view-get-content-summary', 'wpv_pagination_summary_filter', 6, 3 );
 
 function wpv_pagination_summary_filter($summary, $post_id, $view_settings) {
-	if ( isset( $view_settings['pagination'] ) && isset( $view_settings['pagination'][0] ) && $view_settings['pagination'][0] != 'disable' ) {
-		if ( isset( $view_settings['pagination']['mode'] ) && $view_settings['pagination']['mode'] == 'paged' ) {
-			if ( isset( $view_settings['ajax_pagination'] ) && isset( $view_settings['ajax_pagination'][0] ) && $view_settings['ajax_pagination'][0] == 'enable' ) {
-				$summary .= ', ' . sprintf( _n( '1 item per page with manual AJAX', '%s items per page with manual AJAX', $view_settings['posts_per_page'], 'wpv-views' ), $view_settings['posts_per_page'] );
-			} else {
-				$summary .= ', ' . sprintf( _n( '1 item per page', '%s items per page', $view_settings['posts_per_page'], 'wpv-views' ), $view_settings['posts_per_page'] );
-			}
-		} else if ( isset( $view_settings['pagination']['mode'] ) && $view_settings['pagination']['mode'] == 'rollover' && isset( $view_settings['rollover'] ) && isset( $view_settings['rollover']['posts_per_page'] ) ) {
-			$summary .= ', ' . sprintf( _n( '1 item per page with automatic AJAX', '%s items per page with automatic AJAX', $view_settings['rollover']['posts_per_page'], 'wpv-views' ), $view_settings['rollover']['posts_per_page'] );
-		}
-	}
+	$summary .= wpv_get_pagination_summary( $view_settings );
     return $summary;
 }

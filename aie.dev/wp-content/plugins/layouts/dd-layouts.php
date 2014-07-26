@@ -5,7 +5,7 @@ Plugin URI: http://wp-types.com/
 Description:
 Author: ICanLocalize
 Author URI: http://wpml.org
-Version: 0.9.1.1
+Version: 0.9.2
 */
 
 define( 'WPDDL_RELPATH', plugins_url() . '/' . basename( dirname( __FILE__ ) ) );

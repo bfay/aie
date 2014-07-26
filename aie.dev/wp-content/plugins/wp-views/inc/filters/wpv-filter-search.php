@@ -81,37 +81,7 @@ if(is_admin()){
 		<?php
 		$res = ob_get_clean();
 		return $res;
-		/*
-		ob_start();
-		wpv_render_search_options(array('mode' => 'edit',
-				'view_settings' => $view_settings));
-		$data = ob_get_clean();
-
-		$td = "<p class='wpv-filter-search-summary js-wpv-filter-summary js-wpv-filter-search-summary'>\n";
-		$td .= wpv_get_filter_search_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-search-edit-open' title='". __('Edit this filter','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='" . esc_attr( __('Delete this filter', 'wpv-views') ) . "' data-nonce='". wp_create_nonce( 'wpv_view_filter_search_delete_nonce' ) . "'></i>\n</p>";
-		$td .= "<div id=\"wpv-filter-search-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
-		$td .= '<fieldset>';
-		$td .= '<p><strong>' . __('Post search', 'wpv-views') . ':</strong></p>';
-		$td .= '<div id="wpv-filter-search" class="js-filter-search-list">' . $data . '</div>';
-		$td .= '</fieldset>';
-		ob_start();
-		?>
-		<p>
-			<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-search-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_search_nonce' ); ?>" />
-		</p>
-		<p class="wpv-custom-fields-help">
-                        <?php echo sprintf(__('%sLearn about filtering for a specific text string%s', 'wpv-views'),
-                                        '<a class="wpv-help-link" href="' . WPV_FILTER_BY_SPECIFIC_TEXT_LINK . '" target="_blank">',
-                                        ' &raquo;</a>'
-                                        ); ?>
-        </p>
-		<?php
-		$td .= ob_get_clean();
-		$td .= '</div>';
-
-		return $td;
-		*/
+		
 	}
 
 	/**
@@ -266,31 +236,7 @@ if(is_admin()){
 		<?php
 		$res = ob_get_clean();
 		return $res;
-		/*
-		ob_start();
-		wpv_render_taxonomy_search_options(array('mode' => 'edit',
-				'view_settings' => $view_settings));
-		$data = ob_get_clean();
-
-		$td = "<p class='wpv-filter-taxonomy-search-summary js-wpv-filter-summary js-wpv-filter-taxonomy-search-summary'>\n";
-		$td .= wpv_get_filter_taxonomy_search_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-taxonomy-search-edit-open' title='". __('Edit this filter','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_taxonomy_search_delete_nonce' ) . "'></i>\n</p>";
-		$td .= "<div id=\"wpv-filter-taxonomy-search-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
-		$td .= '<fieldset>';
-		$td .= '<legend><strong>' . __('Taxonomy search', 'wpv-views') . ':</strong></legend>';
-		$td .= '<div id="wpv-filter-taxonomy-search" class="js-filter-taxonomy-search-list">' . $data . '</div>';
-		$td .= '</fieldset>';
-		ob_start();
-		?>
-		<p>
-			<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-taxonomy-search-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_search_nonce' ); ?>" />
-		</p>
-		<?php
-		$td .= ob_get_clean();
-		$td .= '</div>';
-
-		return $td;
-		*/
+		
 	}
 
 	/**
@@ -433,49 +379,6 @@ function wpv_render_search_options($args) {
 }
 
 /**
-* Render search filter summary text
-*/
-
-function wpv_get_filter_search_summary_txt($view_settings, $short=false) {
-
-	ob_start();
-
-	switch ($view_settings['search_mode']) {
-		case 'specific':
-			$term = $view_settings['post_search_value'];
-			if ($term == '') {
-				$term = '<i>' . __('None set', 'wpv-views') . '</i>';
-			}
-			if($short) {
-				echo sprintf(__('Filter by <strong>search</strong> term: <strong>%s</strong>', 'wpv-views'), $term);
-			} else {
-				echo sprintf(__('Filter by this search term: <strong>%s</strong>.', 'wpv-views'), $term);
-			}
-			break;
-
-		case 'visitor':
-			if ($short) {
-				echo __('Show a <strong>search box</strong> for visitors', 'wpv-views');
-			} else {
-				echo __('Show a <strong>search box</strong> for visitors.', 'wpv-views');
-			}
-			break;
-
-		case 'manual':
-			if ($short) {
-				echo __('Filter by <strong>search box</strong>', 'wpv-views');
-			} else {
-				echo __('The search box will be added <strong>manually</strong>.<br /><code>eg. [wpv-filter-search-box]</code>', 'wpv-views');
-			}
-			break;
-	}
-	$data = ob_get_clean();
-
-	return $data;
-
-}
-
-/**
 * Render taxonomy search filter options
 */
 
@@ -504,36 +407,6 @@ function wpv_render_taxonomy_search_options($args) {
         </ul>
 
 	<?php
-}
-
-/**
-* Render taxonomy search filter summary text
-*/
-
-function wpv_get_filter_taxonomy_search_summary_txt($view_settings) {
-	ob_start();
-
-	switch ($view_settings['taxonomy_search_mode']) {
-	case 'specific':
-		$term = $view_settings['taxonomy_search_value'];
-		if ($term == '') {
-		$term = '<i>' . __('None set', 'wpv-views') . '</i>';
-		}
-		echo sprintf(__('Filter by this search term: <strong>%s</strong>.', 'wpv-views'), $term);
-		break;
-
-	case 'visitor':
-		echo __('Show a <strong>search box</strong> for visitors.', 'wpv-views');
-		break;
-
-	case 'manual':
-		echo __('The search box will be added <strong>manually</strong>.<br /><code>eg. [wpv-filter-search-box]</code>', 'wpv-views');
-		break;
-	}
-
-	$data = ob_get_clean();
-
-	return $data;
 }
 
 /**

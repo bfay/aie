@@ -36,6 +36,7 @@ class WPDD_layout_cell_child_layout_factory extends WPDD_layout_cell_factory{
 		$template['dialog-title-edit'] = __('Edit Child Layout Cell', 'ddl-layouts');
 		$template['dialog-template'] = $this->_dialog_template();
 		$template['allow-multiple'] = false;
+		$template['category'] = __('Grids', 'ddl-layouts');
 		return $template;
 	}
 
@@ -43,7 +44,7 @@ class WPDD_layout_cell_child_layout_factory extends WPDD_layout_cell_factory{
 		ob_start();
 		?>
 			<div class="cell-content">
-				<p class="cell-name"><%= name %> &ndash; <%- kind %></p>
+				<p class="cell-name">{{{ name }}} &ndash; {{ kind }}</p>
 				<div class="cell-preview"><?php _e('Child Layout', 'ddl-layouts'); ?></div>
 			</div>
 		<?php

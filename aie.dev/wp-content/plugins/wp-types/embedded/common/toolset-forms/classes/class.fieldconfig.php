@@ -1,9 +1,9 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.fieldconfig.php $
- * $LastChangedDate: 2014-06-10 12:58:55 +0000 (Tue, 10 Jun 2014) $
- * $LastChangedRevision: 23430 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.fieldconfig.php $
+ * $LastChangedDate: 2014-07-10 09:49:32 +0000 (Thu, 10 Jul 2014) $
+ * $LastChangedRevision: 24825 $
  * $LastChangedBy: francesco $
  *
  */
@@ -57,26 +57,26 @@ if (!class_exists("FieldConfig")) {
         public function setDefaultValue($type,$field_arr)
         {
             switch ($type) {
-            case 'date':
-                $this->add_time = 'and_time' == $field_arr['data']['date_and_time'];
+                case 'date':
+                    $this->add_time = 'and_time' == $field_arr['data']['date_and_time'];
                     break;
-            case 'checkboxes':
-                if ( is_array( $field_arr['attr']['default'] ) && count( $field_arr['attr']['default'] ) ) {
-                    $this->default_value = $field_arr['attr']['default'][0];
-                }
-                break;
+                case 'checkboxes':
+                    if ( is_array( $field_arr['attr']['default'] ) && count( $field_arr['attr']['default'] ) ) {
+                        $this->default_value = $field_arr['attr']['default'][0];
+                    }
+                    break;
 
-            case 'select':
-                $this->default_value = isset( $field_arr['attr']['actual_value'][0] )? $field_arr['attr']['actual_value'][0] : null;
-                break;
+                case 'select':
+                    $this->default_value = isset( $field_arr['attr']['actual_value'][0] )? $field_arr['attr']['actual_value'][0] : null;
+                    break;
 
-            case 'radios':
-                $this->default_value = $field_arr['attr']['default'];
-                break;
+                case 'radios':
+                    $this->default_value = $field_arr['attr']['default'];
+                    break;
 
-            default:
-                $this->default_value = "";
-                break;
+                default:
+                    $this->default_value = "";
+                    break;
             }
         }
 
@@ -89,7 +89,10 @@ if (!class_exists("FieldConfig")) {
                 case 'checkboxes':
                     foreach ($attrs['actual_titles'] as $refvalue=>$title) {
                         $value = $attrs['actual_values'][$refvalue];
-                        $arr[$refvalue] = array('value'=>$refvalue,'title'=>$title,'checked'=>(bool)$values[$refvalue],'name'=>$name);
+                        $arr[$refvalue] = array('value'=>$refvalue,'title'=>$title,'name'=>$name);
+                        if ( in_array($refvalue, $attrs['default']) ) {
+                            $arr[$refvalue]['checked'] = true;
+                        }
                     }
                     break;
                 case 'select':
@@ -127,7 +130,7 @@ if (!class_exists("FieldConfig")) {
                 'type' => $this->getType(),
                 'title' => $this->getTitle(),
                 'options' => $this->getOptions(),
-                'defualt_value' => $this->getDefaultValue(),
+                'default_value' => $this->getDefaultValue(),
                 'description' => $this->getDescription(),
                 'repetitive' => $this->isRepetitive(),
                 /*'name' => $base_name."[".$this->getType()."]",*/

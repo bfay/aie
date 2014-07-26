@@ -17,7 +17,7 @@
 
 				<ul>
 					<li><a href="#js-cell-content-<?php echo $unique_id; ?>"><?php _e('Content', 'ddl-layouts'); ?></a></li>
-					<li><a href="#js-cell-settings-<?php echo $unique_id; ?>"><?php _e('Display Settings', 'ddl-layouts'); ?></a></li>
+					<li class="ddl-tab-right"><a href="#js-cell-settings-<?php echo $unique_id; ?>"><?php _e('CSS styling', 'ddl-layouts'); ?></a></li>
 				</ul>
 
 				<div class="ddl-dialog-content-main ddl-popup-tab" id="js-cell-content-<?php echo $unique_id; ?>">
@@ -52,7 +52,7 @@
 		<div class="ddl-dialog-footer js-dialog-footer">
 			<?php wp_nonce_field('wp_nonce_edit_css', 'wp_nonce_edit_css'); ?>
 			<button class="button js-edit-dialog-close"><?php _e('Cancel','ddl-layouts') ?></button>
-			<button class="button button-primary js-dialog-edit-save js-save-dialog-settings"><?php _e('Save','ddl-layouts') ?></button>
+			<button class="button button-primary js-dialog-edit-save js-save-dialog-settings" data-create-text="<?php _e('Create cell','ddl-layouts') ?>" data-update-text="<?php _e('Update cell','ddl-layouts') ?>"><?php _e('Update cell','ddl-layouts') ?></button>
 		</div>
 
 	</div>

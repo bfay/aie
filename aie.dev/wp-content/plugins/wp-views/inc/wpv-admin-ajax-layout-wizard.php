@@ -49,6 +49,7 @@ function wpv_layout_wizard_convert_settings() {
 	$settings['bootstrap_grid_cols'] = $_POST['bootstrap_grid_cols'];
 	//$settings['bootstrap_grid_cols_width'] = $_POST['bootstrap_grid_cols_width'];
 	$settings['bootstrap_grid_container'] = $_POST['bootstrap_grid_container'];
+	$settings['bootstrap_grid_row_class'] = $_POST['bootstrap_grid_row_class'];
 	$settings['bootstrap_grid_individual'] = $_POST['bootstrap_grid_individual'];
     $settings['include_field_names'] = $_POST['inc_headers'];
     $settings['layout_meta_html'] = $_POST['layout_content'];
@@ -97,7 +98,7 @@ function wpv_layout_wizard_add_field() { // TODO this might need localization TO
     $WP_Views->editor_addon = new Editor_addon('wpv-views',
             __('Insert Views Shortcodes', 'wpv-views'),
             WPV_URL . '/res/js/views_editor_plugin.js',
-            WPV_URL . '/res/img/bw_icon16.png');
+            WPV_URL_EMBEDDED . '/res/img/views-icon-black_16X16.png');
 
     if ((string)$settings["query_type"][0] == 'posts') {
         add_short_codes_to_js( array('body-view-templates','post', 'taxonomy', 'post-view', 'taxonomy-view', 'user-view'), $WP_Views->editor_addon );

@@ -7,8 +7,6 @@ DDLayout.listing.views.abstract.CollectionView = Backbone.View.extend({
 
 		self.$el.data( 'view', self );
 
-		self.model.on();
-
 		self.render( options );
 	},
 	render: function (option) {

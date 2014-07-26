@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.colorpicker.php $
- * $LastChangedDate: 2014-06-03 17:25:39 +0000 (Tue, 03 Jun 2014) $
- * $LastChangedRevision: 23085 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.colorpicker.php $
+ * $LastChangedDate: 2014-07-12 08:38:18 +0000 (Sat, 12 Jul 2014) $
+ * $LastChangedRevision: 24908 $
+ * $LastChangedBy: gen $
  *
  */
 require_once 'class.field_factory.php';
@@ -18,22 +18,8 @@ class WPToolset_Field_Colorpicker extends FieldFactory
 {
     public function init()
     {
-    }
-
-    static public function registerScripts()
-    {
-        wp_register_script(
-            'wptoolset-field-colorpicker',
-            WPTOOLSET_FORMS_RELPATH . '/js/colorpicker.js',
-            array('iris'),
-            WPTOOLSET_FORMS_VERSION,
-            true
-        );
-    }
-
-    public function enqueueScripts()
-    {
-        if ( !is_admin() ) {
+		
+		if ( !is_admin() ) {
             wp_enqueue_style( 'wp-color-picker' );
             wp_enqueue_script(
                 'iris',
@@ -51,23 +37,44 @@ class WPToolset_Field_Colorpicker extends FieldFactory
             );
             $colorpicker_l10n = array(
                 'clear' => __( 'Clear' ),
-                'defaultString' => __( 'Default' ),
-                'pick' => __( 'Select Color' )
+                'defaultString' => __( 'Default', 'wpv-views' ),
+                'pick' => __( 'Select Color', 'wpv-views' )
             );
             wp_localize_script( 'wp-color-picker', 'wpColorPickerL10n', $colorpicker_l10n );
         }
-        wp_enqueue_script( 'wptoolset-field-colorpicker' );
+		wp_register_script(
+            'wptoolset-field-colorpicker',
+            WPTOOLSET_FORMS_RELPATH . '/js/colorpicker.js',
+            array('iris'),
+            WPTOOLSET_FORMS_VERSION,
+            true
+        );
+		wp_enqueue_script( 'wptoolset-field-colorpicker' );
+        
+	}
+
+    static public function registerScripts()
+    {
+        
+    }
+
+    public function enqueueScripts()
+    {
+        
     }
 
     public function metaform()
     {
+        $classes = array();
+        $classes[] = 'js-wpt-colorpicker';
         $form = array();
         $form['name'] = array(
             '#type' => 'textfield',
             '#title' => $this->getTitle(),
+			'#description' => $this->getDescription(),
             '#value' => $this->getValue(),
             '#name' => $this->getName(),
-            '#attributes' => array('class' => 'js-wpt-colorpicker'),
+            '#attributes' => array('class' => implode(' ', $classes )),
             '#validate' => $this->getValidationData(),
             '#after' => '',
             '#repetitive' => $this->isRepetitive(),

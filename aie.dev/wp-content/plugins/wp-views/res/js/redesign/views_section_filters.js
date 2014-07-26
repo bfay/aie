@@ -755,3 +755,56 @@ jQuery(document).on('click', '.js-wpv-dps-advanced-toggle', function(e) {
 		jQuery('.js-wpv-dps-advanced').hide();
 	}
 });
+
+jQuery(document).on( 'click', '.js-wpv-filter-missing-delete', function(e) {
+	e.preventDefault();
+	var thiz = jQuery(this),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertBefore(thiz).show(),
+	missing_cf = [],
+	missing_tax = [],
+	missing_rel = [];
+	jQuery( '.js-wpv-filter-missing' ).find( 'li' ).each(function(){
+		if ( jQuery( this ).data( 'type' ) == 'cf' ) {
+			missing_cf.push( jQuery( this ).data( 'name' ) );
+		}
+		if ( jQuery( this ).data( 'type' ) == 'tax' ) {
+			missing_tax.push( jQuery( this ).data( 'name' ) );
+		}
+		if ( jQuery( this ).data( 'type' ) == 'rel' ) {
+			missing_rel.push( jQuery( this ).data( 'name' ) );
+		}
+	});
+	data = {
+		action: 'wpv_remove_filter_missing',
+		id: jQuery('.js-post_ID').val(),
+		cf: missing_cf,
+		tax: missing_tax,
+		rel: missing_rel,
+		nonce: thiz.data('nonce')
+	};
+	jQuery.post(ajaxurl, data, function(response) {
+		if ( (typeof(response) !== 'undefined') ) {
+			decoded_response = jQuery.parseJSON(response);
+			if ( decoded_response.success === data.id ) {
+				jQuery('.js-filter-list').html(decoded_response.wpv_filter_update_filters_list);
+				jQuery('.js-wpv-dps-settings').html(decoded_response.wpv_dps_settings_structure);
+				wpv_after_update_filters_list();
+				thiz.parents( '.js-wpv-missing-filter-container' ).remove();
+			}
+		} else {
+			//if(  WPV_Parametric.debug ) console.log( WPV_Parametric.ajax_error, response );
+		}
+	})
+	.fail(function(jqXHR, textStatus, errorThrown) {
+		//if(  WPV_Parametric.debug ) console.log( WPV_Parametric.error_generic, textStatus, errorThrown );
+	})
+	.always(function() {
+		spinnerContainer.remove();
+	});
+});
+
+jQuery(document).on( 'click', '.js-wpv-filter-missing-close', function(e) {
+	e.preventDefault();
+	var thiz = jQuery(this);
+	thiz.parents( '.js-wpv-missing-filter-container' ).remove();
+});

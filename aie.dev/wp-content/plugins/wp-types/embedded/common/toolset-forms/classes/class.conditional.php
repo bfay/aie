@@ -185,19 +185,19 @@ class WPToolset_Forms_Conditional
                     break;
 
                 case '>':
-                    $passed = intval( $value ) > intval( $compare );
+                    $passed = floatval( $value ) > floatval( $compare );
                     break;
 
                 case '>=':
-                    $passed = intval( $value ) >= intval( $compare );
+                    $passed = floatval( $value ) >= floatval( $compare );
                     break;
 
                 case '<':
-                    $passed = intval( $value ) < intval( $compare );
+                    $passed = floatval( $value ) < floatval( $compare );
                     break;
 
                 case '<=':
-                    $passed = intval( $value ) <= intval( $compare );
+                    $passed = floatval( $value ) <= floatval( $compare );
                     break;
 
                 case '===':
@@ -213,7 +213,7 @@ class WPToolset_Forms_Conditional
                     break;
 
                 case 'between':
-                    $passed = intval( $value ) > intval( $compare ) && intval( $value ) < intval( $c['args'][1] );
+                    $passed = floatval( $value ) > floatval( $compare ) && floatval( $value ) < floatval( $c['args'][1] );
                     break;
 
                 default:

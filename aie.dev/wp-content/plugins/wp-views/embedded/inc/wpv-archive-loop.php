@@ -282,6 +282,8 @@ class WP_Views_archive_loops{
     // Add setting to the Views Settings page to select which page to use
     // to display our archive loop.
 
+	// DEPRECATED, TEST
+	/*
     function admin_settings($options) {
 
         global $WP_Views;
@@ -309,6 +311,7 @@ class WP_Views_archive_loops{
 
 		$WP_Views->admin_section_end();
     }
+	*/
 
     function _get_post_type_loops() {
         $loops = array('home-blog-page' => __('Home/Blog', 'wpv-views'),
@@ -349,7 +352,7 @@ class WP_Views_archive_loops{
     }
 
     function _display_post_type_loop_summary($loops, $options) {
-        global $WP_Views;
+        global $WP_Views, $sitepress;
         $views_available = $WP_Views->get_view_titles();
 
         $selected = '';
@@ -357,7 +360,7 @@ class WP_Views_archive_loops{
         foreach($loops as $loop => $loop_name) {
             if (isset ($options['view_' . $loop]) && $options['view_' . $loop] > 0) {
 				$view_id = $options['view_' . $loop];
-				if (function_exists('icl_object_id')) {
+				if (isset($sitepress) && function_exists('icl_object_id')) {
 					$view_id = icl_object_id($view_id, 'view', true);
 				}
 
@@ -381,7 +384,7 @@ class WP_Views_archive_loops{
 
     }
 
-    function _display_post_type_loop_admin($loops, $options) {
+    function _display_post_type_loop_admin($loops, $options) { // DEPRECATED
 
         global $WP_Views;
 
@@ -452,14 +455,14 @@ class WP_Views_archive_loops{
 
     function _display_taxonomy_loop_summary($options) {
 
-        global $WP_Views;
+        global $WP_Views, $sitepress;
         $views_available = $WP_Views->get_view_titles();
 
         $selected = '';
 
         $taxonomies = get_taxonomies('', 'objects');
         $exclude_tax_slugs = array();
-	$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
+		$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
         foreach ($taxonomies as $category_slug => $category) {
 		if ( in_array( $category_slug, $exclude_tax_slugs ) ) {
 			continue;
@@ -470,7 +473,7 @@ class WP_Views_archive_loops{
             $name = $category->name;
             if (isset ($options['view_taxonomy_loop_' . $name ]) && $options['view_taxonomy_loop_' . $name ] > 0) {
 				$view_id = $options['view_taxonomy_loop_' . $name];
-				if (function_exists('icl_object_id')) {
+				if (isset($sitepress) && function_exists('icl_object_id')) {
 					$view_id = icl_object_id($view_id, 'view', true);
 				}
 
@@ -493,7 +496,7 @@ class WP_Views_archive_loops{
         <?php
     }
 
-    function _display_taxonomy_loop_admin($options) {
+    function _display_taxonomy_loop_admin($options) { // DEPRECATED
 
         global $WP_Views;
 
@@ -563,7 +566,7 @@ class WP_Views_archive_loops{
 
 
     // Save the view settings for the archive loops.
-    function submit($options) {
+    function submit($options) { // DEPRECATED
 
         foreach($_POST as $index => $value) {
             if (strpos($index, 'view_') === 0) {
@@ -578,7 +581,7 @@ class WP_Views_archive_loops{
         return $options;
     }
 
-    function add_js() {
+    function add_js() { // DEPRECATED, maybe even the whole script is never loaded
         global $pagenow, $post;
 
         if(($pagenow == 'post.php' && $post->post_type == 'view') ||
@@ -589,7 +592,7 @@ class WP_Views_archive_loops{
         }
     }
 
-    function view_edit_admin($view_id, $view_settings) {
+    function view_edit_admin($view_id, $view_settings) { // MAYBE DEPRECATED
         global $WP_Views;
         $options = $WP_Views->get_options();
         ?>
@@ -602,7 +605,7 @@ class WP_Views_archive_loops{
         <?php
     }
 
-    function _ajax_get_view_edit_summary() {
+    function _ajax_get_view_edit_summary() { // MAYBE DEPRECATED
 
 		if (wp_verify_nonce($_POST['wpv_view_edit_nonce'], 'wpv_view_edit_nonce')) {
             $options = array();
@@ -675,7 +678,7 @@ class WP_Views_archive_loops{
         <?php
     }
 
-    function _view_edit_options($view_id, $options) {
+    function _view_edit_options($view_id, $options) { // MAYBE DEPRECATED
         static $js_added = false;
 
         $title = '';
@@ -707,7 +710,7 @@ class WP_Views_archive_loops{
         return $options;
     }
 
-    function _display_view_edit_edit($view_id) {
+    function _display_view_edit_edit($view_id) { // DEPRECATED
         global $WP_Views;
         $options = $WP_Views->get_options();
         $loops = $this->_get_post_type_loops();
@@ -725,7 +728,7 @@ class WP_Views_archive_loops{
                 <table class="widefat" style="width:auto;margin-top:10px;">
                     <thead>
                         <tr>
-                            <th><?php _e('Post type loopssss', 'wpv-views'); echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; ?></th>
+                            <th><?php _e('Post type loops', 'wpv-views'); echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; ?></th>
                             <th><?php _e('Taxonomy loops', 'wpv-views'); ?></th>
                         </tr>
                     </thead>
@@ -782,7 +785,7 @@ class WP_Views_archive_loops{
         <?php
     }
 
-    function _create_view_archive_popup( $view_id = 0 ) {
+    function _create_view_archive_popup( $view_id = 0 ) { // MAYBE DEPRECATED
         global $WP_Views;
         $options = $WP_Views->get_options();
         $loops = $this->_get_post_type_loops();
@@ -820,7 +823,7 @@ class WP_Views_archive_loops{
                             <?php
                             $show_asterisk = false;
                             $checked = ( isset($options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
-                            if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+                            if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id && $options['view_' . $loop] != 0 ) {
 								$show_asterisk = true;
 								$show_asterisk_explanation = true;
                             }
@@ -857,7 +860,7 @@ class WP_Views_archive_loops{
                             <?php
                             $show_asterisk = false;
                             $checked = ( isset($options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
-                            if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+                            if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id && $options['view_' . $loop] != 0 ) {
 								$show_asterisk = true;
 								$show_asterisk_explanation = true;
                             }
@@ -900,7 +903,7 @@ class WP_Views_archive_loops{
                                 $name = $category->name;
                                 $show_asterisk = false;
 								$checked = ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] == $view_id ) ? ' checked="checked"' : '';
-								if ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] != $view_id ) {
+								if ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] != $view_id && $options['view_taxonomy_loop_' . $name ] != 0 ) {
 									$show_asterisk = true;
 									$show_asterisk_explanation = true;
 								}
@@ -965,7 +968,7 @@ class WP_Views_archive_loops{
 
         $taxonomies = get_taxonomies('', 'objects');
         $exclude_tax_slugs = array();
-	$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
+		$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
        
         foreach ($taxonomies as $category_slug => $category) {
             

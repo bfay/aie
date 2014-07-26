@@ -2,7 +2,7 @@
 /**
  * Fields class.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/classes/fields.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/classes/fields.php $
  * $LastChangedDate: 2014-05-07 07:03:36 +0000 (Wed, 07 May 2014) $
  * $LastChangedRevision: 22085 $
  * $LastChangedBy: marcin $

@@ -85,7 +85,17 @@ DDLayout.CssEditor = function()
 
 			}
 		});
+
+        WPV_Toolset.Utils.eventDispatcher.listenTo(WPV_Toolset.Utils.eventDispatcher, 'color_box_closed', self.clean_up_display_options_screen );
 	};
+
+    self.clean_up_display_options_screen = function( event, dialog )
+    {
+        if( typeof self.bookmarks[self._uid] !== 'undefined' )
+        {
+            self.bookmarks[self._uid].removeAllMarkers( false );
+        }
+    };
 
 	self.codemirrorSetCustomHints = function( strings )
 	{

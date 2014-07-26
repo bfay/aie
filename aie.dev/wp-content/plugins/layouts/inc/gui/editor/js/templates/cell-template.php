@@ -13,12 +13,12 @@
 
 	<script type="text/html" id="cell-template">
 		<div class="cell-content">
-			<p class="cell-name"><%- name %> &ndash; <%-cid%> &ndash; <%- kind %></p>
-			<% if( content ){ %>
+			<p class="cell-name">{{ name }} &ndash; {{cid}} &ndash; {{ kind }}</p>
+			<# if( content ){ #>
 			<div class="cell-preview">
-				<%- content %>
+				{{ content }}
 			</div>
-			<% } %>
+			<# } #>
 		</div>
 	</script>
 

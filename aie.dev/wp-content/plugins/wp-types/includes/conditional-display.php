@@ -76,12 +76,17 @@ function wpcf_cd_field_pre_save_filter( $data ) {
                         && isset( $condition['month'] )
                         && isset( $condition['year'] )
                 ) {
-                    $time = mktime( 0, 0, 0, $condition['month'],
+                    $time = adodb_mktime( 0, 0, 0, $condition['month'],
                             $condition['date'], $condition['year'] );
+					if ( wpcf_fields_date_timestamp_is_valid( $time ) ) {
+						$condition['value'] = $time;
+					}
+					/*
                     $date = date( wpcf_get_date_format(), $time );
                     if ( $date !== false ) {
                         $condition['value'] = $date;
                     }
+					*/
                 }
                 if ( isset( $condition['date'] ) && isset( $condition['month'] )
                         && isset( $condition['year'] )
@@ -169,11 +174,11 @@ function wpcf_cd_admin_form_filter( $data, $group = false ) {
     $form['cd']['add'] = array(
         '#type' => 'markup',
         '#markup' => '<a id="' . $_add_id
-        . '" class="button-secondary"'
+        . '" class="button-secondary simple-logic"'
         . ' onclick="wpcfCdAddCondition(jQuery(this),' . $add . '); return false;"'
         . ' href="' . $_url . '">' . __( 'Add condition', 'wpcf' ) . '</a>'
         . '<br />'
-        . '<div class="wpcf-cd-entries">',
+        . '<div class="wpcf-cd-entries simple-logic">',
     );
 
     /*
@@ -215,7 +220,7 @@ function wpcf_cd_admin_form_filter( $data, $group = false ) {
         ),
         '#default_value' => isset( $data['data']['conditional_display']['relation'] ) ? $data['data']['conditional_display']['relation'] : 'AND',
         '#inline' => true,
-        '#before' => '<div class="wpcf-cd-relation" style="display:none;">',
+        '#before' => '<div class="wpcf-cd-relation simple-logic" style="display:none;">',
         '#after' => '</div>',
     );
     $form['cd']['toggle_open'] = array(
@@ -226,13 +231,13 @@ function wpcf_cd_admin_form_filter( $data, $group = false ) {
     $form['cd']['customize_display_logic_link'] = array(
         '#type' => 'markup',
         '#markup' => '<a href="javascript:void(0);" class="button-secondary wpcf-cd-enable-custom-mode" onclick="window.wpcfCdState_' . md5( $data['id'] )
-        . ' = jQuery(\'#' . md5( $data['id'] ) . '_cd_summary\').val();' . $prepopulate . ' jQuery(\'#' . md5( $data['id'] ) . '_cd_summary\').parent().slideDown(); jQuery(this).hide().next().show();wpcfCdCheckDateCustomized(jQuery(this));">'
+        . ' = jQuery(\'#' . md5( $data['id'] ) . '_cd_summary\').val();' . $prepopulate . ' jQuery(\'#' . md5( $data['id'] ) . '_cd_summary\').parent().slideDown(); jQuery(this).hide().next().show();wpcfCdCheckDateCustomized(jQuery(this));" data-wpcf-custom-logic="show">'
         . __( 'Customize the display logic', 'wpcf' )
         . '</a>',
     );
     $form['cd']['revert_display_logic_link'] = array(
         '#type' => 'markup',
-        '#markup' => '<a href="javascript:void(0);" class="button-secondary wpcf-cd-enable-custom-mode hidden wpcf-hidden" style="display:none;" onclick="jQuery(\'#' . md5( $data['id'] ) . '_cd_summary\').parent().slideUp().find(\'.checkbox\').removeAttr(\'checked\'); jQuery(this).hide().prev().show();">'
+        '#markup' => '<a href="javascript:void(0);" class="button-secondary wpcf-cd-enable-custom-mode hidden wpcf-hidden" style="display:none;" onclick="jQuery(\'#' . md5( $data['id'] ) . '_cd_summary\').parent().slideUp().find(\'.checkbox\').removeAttr(\'checked\'); jQuery(this).hide().prev().show();" data-wpcf-custom-logic="back">'
         . __( 'Go back to simple logic', 'wpcf' )
         . '</a>',
     );
@@ -245,9 +250,7 @@ function wpcf_cd_admin_form_filter( $data, $group = false ) {
         '#name' => $name . '[custom]',
         '#title' => __( 'Customize conditions', 'wpcf' ),
         '#id' => md5( $data['id'] ) . '_cd_summary',
-        '#after' => '<br /><a href="javascript:void(0);" onclick="wpcfCdCreateSummary(\''
-        . md5( $data['id'] ) . '_cd_summary\');">'
-        . __( 'Re-read structure', 'wpcf' ) . '</a><br />',
+//        '#after' => '<br /><a href="javascript:void(0);" onclick="wpcfCdCreateSummary(\'' . md5( $data['id'] ) . '_cd_summary\');">' . __( 'Re-read structure', 'wpcf' ) . '</a><br />',
         '#inline' => true,
         '#value' => isset( $data['data']['conditional_display']['custom'] ) ? $data['data']['conditional_display']['custom'] : '',
     );
@@ -257,7 +260,9 @@ function wpcf_cd_admin_form_filter( $data, $group = false ) {
         '#title' => __( 'Use customized conditions', 'wpcf' ),
         '#inline' => true,
         '#default_value' => isset( $data['data']['conditional_display']['custom_use'] ),
-        '#after' => '',
+        '#attributes' => array(
+            'class' => 'conditional-display-custom-use',
+        ),
     );
     $form['cd']['date_notice'] = array(
         '#type' => 'markup',
@@ -456,10 +461,14 @@ function wpcf_cd_admin_form_single_filter( $data, $condition, $key = null,
         WPCF_Loader::loadInclude( 'fields/date/functions.php' );
         $timestamp = wpcf_fields_date_convert_datepicker_to_timestamp( $condition['value'] );
         if ( $timestamp !== false ) {
-            $date_value = date( 'd', $timestamp ) . ',' . date( 'm', $timestamp ) . ',' . date( 'Y',
+            $date_value = adodb_date( 'd', $timestamp ) . ',' . adodb_date( 'm', $timestamp ) . ',' . adodb_date( 'Y',
                             $timestamp );
             $date_function = 'date';
-        }
+        } else if ( wpcf_fields_date_timestamp_is_valid( $condition['value'] ) ) {
+			$date_value = adodb_date( 'd', $condition['value'] ) . ',' . adodb_date( 'm', $condition['value'] ) . ',' . adodb_date( 'Y',
+                            $condition['value'] );
+            $date_function = 'date';
+		}
     }
     if ( empty( $date_value ) ) {
         $date_value = '';
@@ -546,14 +555,14 @@ function wpcf_conditional_add_date_controls( $function, $value, $name ) {
 
     if ( $function == 'date' ) {
         $date_parts = explode( ',', $value );
-        $time_adj = mktime( 0, 0, 0, $date_parts[1], $date_parts[0],
+        $time_adj = adodb_mktime( 0, 0, 0, $date_parts[1], $date_parts[0],
                 $date_parts[2] );
     } else {
         $time_adj = current_time( 'timestamp' );
     }
-    $jj = gmdate( 'd', $time_adj );
-    $mm = gmdate( 'm', $time_adj );
-    $aa = gmdate( 'Y', $time_adj );
+    $jj = adodb_gmdate( 'd', $time_adj );
+    $mm = adodb_gmdate( 'm', $time_adj );
+    $aa = adodb_gmdate( 'Y', $time_adj );
 
     $output = '<div class="wpcf-custom-field-date">' . "\n";
 

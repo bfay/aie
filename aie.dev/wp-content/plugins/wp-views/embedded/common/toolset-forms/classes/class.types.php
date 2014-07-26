@@ -2,10 +2,10 @@
 /**
  * Types fields specific
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Views-1.6.1-Types-1.5.7/toolset-forms/classes/class.types.php $
- * $LastChangedDate: 2014-04-16 08:42:22 +0000 (Wed, 16 Apr 2014) $
- * $LastChangedRevision: 21561 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.types.php $
+ * $LastChangedDate: 2014-07-02 03:07:11 +0000 (Wed, 02 Jul 2014) $
+ * $LastChangedRevision: 24554 $
+ * $LastChangedBy: bruce $
  *
  */
 
@@ -179,10 +179,22 @@ class WPToolset_Types
         if ( isset( $config['data']['validate'] ) ) {
             foreach ( $config['data']['validate'] as $rule => $settings ) {
                 if ( $settings['active'] ) {
+                    // Work out the id so we can get the translated message.
+                    $id = '';
+                    if (isset($config['slug'])) {
+                        $id = $config['slug'];
+                    } else {
+                        // This is on a cred from
+                        // try to find an appropriate id
+                        $id = $config['name'];
+                        if (strpos($id, 'wpcf-') === 0) {
+                            $id = substr($id, 5);
+                        }
+                    }
                     $validation[$rule] = array(
                         'args' => isset( $settings['args'] ) ? array_unshift( $value,
                                         $settings['args'] ) : array($value, true),
-                        'message' => $settings['message']
+                        'message' => self::translate('field ' . $id . ' validation message ' . $rule, $settings['message'])
                     );
                 }
             }

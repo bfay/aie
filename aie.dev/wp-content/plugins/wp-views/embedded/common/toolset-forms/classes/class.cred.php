@@ -138,8 +138,8 @@ class WPToolset_Cred
           [mode] => fade-slide
           )
          */
-        $patterns = array('/\$\(([\w\-]*)\)/', '/\s\)/', '/\s\s/', '/[\s](eq)[\s]/', '/[\s](ne)[\s]/', '/[\s](gt)[\s]/', '/[\s](lt)[\s]/', '/[\s](gte)[\s]/', '/[\s](lte)[\s]/');
-        $replace = array('$\1', ')', ' ', ' = ', ' != ', ' > ', ' < ', ' >= ', ' <= ');
+        $patterns = array('/\$\(([\w\-]*)\)/', '/\s\)/', '/\s\s/', '/[\s](eq)[\s]/', '/[\s](ne)[\s]/', '/[\s](gt)[\s]/', '/[\s](lt)[\s]/', '/[\s](gte)[\s]/', '/[\s](lte)[\s]/', '/[\s](<>)[\s]/');
+        $replace = array('$\1', ')', ' ', ' = ', ' != ', ' > ', ' < ', ' >= ', ' <= ', ' != ');
         $custom = preg_replace( $patterns, $replace, $if );
 
         preg_match_all( '/\((.*?)\)/', $custom, $conditions );

@@ -1,6 +1,12 @@
 <?php
 /*
  * Fields and groups form functions.
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/includes/usermeta-form.php $
+ * $LastChangedDate: 2014-07-10 15:25:28 +0000 (Thu, 10 Jul 2014) $
+ * $LastChangedRevision: 24854 $
+ * $LastChangedBy: marcin $
+ *
  */
 require_once WPCF_EMBEDDED_ABSPATH . '/classes/validate.php';
 require_once WPCF_ABSPATH . '/includes/conditional-display.php';
@@ -232,7 +238,8 @@ function wpcf_admin_usermeta_form() {
             '#type' => 'markup',
             '#markup' => '<a href="' . admin_url('admin-ajax.php'
                     . '?action=wpcf_ajax&amp;wpcf_action=fields_insert'
-                    . '&amp;field=' . basename($filename, '.php'))
+                    . '&amp;field=' . basename($filename, '.php')
+                    . '&amp;page=wpcf-edit-usermeta' )
             . '&amp;_wpnonce=' . wp_create_nonce('fields_insert') . '" '
             . 'class="wpcf-fields-add-ajax-link button-secondary">' . $data['title'] . '</a> ',
         );
@@ -286,6 +293,7 @@ function wpcf_admin_usermeta_form() {
                 '#type' => 'markup',
                 '#markup' => '<div id="wpcf-user-created-fields-wrapper-' . $field['id'] . '" style="float:left; margin-right: 10px;"><a href="' . admin_url( 'admin-ajax.php'
                         . '?action=wpcf_ajax'
+                        . '&amp;page=wpcf-edit'
                         . '&amp;wpcf_action=usermeta_insert_existing'
                         . '&amp;field=' . $field['id'] ) . '&amp;_wpnonce='
                 . wp_create_nonce( 'usermeta_insert_existing' ) . '" '
@@ -468,6 +476,7 @@ function wpcf_admin_usermeta_form() {
 		$group = $update;
 		$group['fields'] = wpcf_admin_usermeta_process_fields( $user_id, $group['fields'], true, false );
 		$edit_profile = wpcf_admin_render_fields($group, $user_id, 1);
+        add_action( 'admin_enqueue_scripts', 'wpcf_admin_fields_form_fix_styles', PHP_INT_MAX  );
 	}
 	$temp[] = array(
 		'#type' => 'radio',

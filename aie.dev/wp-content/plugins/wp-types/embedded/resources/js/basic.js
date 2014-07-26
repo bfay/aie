@@ -3,6 +3,12 @@
  * Embedded JS.
  * For now full and embedded version use this script.
  * Before moving full-version-only code - make sure it's not needed here.
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/resources/js/basic.js $
+ * $LastChangedDate: 2014-07-03 03:42:59 +0000 (Thu, 03 Jul 2014) $
+ * $LastChangedRevision: 24572 $
+ * $LastChangedBy: bruce $
+ *
  */
 
 var wpcfFormGroupsSupportPostTypeState = new Array();
@@ -124,6 +130,7 @@ jQuery(document).ready(function(){
     });
 
     // Check radio and select if same values
+    // Check checkbox has a value to store
     jQuery('.wpcf-fields-form').submit(function(){
         wpcfLoadingButton();
         var passed = true;
@@ -210,6 +217,13 @@ jQuery(document).ready(function(){
             return false;
         }
 
+        // check to make sure checkboxes have a value to save.
+        jQuery('[data-wpcf-type=checkbox],[data-wpcf-type=checkboxes]').each(function () {
+            if (wpcf_checkbox_value_zero(this)) {
+                passed = false;
+            }
+        });
+        
         if (passed == false) {
             // Bind message fade out
             jQuery('.wpcf-forms-field-slug').live('keyup', function(){
@@ -299,13 +313,20 @@ jQuery(document).ready(function(){
         var wpcfFormGroupsUserCreatedFieldsHeight = Math.round(jQuery('#wpcf-form-groups-user-fields').height());
         var wpcfScreenHeight = Math.round(jQuery(window).height());
         var wpcfFormGroupsUserCreatedFieldsOffset = jQuery('#wpcf-form-groups-user-fields').offset();
-        if (wpcfFormGroupsUserCreatedFieldsHeight+wpcfFormGroupsUserCreatedFieldsOffset.top > wpcfScreenHeight) {
-            var wpcfFormGroupsUserCreatedFieldsHeightResize = Math.round(wpcfScreenHeight-wpcfFormGroupsUserCreatedFieldsOffset.top-40);
-            jQuery('#wpcf-form-groups-user-fields').height(wpcfFormGroupsUserCreatedFieldsHeightResize);
-            jQuery('#wpcf-form-groups-user-fields .fieldset-wrapper').height(wpcfFormGroupsUserCreatedFieldsHeightResize-15);
-            jQuery('#wpcf-form-groups-user-fields .fieldset-wrapper').jScrollPane();
+        /**
+         * use jScrollPane only when have enough space
+         */
+        if ( wpcfScreenHeight -wpcfFormGroupsUserCreatedFieldsOffset.top > 100 ) {
+            if (wpcfFormGroupsUserCreatedFieldsHeight+wpcfFormGroupsUserCreatedFieldsOffset.top > wpcfScreenHeight) {
+                var wpcfFormGroupsUserCreatedFieldsHeightResize = Math.round(wpcfScreenHeight-wpcfFormGroupsUserCreatedFieldsOffset.top-40);
+                jQuery('#wpcf-form-groups-user-fields').height(wpcfFormGroupsUserCreatedFieldsHeightResize);
+                jQuery('#wpcf-form-groups-user-fields .fieldset-wrapper').height(wpcfFormGroupsUserCreatedFieldsHeightResize-15);
+                jQuery('#wpcf-form-groups-user-fields .fieldset-wrapper').jScrollPane();
+            }
+            jQuery('.wpcf-form-fields-align-right').css('position', 'fixed');
+        } else {
+            jQuery('#wpcf-form-groups-user-fields').closest('.wpcf-form-fields-align-right').css('position', 'absolute' );
         }
-        jQuery('.wpcf-form-fields-align-right').css('position', 'fixed');
     }
 
     // Types form

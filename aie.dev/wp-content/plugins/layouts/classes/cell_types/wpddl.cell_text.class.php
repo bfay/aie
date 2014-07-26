@@ -50,7 +50,14 @@ class WPDD_layout_cell_text extends WPDD_layout_cell {
 			$content = $target->make_images_responsive($content);
 
 		}
-		$content = apply_filters( 'the_content', $content );
+		
+		if ($this->get('disable_auto_p') && has_filter('the_content', 'wpautop')) {
+			remove_filter('the_content', 'wpautop');
+			$content = apply_filters( 'the_content', $content );
+			add_filter('the_content', 'wpautop');
+		} else {
+			$content = apply_filters( 'the_content', $content );
+		}
 
 		$target->cell_content_callback($content);
 	}
@@ -66,11 +73,11 @@ class WPDD_layout_cell_text_factory extends WPDD_layout_cell_factory{
 	public function get_cell_info($template) {
 		$template['icon-css'] = 'icon-font';
 		$template['preview-image-url'] = WPDDL_RES_RELPATH . '/images/rich-content.png';
-		$template['name'] = __('Rich content (text, images, HTML)', 'ddl-layouts');
-		$template['description'] = __('Rich content box can contain any HTML code or plain text.', 'ddl-layouts');
-		$template['button-text'] = __('Assign Rich content box', 'ddl-layouts');
-		$template['dialog-title-create'] = __('Create a new Rich content  Cell', 'ddl-layouts');
-		$template['dialog-title-edit'] = __('Edit Rich content  Cell', 'ddl-layouts');
+		$template['name'] = __('Visual editor (text, images, HTML)', 'ddl-layouts');
+		$template['description'] = __('The Visual editor box can contain any HTML code or plain text.', 'ddl-layouts');
+		$template['button-text'] = __('Assign Visual editor box', 'ddl-layouts');
+		$template['dialog-title-create'] = __('Create a Visual editor Cell', 'ddl-layouts');
+		$template['dialog-title-edit'] = __('Edit Visual editor Cell', 'ddl-layouts');
 		$template['dialog-template'] = $this->_dialog_template();
 
 		return $template;
@@ -81,16 +88,21 @@ class WPDD_layout_cell_text_factory extends WPDD_layout_cell_factory{
 		?>
 			<div class="cell-content">
 
-				<p class="cell-name"><%- name %> &ndash; <?php _e('Text Cell', 'ddl-layouts'); ?></p>
+				<p class="cell-name">{{ name }} &ndash; <?php _e('Visual editor Cell', 'ddl-layouts'); ?></p>
 
-				<% if( content.content ){ %>
-				<div class="cell-preview">
-					<%
-					var preview = DDL_Helper.sanitizeHelper.stringToDom( content.content );
-					print( preview.innerHTML );
-					%>
-				</div>
-			<% } %>
+				<# if( content.content ){ #>
+					<div class="cell-preview">
+						<#
+						var preview = content.content;
+						if (typeof content.disable_auto_p != 'undefined' && !content.disable_auto_p) {
+							// display the content with auto paragraphs
+							preview = window.switchEditors.wpautop(preview);
+						}
+						preview = DDL_Helper.sanitizeHelper.stringToDom( preview );
+						print( preview.innerHTML );
+						#>
+					</div>
+				<# } #>
 			</div>
 		<?php
 		return ob_get_clean();
@@ -118,7 +130,6 @@ class WPDD_layout_cell_text_factory extends WPDD_layout_cell_factory{
 
 				<div class="ddl-form-item">
 					<fieldset>
-						<legend><?php _e('Responsive images:', 'ddl-layouts'); ?></legend>
 						<p class="fields-group">
 							<label class="checkbox" for="<?php the_ddl_name_attr('responsive_images'); ?>">
 								<input type="checkbox" name="<?php the_ddl_name_attr('responsive_images'); ?>" id="<?php the_ddl_name_attr('responsive_images'); ?>">
@@ -128,20 +139,30 @@ class WPDD_layout_cell_text_factory extends WPDD_layout_cell_factory{
 					</fieldset>
 				</div>
 
+				<div class="ddl-form-item">
+					<fieldset>
+						<p class="fields-group">
+							<label class="checkbox" for="<?php the_ddl_name_attr('disable_auto_p'); ?>">
+								<input type="checkbox" name="<?php the_ddl_name_attr('disable_auto_p'); ?>" id="<?php the_ddl_name_attr('disable_auto_p'); ?>">
+								<?php _e('Disable automatic paragraphs', 'ddl-layouts'); ?>
+							</label>
+						</p>
+						
+					</fieldset>
+				</div>
+				
 			</div>
 		<?php
 
 		$options = array(
 			'textarea_name' => $this->element_name('content'),
-			'media_buttons' => true,
-			'editor_class' => 'ddl_dialog_rich_editor',
+			'dfw' => true,
+			'drag_drop_upload' => true,
+			'tabfocus_elements' => 'insert-media-button,save-post',
+			'editor_height' => 360,
 			'tinymce' => array(
-				'auto_focus' => 'celltexteditor',
-				'force_br_newlines' => false,
-				'force_p_newlines' => false,
-				'forced_root_block' => '',
-				'plugins' => 'media',
-				'media_strict' => false
+				'resize' => false,
+				'add_unload_trigger' => false,
 			)
 		);
 		wp_editor( '', 'celltexteditor', $options );

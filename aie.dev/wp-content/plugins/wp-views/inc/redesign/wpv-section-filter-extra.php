@@ -238,7 +238,7 @@ function add_view_filter_extra($view_settings, $view_id) {
 					</select>
 				</p>
 				<p>
-					<label for="spinner_shortcode_content"><?php _e('Content:','wpv-views'); ?></button>
+					<label for="spinner_shortcode_content"><?php _e('Content:','wpv-views'); ?></label>
 					<textarea id="spinner_shortcode_content"></textarea>
 				</p>
 			</div>
@@ -262,10 +262,45 @@ function wpv_dps_settings_structure( $view_settings, $view_id ) {
 		return;
 	}
 	
+	$controls_per_kind = wpv_count_filter_controls( $view_settings );
+	if ( isset( $controls_per_kind['missing'] ) && is_array( $controls_per_kind['missing'] ) && !empty( $controls_per_kind['missing'] ) ) {
+	// This structure is moved using javascript to the FilerHTML section. See wpv_display_missing_filters_message() in views_sections_update.js
+	?>
+	<div class="toolset-help js-wpv-missing-filter-container" style="display:none">
+		<div class="toolset-help-content">
+			<?php
+			_e( 'This View has some query filters that are missing from the form. Maybe you have removed them:', 'wpv-views' );
+			?>
+			<ul class="js-wpv-filter-missing">
+			<?php
+			foreach ( $controls_per_kind['missing'] as $missed ) {
+				?>
+				<li class="js-wpv-missing-filter" data-type="<?php echo $missed['type']; ?>" data-name="<?php echo $missed['name']; ?>">
+					<?php
+					echo sprintf( __( 'Filter by <strong>%s</strong>', 'wpv-views' ), $missed['name'] );
+					?>
+				</li>
+				<?php
+			}
+			?>
+			</ul>
+			<?php
+			_e( 'Can they also be removed from the query filtering?', 'wpv-views' );
+			?>
+			<p>
+				<a href="#" class="button button-primary js-wpv-filter-missing-delete" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_missing_delete' ); ?>"><?php _e( 'Yes (recommended)', 'wpv-views' ); ?></a> <a href="#" class="button button-secondary js-wpv-filter-missing-close"><?php _e( 'No', 'wpv-views' ); ?></a>
+			</p>
+		</div>
+		<div class="toolset-help-sidebar">
+			<div class="toolset-help-sidebar-ico"></div>
+		</div>
+	</div>
+	<?php
+	}
+	
 	if ( !isset( $view_settings['dps'] ) ) {
 			$view_settings['dps'] = array();
 		}
-		$controls_per_kind = wpv_count_filter_controls( $view_settings );
 		$controls_count = 0;
 		$no_intersection = array();
 		
@@ -282,9 +317,9 @@ function wpv_dps_settings_structure( $view_settings, $view_id ) {
 		
 		if ( isset( $controls_per_kind['warning'] ) ) {
 			?>
-			<p class="toolset-alert toolset-alert-info">
+			<!--<p class="toolset-alert toolset-alert-info js-wpv-mismatch-parametric-search-count">
 				<?php echo $controls_per_kind['warning']; ?>
-			</p>
+			</p>-->
 			<?php
 		}
 		
@@ -581,7 +616,7 @@ function wpv_dps_settings_structure( $view_settings, $view_id ) {
 			</p>
 		<?php } ?>
 			<p>
-				<a href="http://wp-types.com/documentation/user-guides/front-page-filters/"><?php _e('Learn more about parametric search', 'wpv-views'); ?></a>
+				<a href="http://wp-types.com/documentation/user-guides/front-page-filters/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-view-parametric-settings&utm_term=Learn more about parametric search"><?php _e('Learn more about parametric search', 'wpv-views'); ?></a>
 			</p>
 			<p class="update-button-wrap">
 				<button data-success="<?php echo esc_attr( __('Data updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo esc_attr( __('Data not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_dps_nonce' ); ?>" class="js-wpv-filter-dps-update button-secondary" disabled="disabled"><?php _e('Update', 'wpv-views'); ?></button>

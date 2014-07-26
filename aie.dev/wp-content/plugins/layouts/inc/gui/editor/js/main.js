@@ -67,6 +67,10 @@ DDLayout_settings.DDL_JS.ns.js(
 	, DDLayout_settings.DDL_JS.dialogs_lib_path + "css-editor/CssEditor.js"
 	, DDLayout_settings.DDL_JS.dialogs_lib_path +'theme-section-row-edit-dialog.js'
 	, DDLayout_settings.DDL_JS.dialogs_lib_path +'child-layout-manager.js'
+    , DDLayout_settings.DDL_JS.editor_lib_path + "views/ViewLayoutManager.js"
+    , DDLayout_settings.DDL_JS.res_path + "/js/ddl_change_layout_use_helper.js"
+    , DDLayout_settings.DDL_JS.editor_lib_path + "ddl-post-types-options.js"
+    , DDLayout_settings.DDL_JS.res_path + "/js/ddl-individual-assignment-manager.js"
 
 	, function () {
 		_.each(DDLayout.models.cells, function (item, key, list) {
@@ -123,7 +127,9 @@ DDLayout.AdminPage = function($)
 	{
 		// get the layout from the json textarea.
 		var json = jQuery.parseJSON( jQuery('.js-hidden-json-textarea').text() );
-		var layout = new DDLayout.models.cells.Layout( json );
+		var layout = new DDLayout.models.cells.Layout( json )
+            , view_layout = new DDLayout.ViewLayoutManager( layout.get('id'), layout.get('name') );
+
 		self.instance_layout_view = new DDLayout.views.LayoutView({model:layout});
 
 		self.undo_redo = new DDLayout.UndoRedo();
@@ -160,8 +166,39 @@ DDLayout.AdminPage = function($)
 
 		self.instance_layout_view.listenTo(self.instance_layout_view.eventDispatcher, 'ddl-remove-row', self.remove_row_callback, self );
 		
+	//	self.initialize_where_used_ui(layout.get('id'), false);
 	};
 
+	self.initialize_where_used_ui = function (layout_id, include_spinner) {
+		var where_used_ui = jQuery('.js-where-used-ui');
+
+		if (where_used_ui.length) {
+			
+			if (include_spinner) {
+				var child_div = where_used_ui.find('.dd-layouts-where-used');
+				if (child_div.length) {
+					child_div.html('<div class="spinner ajax-loader" style="float:none; display:inline-block"></div>');
+				}
+			}
+			
+			var data = {
+					action : 'ddl_get_where_used_ui',
+					layout_id: layout_id,
+					wpnonce : jQuery('#ddl_layout_view_nonce').val()
+			};
+			jQuery.ajax({
+				url: ajaxurl,
+				type: 'post',
+				data: data,
+				cache: false,
+				success: function(data) {
+                    where_used_ui.empty().html(data);
+                   // self.post_types_options_manager.openDialog();
+				}
+			});
+		}
+	};
+	
 	self._initialize_post_edit = function () {
 		if (jQuery('#post').length) {
 			jQuery('#post').submit(function (e) {
@@ -183,6 +220,9 @@ DDLayout.AdminPage = function($)
 		 {
 			 view.eventDispatcher.trigger( 'ddl-delete-cell' );
 		 }
+
+        self.instance_layout_view.eventDispatcher.trigger('cell_removed', view.model, 'remove' );
+
 	};
 
 	self.remove_row_callback = function( row_view, handler )
@@ -368,22 +408,50 @@ DDLayout.AdminPage = function($)
 		return self._save_state.is_save_required();
 	};
 
+
+
 	self.change_layout_title = function () {
 		var self = this,
-			el = jQuery('.js-layout-title');
+			el = jQuery('.js-edit-layout-slug')
+            , edit_button = jQuery('.js-edit-slug')
+            , $ok_button_wrap = jQuery('.js-edit-slug-buttons-active')
+            , $ok_button = jQuery('.js-edit-slug-save')
+            , $cancel_link = jQuery('.js-cancel-edit-slug');
+
+        jQuery(document).on('click', edit_button.selector, function(event){
+                event.preventDefault();
+                el.trigger('click');
+        });
 
 		el.on('click', function (event) {
 			event.stopImmediatePropagation();
 			DDLayout.ddl_admin_page.take_undo_snapshot();
 
 			var parent = jQuery(this).parent(),
-				old_title = jQuery(this).text();
+				old_title = jQuery(this).text(),
 				index = jQuery(this).index(),
-				input = jQuery('<input type="text" name="layout-title-input" class="layout-title-input" />');
+                input = jQuery('<input id="layout-slug" name="layout-slug" type="text" class="edit-layout-slug js-edit-layout-slug" />'),
+                $me = jQuery(this);
+
+            edit_button.parent().hide();
+            $ok_button_wrap.show();
+
+            $ok_button.on('click', function(event){
+                event.preventDefault();
+                jQuery(document).not(input).trigger('mouseup');
+                jQuery(this).off('click');
+            });
+
+            jQuery( document).on('click', $cancel_link.selector, function(event){
+                event.preventDefault();
+                $me.text( old_title );
+                edit_button.parent().show();
+                $ok_button_wrap.hide();
+                jQuery(this).off('click');
+            });
 
 			input.val(old_title);
 			jQuery(this).addClass('hidden');
-
 
 			parent.insertAtIndex(index, input);
 
@@ -408,7 +476,9 @@ DDLayout.AdminPage = function($)
 				input: input,
 				self: self.instance_layout_view,
 				is_title: true,
-				old_title:old_title
+				old_title:old_title,
+                edit_button:edit_button,
+                ok_button_wrap:$ok_button_wrap
 			}, DDLayout.AdminPage.manageDeselectElementName);
 		});
 	};
@@ -515,12 +585,19 @@ DDLayout.AdminPage.manageDeselectElementName = function( event, args )
 		DDLayout.ddl_admin_page.add_snapshot_to_undo();
 		var new_val = input.val();
 
-		if( new_val == '' && event.data.is_title )
+        if( event.data.edit_button && event.data.ok_button_wrap)
+        {
+            event.data.edit_button.parent().show();
+            event.data.ok_button_wrap.hide();
+        }
+
+		if( (new_val.replace(/[^A-Z]/g, "").length || new_val == '') && event.data.is_title )
 		{
 			input.val( old_title );
 			value = old_title;
+
 			WPV_Toolset.messages.container.wpvToolsetMessage({
-				text: DDLayout_settings.DDL_JS.strings.title_not_empty_string,
+				text: DDLayout_settings.DDL_JS.strings.invalid_slug,
 				type: 'error',
 				stay: false,
 				close: false,
@@ -534,7 +611,15 @@ DDLayout.AdminPage.manageDeselectElementName = function( event, args )
 		}
 		else
 		{
-			self.model.set( 'name', new_val );
+            if( event.data.is_title )
+            {
+                self.model.set( 'slug', new_val );
+            }
+            else
+            {
+                self.model.set( 'name', new_val );
+            }
+
 			value = new_val;
 		}
 
@@ -548,7 +633,7 @@ DDLayout.AdminPage.manageDeselectElementName = function( event, args )
 		.css('visibility', 'visible');
 
 	if ( event.data.is_title ) {
-		jQuery(".js-layout-title").text( value );
+		jQuery(".js-edit-layout-slug").text( value );
 	}
 
 	DDLayout.ddl_admin_page.element_name_editable_now.pop();

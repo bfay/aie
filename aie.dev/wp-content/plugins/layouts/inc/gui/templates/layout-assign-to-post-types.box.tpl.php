@@ -31,7 +31,7 @@
 		<i class="icon-remove js-edit-dialog-close"></i>
 	</div>
 	<div class="ddl-dialog-content">
-		<?php printf(__('All %s were updated.', 'ddl-layouts'), '<%= label %>'); ?>
+		<?php printf(__('All %s were updated.', 'ddl-layouts'), '{{{ label }}}'); ?>
 	</div>
 	<div class="ddl-dialog-footer">
 		<button class="button js-edit-dialog-close"><?php _e('Close', 'ddl-layouts'); ?></button>

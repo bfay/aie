@@ -2,10 +2,10 @@
 /*
  * Post relationship code.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/post-relationship.php $
- * $LastChangedDate: 2014-05-07 10:21:26 +0000 (Wed, 07 May 2014) $
- * $LastChangedRevision: 22111 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/post-relationship.php $
+ * $LastChangedDate: 2014-07-21 13:54:15 +0000 (Mon, 21 Jul 2014) $
+ * $LastChangedRevision: 25150 $
+ * $LastChangedBy: riccardo $
  *
  */
 require_once WPCF_EMBEDDED_INC_ABSPATH . '/editor-support/post-relationship-editor-support.php';
@@ -62,7 +62,7 @@ function wpcf_pr_admin_post_init_action( $post_type, $post, $groups, $wpcf_activ
             wpcf_admin_add_js_settings( 'wpcf_pr_del_warning',
                     '\'' . __( 'Are you sure about deleting this post?', 'wpcf' ) . '\'' );
             wpcf_admin_add_js_settings( 'wpcf_pr_pagination_warning',
-                    '\'' . __( 'If you continue without saving your changes, it might get lost.',
+                    '\'' . __( 'If you continue without saving your changes, they might get lost.',
                             'wpcf' ) . '\'' );
         }
     }
@@ -174,12 +174,12 @@ function wpcf_admin_notice_post_locked_no_parent() {
 <?php
     if ( 'auto-draft' == $post->post_status ) {
         printf(
-            __( 'You will be able to add child posts after saving at last one <b>%s</b>.', 'wpcf' ),
+            __( 'You will be able to add child posts after saving at least one <b>%s</b>.', 'wpcf' ),
             $parent_type->labels->singular_name
         );
     } else {
         printf(
-            __( 'You will be able to edit child posts after saving at last one <b>%s</b>.', 'wpcf' ),
+            __( 'You will be able to edit child posts after saving at least one <b>%s</b>.', 'wpcf' ),
             $parent_type->labels->singular_name
         );
     }

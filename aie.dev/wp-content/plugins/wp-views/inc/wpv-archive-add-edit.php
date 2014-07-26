@@ -17,8 +17,6 @@ require_once WPV_PATH . '/inc/redesign/wpv-section-layout-extra.php';
 require_once WPV_PATH . '/inc/redesign/wpv-section-layout-extra-js.php';
 // Extra section files
 require_once WPV_PATH . '/inc/redesign/wpv-section-content.php';
-// Edit view page sections descriptions
-require_once WPV_PATH . '/inc/redesign/wpv-section-descriptons.php';
 // editor addon
 require_once WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon.class.php';
 
@@ -157,6 +155,12 @@ function views_archive_redesign_html() {
 			}
 			?>
 		</h2>
+		<?php if ( isset( $_GET['in-iframe-for-layout'] ) ) {
+			$in_iframe = 'yes';
+		} else {
+			$in_iframe = '';
+		} ?>
+		<input type="hidden" class="js-wpv-display-in-iframe" value="<?php echo $in_iframe; ?>" />
 		<div class="wpv-settings-save-all wpv-setting-container">
 			<div class="wpv-setting">
 				<p class="update-button-wrap">

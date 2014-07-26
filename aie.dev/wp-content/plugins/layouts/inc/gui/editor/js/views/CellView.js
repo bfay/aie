@@ -792,7 +792,7 @@ DDLayout.views.CellView = DDLayout.views.abstract.ElementView.extend({
 					self.$el.addClass('selected');
 					self.model.selected_cell = true;
 					self.eventDispatcher.trigger('cell_selection_changed', self);
-					self.eventDispatcher.trigger( 'ddl-remove-cell', self, jQuery(this) );
+					self.eventDispatcher.trigger( 'ddl-remove-cell', self, jQuery(this), 'remove' );
 				});
 
 				var pencil_icon = self.$el.find('.js-edit-cell');

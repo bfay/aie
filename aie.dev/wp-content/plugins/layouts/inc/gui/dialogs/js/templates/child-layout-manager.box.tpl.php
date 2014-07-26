@@ -1,5 +1,5 @@
 <script type="text/html" id="js-child-layout-box-tpl">
-	<div id="js-child-layout-box-<%- cid %>" class="child-layout-box js-child-layout-box">
+	<div id="js-child-layout-box-{{ cid }}" class="child-layout-box js-child-layout-box">
 		<div class="ddl-dialog-header">
 			<h2 class="js-dialog-title"><?php _e('This layout has children', 'ddl-layouts'); ?></h2>
 			<i class="icon-remove js-edit-dialog-close"></i>
@@ -32,7 +32,7 @@
 </script>
 
 <script type="text/html" id="js-child-layout-box-row-tpl">
-	<div id="js-child-layout-box-row-<%- cid %>" class="child-layout-box js-child-layout-box">
+	<div id="js-child-layout-box-row-{{ cid }}" class="child-layout-box js-child-layout-box">
 		<div class="ddl-dialog-header">
 			<h2 class="js-dialog-title"><?php _e('This row has a Child Layout cell and the layout has children', 'ddl-layouts'); ?></h2>
 			<i class="icon-remove js-edit-dialog-close"></i>

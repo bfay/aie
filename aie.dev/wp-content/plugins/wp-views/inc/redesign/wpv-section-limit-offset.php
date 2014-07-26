@@ -1,7 +1,15 @@
 <?php
 
-/*
+/**
+* wpv_show_hide_limit_offset
+*
 * We can enable this to hide the Limit and offset section
+*
+* @param $sections (array) sections on the editor screen
+*
+* @return $sections
+*
+* @since unknown
 */
 
 add_filter('wpv_sections_query_show_hide', 'wpv_show_hide_limit_offset', 1,1);
@@ -12,6 +20,19 @@ function wpv_show_hide_limit_offset($sections) {
 		);
 	return $sections;
 }
+
+/**
+* add_view_limit_offset
+*
+* Creates the filter and offset section in the edit screen
+*
+* @param $view_settings
+* @param $view_id
+*
+* @uses $views_edit_help (global)
+*
+* @since unknown
+*/
 
 add_action('view-editor-section-query', 'add_view_limit_offset', 40, 2);
 
@@ -157,6 +178,8 @@ function add_view_limit_offset($view_settings, $view_id) {
 *
 * @returns (string) $summary
 *
+* @uses wpv_get_limit_offset_summary
+*
 * @since 1.6.0
 */
 
@@ -165,71 +188,4 @@ add_filter('wpv-view-get-content-summary', 'wpv_limit_offset_summary_filter', 5,
 function wpv_limit_offset_summary_filter($summary, $post_id, $view_settings) {
 	$summary .= wpv_get_limit_offset_summary( $view_settings );
     return $summary;
-}
-
-/**
-* wpv_get_limit_offset_summary
-*
-* Returns the limit and offset summary for a View
-*
-* @param $view_settings
-*
-* @returns (string) $summary
-*
-* @since 1.6.0
-*/
-
-function wpv_get_limit_offset_summary( $view_settings ) {
-	
-	$view_settings = wpv_limit_default_settings( $view_settings );
-	$output = '';
-	if ( !isset( $view_settings['query_type'] ) || ( isset($view_settings['query_type'] ) && $view_settings['query_type'][0] == 'posts' ) ) {
-		if ( intval( $view_settings['limit'] ) != -1 ) {
-			if ( intval( $view_settings['limit'] ) == 1 ) {
-				$output .= __( ', limit to 1 item', 'wpv-views' );
-			} else {
-				$output .= sprintf( __( ', limit to %d items', 'wpv-views' ), intval( $view_settings['limit'] ) );
-			}
-		}
-		if ( intval( $view_settings['offset'] ) != 0 ) {
-			if ( intval( $view_settings['limit'] ) == 1 ) {
-				$output .= __( ', skip first item', 'wpv-views' );
-			} else {
-				$output .= sprintf( __( ', skip %d items', 'wpv-views' ), intval( $view_settings['offset'] ) );
-			}
-		}
-	}
-	if ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'taxonomy' ) {
-		if ( intval( $view_settings['taxonomy_limit'] ) != -1 ) {
-			if ( intval( $view_settings['taxonomy_limit'] ) == 1 ) {
-				$output .= __( ', limit to 1 item', 'wpv-views' );
-			} else {
-				$output .= sprintf( __( ', limit to %d items', 'wpv-views' ), intval( $view_settings['taxonomy_limit'] ) );
-			}
-		}
-		if ( intval( $view_settings['taxonomy_offset'] ) != 0 ) {
-			if ( intval($view_settings['taxonomy_limit'] ) == 1 ) {
-				$output .= __( ', skip first item', 'wpv-views' );
-			} else {
-				$output .= sprintf( __( ', skip %d items', 'wpv-views' ), intval( $view_settings['taxonomy_offset'] ) );
-			}
-		}
-	}
-	if ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'users' ) {
-		if ( intval( $view_settings['users_limit'] ) != -1 ) {
-			if ( intval( $view_settings['users_limit'] ) == 1 ) {
-				$output .= __( ', limit to 1 item', 'wpv-views' );
-			} else {
-				$output .= sprintf( __( ', limit to %d items', 'wpv-views' ), intval( $view_settings['users_limit'] ) );
-			}
-		}
-		if ( intval( $view_settings['users_offset'] ) != 0 ) {
-			if ( intval($view_settings['users_limit'] ) == 1 ) {
-				$output .= __( ', skip first item', 'wpv-views' );
-			} else {
-				$output .= sprintf( __( ', skip %d items', 'wpv-views' ), intval( $view_settings['users_offset'] ) );
-			}
-		}
-	}
-	return $output;
 }

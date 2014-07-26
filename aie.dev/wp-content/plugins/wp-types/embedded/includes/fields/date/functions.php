@@ -24,9 +24,13 @@ function wpcf_fields_date_calculate_time( $value ) {
     if ( empty( $minute ) || strval( $minute ) == '00' ) {
         $minute = 0;
     }
+	
+	$timestamp_date = adodb_date( 'dmY', $timestamp );
+	$date = adodb_mktime( intval( $hour ), intval( $minute ), 0, substr( $timestamp_date, 2, 2 ), substr( $timestamp_date, 0, 2 ), substr( $timestamp_date, 4, 4 ) );
+	$timestamp = $date;
 
     // Add Hour and minute
-    $timestamp = intval( $timestamp ) + (60 * 60 * intval( $hour )) + (60 * intval( $minute ));
+    //$timestamp = $timestamp + (60 * 60 * intval( $hour )) + (60 * intval( $minute ));
 
     return $timestamp;
 }
@@ -43,20 +47,29 @@ function wpcf_fields_date_value_save_filter( $value, $field, $field_object ) {
         if ( empty( $value ) || empty( $value['datepicker'] ) ) {
             return false;
         }
-        $timestamp = wptoolset_strtotime( $value['datepicker'] );
+		if ( is_numeric( $value['datepicker'] ) ) {
+			$timestamp = $value['datepicker'];
+		} else {
+			$timestamp = wptoolset_strtotime( $value['datepicker'] );
+		}
         // Append Hour and Minute
         if ( $timestamp !== false && isset( $value['hour'] ) && isset( $value['minute'] ) ) {
-            $date = new DateTime( $value['datepicker'] );
+            $timestamp_date = adodb_date( 'dmY', $timestamp );
+			$date = adodb_mktime( intval( $value['hour'] ), intval( $value['minute'] ), 0, substr( $timestamp_date, 2, 2 ), substr( $timestamp_date, 0, 2 ), substr( $timestamp_date, 4, 4 ) );
+			$timestamp = $date;
+			/*
+			$date = new DateTime( $value['datepicker'] );
             try {
                 $date->add( new DateInterval( 'PT' . intval( $value['hour'] ) . 'H' . intval( $value['minute'] ) . 'M' ) );
             } catch (Exception $e) {
                 return $timestamp;
             }
             $timestamp = $date->format( "U" );
+			*/
         }
         return $timestamp;
     }
-
+	// I understand this below is not executed anymore?
     global $wpcf;
 
     // Remove additional meta if any
@@ -291,7 +304,7 @@ function wpcf_fields_date_value_check( $a ) {
                     }
                     $a['timestamp'] = $_t;
                 }
-                $a['timestamp'] = intval( $a['timestamp'] );
+                $a['timestamp'] = $a['timestamp'];
                 break;
 
             case 'datepicker':
@@ -305,19 +318,21 @@ function wpcf_fields_date_value_check( $a ) {
                     $a['datepicker'] = $_d;
                 }
                 // Check if valid (already set value)
+				/*
                 if ( !wpcf_fields_date_datepicker_is_valid( $a['datepicker'] ) ) {
                     return $empty_date;
                 }
+				*/
                 $a['datepicker'] = strval( $a['datepicker'] );
                 break;
 
             case 'hour':
-                $_h = date( 'H', intval( $a['timestamp'] ) );
+                $_h = adodb_date( 'H', $a['timestamp'] );
                 $a['hour'] = $_h;
                 break;
 
             case 'minute':
-                $_m = date( 'i', intval( $a['timestamp'] ) );
+                $_m = adodb_date( 'i', $a['timestamp'] );
                 $a['minute'] = $_m;
                 break;
 
@@ -327,7 +342,7 @@ function wpcf_fields_date_value_check( $a ) {
     }
 
     // Final test - make sure timestamp matches Datepicker
-    if ( date( wpcf_get_date_format(), $a['timestamp'] ) != $a['datepicker'] ) {
+    if ( adodb_date( wpcf_get_date_format(), $a['timestamp'] ) != $a['datepicker'] ) {
         // In this case we'll give advantage to timestamp
         $a['datepicker'] = wpcf_fields_date_convert_timestamp_to_datepicker( $a['timestamp'] );
         if ( !$a['timestamp'] ) {
@@ -351,11 +366,13 @@ function wpcf_fields_date_convert_timestamp_to_datepicker( $timestamp ) {
     if ( !wpcf_fields_date_timestamp_is_valid( $timestamp ) ) {
         return false;
     }
-    $_d = date( wpcf_get_date_format(), intval( $timestamp ) );
+    $_d = adodb_date( wpcf_get_date_format(), $timestamp );
+	/*
     if ( !wpcf_fields_date_datepicker_is_valid( $_d ) ) {
         // Failed converting
         return false;
     }
+	*/
     return $_d;
 }
 
@@ -404,8 +421,8 @@ function wpcf_fields_date_timestamp_is_valid( $timestamp ) {
     $_min_timestamp = fields_date_timestamp_neg_supported() ? -2147483646 : 0;
     // MAX 'Tue, 19 Jan 2038 03:14:07 UTC' - 2147483647
     $_max_timestamp = 2147483647;
-
-    return is_numeric( $timestamp ) && $_min_timestamp <= intval( $timestamp ) && intval( $timestamp ) <= $_max_timestamp;
+	return WPToolset_Field_Date_Scripts::_isTimestampInRange($timestamp);
+    //return is_numeric( $timestamp ) && $_min_timestamp <= $timestamp && $timestamp <= $_max_timestamp;
 }
 
 /**
@@ -475,9 +492,9 @@ function __wpcf_fields_date_check_leftover( $value, $field, $use_cache = true ) 
 
             // Check if calculation needed
             if ( (isset( $meta['hour'] )
-                    && $meta['hour'] != date( 'H', $meta['timestamp'] ) )
+                    && $meta['hour'] != adodb_date( 'H', $meta['timestamp'] ) )
                     || (isset( $meta['minute'] )
-                    && $meta['minute'] != date( 'i', $meta['timestamp'] ) ) ) {
+                    && $meta['minute'] != adodb_date( 'i', $meta['timestamp'] ) ) ) {
 
                 $value = wpcf_fields_date_calculate_time( $meta );
 

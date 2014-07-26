@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.skype.php $
- * $LastChangedDate: 2014-06-09 13:31:58 +0000 (Mon, 09 Jun 2014) $
- * $LastChangedRevision: 23360 $
- * $LastChangedBy: francesco $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.skype.php $
+ * $LastChangedDate: 2014-07-19 09:54:04 +0000 (Sat, 19 Jul 2014) $
+ * $LastChangedRevision: 25122 $
+ * $LastChangedBy: gen $
  *
  */
 require_once 'class.textfield.php';
@@ -15,32 +15,28 @@ class WPToolset_Field_Skype extends WPToolset_Field_Textfield
     protected $_defaults = array('skypename' => '', 'button_style' => 'btn2');
 
     public function init(){
-        wp_register_script( 'wptoolset-field-skype',
+        
+		add_action( 'admin_footer', array($this, 'editButtonTemplate') );
+        add_action( 'wp_footer', array($this, 'editButtonTemplate') );
+        
+		wp_register_script( 'wptoolset-field-skype',
                 WPTOOLSET_FORMS_RELPATH . '/js/skype.js', array('jquery'),
                 WPTOOLSET_FORMS_VERSION, true );
-        wp_register_style( 'wptoolset-field-skype',
-                WPTOOLSET_FORMS_RELPATH . '/css/skype.css', array(),
-                WPTOOLSET_FORMS_VERSION );
-    }
-
-    public function enqueueScripts() {
         wp_enqueue_script( 'wptoolset-field-skype' );
         add_thickbox();
-        $translation = array('title' => __( 'Edit Skype button' ));
+        $translation = array('title' => __( 'Edit Skype button', 'wpv-views' ));
         wp_localize_script( 'wptoolset-field-skype', 'wptSkypeData',
                 $translation );
-        add_action( 'admin_footer', array($this, 'editButtonTemplate') );
-        add_action( 'wp_footer', array($this, 'editButtonTemplate') );
+        
     }
 
     public function enqueueStyles() {
-        wp_enqueue_style( 'wptoolset-field-skype' );
+        
     }
 
     public function metaform() {
         $value = wp_parse_args( $this->getValue(), $this->_defaults );
-        $def_class='js-wpt-skypename js-wpt-cond-trigger';
-        if ($this->isRepetitive()) $def_class.=' js-wpt-repetitive';
+        $def_class='js-wpt-skypename js-wpt-cond-trigger';// What is this js-wpt-cond-trigger classname for?
         $form = array();
         $form[] = array(
             '#type' => 'textfield',
@@ -59,15 +55,15 @@ class WPToolset_Field_Skype extends WPToolset_Field_Textfield
             '#name' => $this->getName() . '[button_style]',
             '#attributes' => array('class' => 'js-wpt-skypestyle'),
         );
-        $form[] = array(
-            '#type' => 'markup',
-            '#markup' => $this->getButtonImage( $value['skypename'], $value['button_style'], 'js-wpt-skype-preview' ),
-        );
-        if (is_admin()) {
+		if (is_admin()) {
+			$form[] = array(
+				'#type' => 'markup',
+				'#markup' => $this->getButtonImage( $value['skypename'], $value['button_style'], 'js-wpt-skype-preview' ),
+			);
             $button_element = array(
                 '#name' => '',
                 '#type' => 'button',
-                '#value' => __( 'Edit Skype button' ),
+                '#value' => __( 'Edit Skype button', 'wpv-views' ),
                 '#attributes' => array('class' => 'js-wpt-skype-edit-button button-secondary'),
             );        
             if ( array_key_exists( 'use_bootstrap', $this->_data ) && $this->_data['use_bootstrap'] ) {
@@ -82,13 +78,13 @@ class WPToolset_Field_Skype extends WPToolset_Field_Textfield
         $output = '';
         $output .= '<div id="tpl-wpt-skype-edit-button" style="display:none;">'
                 . '<div id="wpt-skype-edit-button-popup">'
-                . '<h3>' .__( 'Enter your Skype Name' ) . '</h3>'
+                . '<h3>' .__( 'Enter your Skype Name', 'wpv-views' ) . '</h3>'
                 . '<input type="textfield" value="" class="js-wpt-skypename-popup">&nbsp;'
-                . '<h3>' . __( 'Select a button from below' ) . '</h3>';
+                . '<h3>' . __( 'Select a button from below', 'wpv-views' ) . '</h3>';
         for ( $index = 1; $index < 7; $index++ ) {
             if ( $index == 5 ) {
-                $output .= '<h3>' . __( 'Skype buttons with status' ) . '</h3>'
-                        . '<p>' . __( 'If you choose to show your Skype status, your Skype button will always reflect your availability on Skype. This status will be shown to everyone, whether they’re in your contact list or not.' )
+                $output .= '<h3>' . __( 'Skype buttons with status', 'wpv-views' ) . '</h3>'
+                        . '<p>' . __( 'If you choose to show your Skype status, your Skype button will always reflect your availability on Skype. This status will be shown to everyone, whether they’re in your contact list or not.', 'wpv-views' )
                         . '</p>';
             }
             $output .= '<div><label><input type="radio" name="wpt-skypestyle-popup" value="btn'
@@ -97,7 +93,7 @@ class WPToolset_Field_Skype extends WPToolset_Field_Textfield
                             'js-wpt-skype-preview' )
                     . '</label></div>';
         }
-        $output .= '<input type="button" class="button-secondary js-wpt-close-thickbox" value="' . __( 'Save' ) . '">'
+        $output .= '<input type="button" class="button-secondary js-wpt-close-thickbox" value="' . __( 'Save', 'wpv-views' ) . '">'
                 . '</div></div>';
         echo $output;
     }

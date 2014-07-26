@@ -1,16 +1,28 @@
 /* -------------- */
 /* General styles */ /* Styles which don't belong to any specicif page */
 /* -------------- */
-[class^="icon-"].icon-layouts {
-	display: inline-block;
-	width: 18px;
-	height: 18px;
-	background-image: url('../images/ico-layouts-black-18.png');
-	vertical-align: bottom;
-}
+/*[class^="icon-"].icon-layouts {
+    display: inline;
+    width: auto;
+    height: auto;
+    line-height: normal;
+    vertical-align: baseline;
+    background-image: none;
+    background-position: 0% 0%;
+    background-repeat: repeat;
+    margin-top: 0;
+}*/
 
 .CodeMirror-hints {
 	z-index: 10000; /* Must be greater than #colorbox z-index */
+}
+
+.select-layout-template {
+	color: #969696;
+}
+
+.select2-chosen .icon-layouts {
+	vertical-align: middle !important;
 }
 
 /* custom shortcode overlay parser */
@@ -424,3 +436,6 @@
 
 /* //// THEME OPTIONS BOX */
 .css-batch-theme-help-box{padding:10px;min-height:100px;max-width:760px;}
+
+/* EXTRA PROPERTIES */
+.extra-top{padding: 20px 0 0;}

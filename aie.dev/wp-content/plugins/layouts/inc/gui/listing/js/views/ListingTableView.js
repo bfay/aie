@@ -14,7 +14,8 @@ DDLayout.listing.views.ListingTableView = Backbone.View.extend({
 		self.options = options;
 		self.$el.data('view', self);
 		self.model.is_searching = false;
-		self.listenTo(self.model, 'sync', self.render, options);
+	//	self.listenTo(self.model, 'sync', self.render, options);
+        self.listenTo(self.eventDispatcher, 'changes_in_dialog_done', self.render, options);
 		self.listenTo(self.model, 'changed_usage', self.render, options);
 		self.listenTo(self.eventDispatcher, 'resort', self.render, options);
 		self.listenTo(self.eventDispatcher, 'changeLayoutStatus', self.changeLayoutStatus);
@@ -33,7 +34,7 @@ DDLayout.listing.views.ListingTableView = Backbone.View.extend({
 	},
 	render: function ( option ) {
 
-	//	console.log('render the full table');
+		//console.log('render the full table');
 
 		var self = this,
 			options = option || {};
@@ -92,13 +93,13 @@ DDLayout.listing.views.ListingTableView = Backbone.View.extend({
 			}
 
 			if( jQuery.jStorage.get( 'sortKey') == 'post_title' ) {
-				jQuery( '.js-icon-sort-title').show();
-				jQuery( '.js-icon-sort-date').hide();
+				jQuery( '.js-icon-sort-title').addClass('sort-icon-active');
+				jQuery( '.js-icon-sort-date').addClass('sort-icon-inactive');
 			}
 			else
 			{
-				jQuery( '.js-icon-sort-title').hide();
-				jQuery( '.js-icon-sort-date').show();
+				jQuery( '.js-icon-sort-title').addClass('sort-icon-inactive');
+				jQuery( '.js-icon-sort-date').addClass('sort-icon-active');
 			}
 	},
 	/*
@@ -125,18 +126,18 @@ DDLayout.listing.views.ListingTableView = Backbone.View.extend({
 				, order_by = 'post_title'
 				, icon = '';
 
-			console.log( jQuery(this).data(), sort_by );
+		//	console.log( jQuery(this).data(), sort_by );
 
 			if (sort_by == 'title') {
 				order_by = 'post_title';
-				jQuery('a[data-orderby="date"]').find('i').hide();
-				jQuery(this).find('i').show();
+				jQuery('a[data-orderby="date"]').find('i').removeClass('sort-icon-active').addClass('sort-icon-inactive');
+				jQuery(this).find('i').removeClass('sort-icon-inactive').addClass('sort-icon-active');
 				icon = self.icon_title;
 			}
 			else if (order_by = 'date') {
 				order_by = 'post_date';
-				jQuery('a[data-orderby="title"]').find('i').hide();
-				jQuery(this).find('i').show();
+				jQuery('a[data-orderby="title"]').find('i').removeClass('sort-icon-active').addClass('sort-icon-inactive');
+				jQuery(this).find('i').removeClass('sort-icon-inactive').addClass('sort-icon-active');
 				icon = self.icon_date;
 			}
 
@@ -267,6 +268,7 @@ DDLayout.listing.views.ListingTableView = Backbone.View.extend({
 						_.each(response.message, function (v) {
 							self.model.trigger('removed_batched_items', data );
 						});
+                        self.eventDispatcher.trigger('changes_in_dialog_done');
 					}
 				});
 			}
@@ -301,7 +303,7 @@ DDLayout.listing.views.ListingTableView = Backbone.View.extend({
 				_.each(response.message, function (v) {
 					self.model.trigger('removed_batched_items', data_obj );
 				});
-
+                self.eventDispatcher.trigger('changes_in_dialog_done');
 			}
 		});
 	},

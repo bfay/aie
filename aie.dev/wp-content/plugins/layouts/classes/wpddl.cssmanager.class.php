@@ -3,6 +3,7 @@ class WPDD_Layouts_CSSManager{
 
 	private static $instance;
 	public $options_manager;
+    private $layout_for_render = 0;
 	const API_QUERY_STRING = 'ddl_layouts_css_api';
 	const INITIAL_CSS = '/*Layouts css goes here*/';
 	const CSS_TEMP_DIR = '/ddl-layouts-tmp';
@@ -22,19 +23,16 @@ class WPDD_Layouts_CSSManager{
 		}
 		else
 		{
-			add_action('wp_head', array($this,'wpddl_frontend_header_init'));
+			add_filter('get_layout_id_for_render', array($this,'wpddl_frontend_header_init'), 10, 2);
 			add_action('template_redirect', array($this, 'layout_style_router'));
-
 		}
 	}
 
-	public function wpddl_frontend_header_init()
-	{
-		$post_id = get_the_ID();
-		$layout_selected = get_post_meta($post_id, '_layouts_template', true);
-
-		if( $layout_selected ) $this->handle_layout_css_fe();
-	}
+    public function wpddl_frontend_header_init($id, $layout)
+    {
+        if( $id !== 0 ) $this->handle_layout_css_fe();
+        return $id;
+    }
 
 	function handle_layout_css_save( $css )
 	{

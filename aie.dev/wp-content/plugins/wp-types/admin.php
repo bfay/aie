@@ -3,10 +3,10 @@
  *
  * Admin functions
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/admin.php $
- * $LastChangedDate: 2014-06-10 08:06:41 +0000 (Tue, 10 Jun 2014) $
- * $LastChangedRevision: 23411 $
- * $LastChangedBy: emerson $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/admin.php $
+ * $LastChangedDate: 2014-07-04 10:00:44 +0000 (Fri, 04 Jul 2014) $
+ * $LastChangedRevision: 24630 $
+ * $LastChangedBy: marcin $
  *
  */
 require_once WPCF_ABSPATH . '/marketing.php';
@@ -51,7 +51,7 @@ function wpcf_admin_menu_hook()
         $wpcf_capability,
         'wpcf',
         'wpcf_admin_menu_summary',
-        WPCF_RES_RELPATH . '/images/logo-16.png'
+        'none'
     );
 
     $subpages = array(
@@ -304,29 +304,34 @@ function wpcf_admin_menu_edit_fields() {
     echo wpcf_add_admin_header( $title );
     wpcf_wpml_warning();
     $form = wpcf_form( 'wpcf_form_fields' );
-    echo '<br /><form method="post" action="" class="wpcf-fields-form '
-    . 'wpcf-form-validate" onsubmit="';
-    echo 'if (jQuery(\'#wpcf-group-name\').val() == \'' . __( 'Enter group title',
-            'wpcf' ) . '\') { jQuery(\'#wpcf-group-name\').val(\'\'); }';
-    echo 'if (jQuery(\'#wpcf-group-description\').val() == \'' . __( 'Enter a description for this group',
-            'wpcf' ) . '\') { jQuery(\'#wpcf-group-description\').val(\'\'); }';
-    echo 'jQuery(\'.wpcf-forms-set-legend\').each(function(){
-        if (jQuery(this).val() == \'' . __( 'Enter field name',
-            'wpcf' ) . '\') {
-            jQuery(this).val(\'\');
+    
+    ?>
+    <script type="text/javascript">
+        function wpcf_group_submit() {
+            if (jQuery('#wpcf-group-name').val() == 'Enter group title') {
+                jQuery('#wpcf-group-name').val('');
+            }
+            if (jQuery('#wpcf-group-description').val() == 'Enter a description for this group') {
+                jQuery('#wpcf-group-description').val('');
+            }
+            jQuery('.wpcf-forms-set-legend').each(function(){
+                if (jQuery(this).val() == 'Enter field name') {
+                    jQuery(this).val('');
+                }
+                if (jQuery(this).next().val() == 'Enter field slug') {
+                    jQuery(this).next().val('');
+                }
+                if (jQuery(this).next().next().val() == 'Describe this field') {
+                    jQuery(this).next().next().val('');
+                }
+            });
         }
-        if (jQuery(this).next().val() == \'' . __( 'Enter field slug',
-            'wpcf' ) . '\') {
-            jQuery(this).next().val(\'\');
-        }
-        if (jQuery(this).next().next().val() == \'' . __( 'Describe this field',
-            'wpcf' ) . '\') {
-            jQuery(this).next().next().val(\'\');
-        }
-});';
-    echo '">';
-    echo $form->renderForm();
-    echo '</form>';
+    </script>
+    
+    <br /><form method="post" action="" class="wpcf-fields-form wpcf-form-validate" onsubmit="wpcf_group_submit()">
+    <?php echo $form->renderForm(); ?>
+    </form>
+    <?php
     echo wpcf_add_admin_footer();
 }
 
@@ -946,3 +951,21 @@ function wpcf_admin_load_teasers( $teasers ) {
         }
     }
 }
+
+/**
+ * Get temporary directory
+ *
+ * @return 
+ */
+
+function wpcf_get_temporary_directory()
+{
+    $dir = sys_get_temp_dir();
+    if ( !empty( $dir ) && is_dir( $dir ) && is_writable( $dir ) ) {
+        return $dir;
+    }
+    $dir = wp_upload_dir();
+    $dir = $dir['basedir'];
+    return $dir;
+}
+

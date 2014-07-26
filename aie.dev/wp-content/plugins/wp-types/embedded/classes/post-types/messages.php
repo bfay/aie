@@ -2,7 +2,7 @@
 /*
  * Messages.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/classes/post-types/messages.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/classes/post-types/messages.php $
  * $LastChangedDate: 2014-05-13 10:49:25 +0000 (Tue, 13 May 2014) $
  * $LastChangedRevision: 22267 $
  * $LastChangedBy: marcin $

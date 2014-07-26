@@ -2,7 +2,7 @@
 /**
  * Returns HTML formatted output for elements and handles form submission.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/classes/forms.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/classes/forms.php $
  * $LastChangedDate: 2014-05-09 11:24:35 +0000 (Fri, 09 May 2014) $
  * $LastChangedRevision: 22197 $
  * $LastChangedBy: marcin $

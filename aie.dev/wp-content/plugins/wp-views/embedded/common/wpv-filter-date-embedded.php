@@ -1,5 +1,9 @@
 <?php
 if (!function_exists('wpv_filter_parse_date')) {
+
+if (!function_exists('adodb_mktime')) {
+	require_once ( dirname( __FILE__ ) . "/toolset-forms/lib/adodb-time.inc.php" );
+}
 /**
  * Helper function for parsing dates.
  * 
@@ -33,19 +37,19 @@ function wpv_filter_parse_date($date_format) {
 			$resulting_date = false;
 			switch(strtoupper($date_func)) {
 					case "NOW": $resulting_date = current_time('timestamp'); break;
-					case "TODAY": $resulting_date = mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y')); break;
-					case "FUTURE_DAY": $resulting_date = mktime(0, 0, 0, date_i18n('m'), date_i18n('d') + $date_value, date_i18n('Y')); break;
-					case "PAST_DAY": $resulting_date = mktime(0, 0, 0, date_i18n('m'), date_i18n('d') - $date_value, date_i18n('Y')); break;
-					case "THIS_MONTH": $resulting_date = mktime(0, 0, 0, date_i18n('m'), 1, date_i18n('Y')); break;
-					case "FUTURE_MONTH": $resulting_date = mktime(0, 0, 0, date_i18n('m') + $date_value, 1, date_i18n('Y')); break;
-					case "PAST_MONTH": $resulting_date = mktime(0, 0, 0, date_i18n('m') - $date_value, 1, date_i18n('Y')); break;
-					case "THIS_YEAR": $resulting_date = mktime(0, 0, 0, 1, 1, date_i18n('Y')); break;
-					case "FUTURE_YEAR": $resulting_date = mktime(0, 0, 0, 1, 1, date_i18n('Y') + $date_value); break;
-					case "PAST_YEAR": $resulting_date = mktime(0, 0, 0, 1, 1, date_i18n('Y') - $date_value); break;
+					case "TODAY": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y')); break;
+					case "FUTURE_DAY": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m'), date_i18n('d') + $date_value, date_i18n('Y')); break;
+					case "PAST_DAY": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m'), date_i18n('d') - $date_value, date_i18n('Y')); break;
+					case "THIS_MONTH": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m'), 1, date_i18n('Y')); break;
+					case "FUTURE_MONTH": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m') + $date_value, 1, date_i18n('Y')); break;
+					case "PAST_MONTH": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m') - $date_value, 1, date_i18n('Y')); break;
+					case "THIS_YEAR": $resulting_date = adodb_mktime(0, 0, 0, 1, 1, date_i18n('Y')); break;
+					case "FUTURE_YEAR": $resulting_date = adodb_mktime(0, 0, 0, 1, 1, date_i18n('Y') + $date_value); break;
+					case "PAST_YEAR": $resulting_date = adodb_mktime(0, 0, 0, 1, 1, date_i18n('Y') - $date_value); break;
 					case "SECONDS_FROM_NOW": $resulting_date = current_time('timestamp') + $date_value; break;
-					case "MONTHS_FROM_NOW": $resulting_date = mktime(0, 0, 0, date_i18n('m') + $date_value, date_i18n('d'), date_i18n('Y')); break;
-					case "YEARS_FROM_NOW": $resulting_date = mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y') + $date_value); break;
-					case "DATE": $date_parts = explode(',', $date_value); $resulting_date = mktime(0, 0, 0, $date_parts[1], $date_parts[0], $date_parts[2]); break;  
+					case "MONTHS_FROM_NOW": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m') + $date_value, date_i18n('d'), date_i18n('Y')); break;
+					case "YEARS_FROM_NOW": $resulting_date = adodb_mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y') + $date_value); break;
+					case "DATE": $date_parts = explode(',', $date_value); $resulting_date = adodb_mktime(0, 0, 0, $date_parts[1], $date_parts[0], $date_parts[2]); break;  
 				}
 				if($resulting_date!=false){
                                     $date_format = str_replace($matches[0][$i], $resulting_date, $date_format);

@@ -8,47 +8,37 @@ window.wpvPaginationQueue = {};
 //////////////////////////////////////////////////////////////////////////
 
 function add_url_query_parameters( data ) {
-	var qs = ( function( a ) {
-		if ( a === "" ) {
+    var qs = ( function( a ) {
+        if ( a == "" ) {
 			return {};
 		}
-		var b = {},
-		alength = a.length,
-		i = 0,
-		p = '';
-		for ( i = 0; i < alength; ++i ) {
-			p = a[i].split( '=' );
-			if ( p.length !== 2 ) {
-				continue;
-			}
-			p[0] = p[0].replace( "[]", "" ); // needed for pagination on the author filter to work
-			if ( b.hasOwnProperty( p[0] ) ) {
-				if ( b[p[0]] !== decodeURIComponent( p[1].replace( /\+/g, " " ) ) ) {
-					b[p[0]] += ',' + decodeURIComponent( p[1].replace( /\+/g, " " ) );
+        var b = {};
+        for ( var i = 0; i < a.length; ++i ) {
+            var p=a[i].split( '=' );
+            if (p.length != 2) continue;
+			p[0] = p[0].replace("[]",""); // needed for pagination on the author filter to work
+			if (b.hasOwnProperty(p[0])){
+				if (b[p[0]] != decodeURIComponent(p[1].replace(/\+/g, " "))) {
+					b[p[0]] += ','+decodeURIComponent(p[1].replace(/\+/g, " "));
 				} else {
-					b[p[0]] = decodeURIComponent( p[1].replace( /\+/g, " " ) );
+					b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
 				}
 			} else {
-				b[p[0]] = decodeURIComponent( p[1].replace( /\+/g, " " ) );
+				b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
 			}
-		}
-		return b;
-	}( window.location.search.substr( 1 ).split( '&' ) ) );
-	data['get_params'] = {};
-	var prop = '',
-	prop2 = '',
-	qslength = qs.length,
-	j = 0;
-	//for ( var prop in qs ) {
-	for ( j = 0; j < qslength; ++j ) {
-		prop = qs[j];
-		if ( qs.hasOwnProperty( prop ) ) {
-			if ( !data.hasOwnProperty( prop ) ) {
-				prop2 = prop.replace( "%5B%5D", "" );
-				data['get_params'][prop2] = qs[prop];
-			}
-		}
-	}
+        }
+        return b;
+    })( window.location.search.substr(1).split( '&' ) );
+    data['get_params'] = {};
+    for ( var prop in qs ) {
+        if ( qs.hasOwnProperty( prop ) ) {
+            if ( !data.hasOwnProperty( prop ) ) {
+				var prop2 = prop.replace( "%5B%5D","" );
+                data['get_params'][prop2] = qs[prop];
+            }
+        }
+    }
+    
     return data;
 }
 
@@ -179,7 +169,7 @@ function wpv_render_frontend_datepicker() {
 				data = 'date=' + dateText;
 				data += '&date-format=' + jQuery( '.js-wpv-date-param-' + url_param + '-format' ).val();
 				data += '&action=wpv_format_date';
-				jQuery.post( front_ajaxurl, data, function( response ) {
+				jQuery.post( wpv_pagination_local.front_ajaxurl, data, function( response ) {
 					response = jQuery.parseJSON( response );
 					jQuery( '.js-wpv-date-param-' + url_param + '-value' ).val( response['timestamp'] ).trigger( 'change' );
 					jQuery( '.js-wpv-date-param-' + url_param ).html( response['display'] );
@@ -187,8 +177,8 @@ function wpv_render_frontend_datepicker() {
 			},
 			dateFormat: 'ddmmyy',
 			showOn: "button",
-			buttonImage: wpv_calendar_image,
-			buttonText: wpv_calendar_text,
+			buttonImage: wpv_pagination_local.calendar_image,
+			buttonText: wpv_pagination_local.calendar_text,
 			buttonImageOnly: true,
 			changeMonth: true,
 			changeYear: true
@@ -237,7 +227,7 @@ function add_view_parameters( data, page, view_number ) {
 		data['dps_pr'] = this_prelements.serializeArray();
 	}
 	if ( this_form.hasClass( 'js-wpv-dps-enabled' ) || this_form.hasClass( 'js-wpv-ajax-results-enabled' ) ) {
-		data['dps_general'] = this_form.find( '.js-wpv-filter-trigger' ).serializeArray();
+		data['dps_general'] = this_form.find( '.js-wpv-filter-trigger, .js-wpv-filter-trigger-delayed' ).serializeArray();
 	}
 	return data;
 }
@@ -1106,7 +1096,12 @@ function wpv_manage_advanced_form( thiz, force_filter_update, force_layout_updat
 	},
 	spinnerItems = spinnerContainer.length,
 	spinnerImage,
-	i;
+	i,
+	attr_data = fil.find('.js-wpv-view-attributes');
+	wpv_stop_rollover[view_num] = true;
+	if ( attr_data.length > 0 ) {
+		data['attributes'] = attr_data.data();
+	}
 	
 	if ( full_data.data( 'spinnerimage' ) ) {
 		spinnerImage = '<img src="' +  full_data.data( 'spinnerimage' ) + '" />';
@@ -1131,7 +1126,7 @@ function wpv_manage_advanced_form( thiz, force_filter_update, force_layout_updat
 	
 	jQuery.ajax({
 		type: "POST",
-		url: front_ajaxurl,
+		url: wpv_pagination_local.front_ajaxurl,
 		data: data,
 		success: function( response ) {
 			var response_content = jQuery( '<div></div>' ).append( response ),
@@ -1224,18 +1219,29 @@ jQuery( document ).on( 'click', '.js-wpv-reset-trigger', function( e ) {
 	if ( fil.hasClass( 'js-wpv-ajax-results-enabled' ) || fil.hasClass( 'js-wpv-dps-only-form' ) ) {
 		if ( watcherslength ) {
 			for ( i = 0; i < watcherslength; i++ ) {
-				jQuery( watchers[i] )
-					.attr( 'disabled', true )
-					.removeAttr( 'checked' )
-					.removeAttr( 'selected' )
-					.not( ':button, :submit, :reset, :hidden, :radio, :checkbox' )
-					.val( '' );
+				if ( !jQuery( watchers[i] ).hasClass( 'js-wpv-keep-on-clear' ) ) {
+					jQuery( watchers[i] )
+						.attr( 'disabled', true )
+						.removeAttr( 'checked' )
+						.removeAttr( 'selected' )
+						.not( ':button, :submit, :reset, :hidden, :radio, :checkbox' )
+						.val( '' );
+				}
 			}
 		}
 		wpv_manage_advanced_form( thiz, false, false );
 	} else {
 		window.location.href = target;
 	}
+});
+
+// Also, stop the rollover if we do any modification on the parametric search form
+
+jQuery( document ).on( 'change', '.js-wpv-filter-trigger, .js-wpv-filter-trigger-delayed', function() {
+	var thiz = jQuery( this ),
+	fil = thiz.closest( 'form' ),
+	view_num = fil.data( 'viewnumber' );
+	wpv_stop_rollover[view_num] = true;
 });
 
 ////////////////////////////////////////////////////

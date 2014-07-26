@@ -324,6 +324,8 @@ function wpv_view_defaults( $settings = 'view_settings', $purpose = 'full' ) {
 			break;
 		case 'parametric':
 			$defaults['view_settings']['sections-show-hide'] = array(
+				'query-options'		=> 'off',
+				'limit-offset'		=> 'off',
 				'pagination'		=> 'off',
 			);
 			$defaults['view_settings']['view_purpose'] = 'parametric';
@@ -427,9 +429,9 @@ function wpv_admin_listing_pagination( $context = 'views', $wpv_found_items, $wp
 				<?php } ?>
 				<?php _e('Items per page', 'wpv-views'); ?>
 				<select class="js-items-per-page">
-					<option value="10"<?php if ( $wpv_items_per_page == '10' ) echo ' selected="selected"'; ?>>10</value>
-					<option value="20"<?php if ( $wpv_items_per_page == '20' ) echo ' selected="selected"'; ?>>20</value>
-					<option value="50"<?php if ( $wpv_items_per_page == '50' ) echo ' selected="selected"'; ?>>50</value>
+					<option value="10"<?php if ( $wpv_items_per_page == '10' ) echo ' selected="selected"'; ?>>10</option>
+					<option value="20"<?php if ( $wpv_items_per_page == '20' ) echo ' selected="selected"'; ?>>20</option>
+					<option value="50"<?php if ( $wpv_items_per_page == '50' ) echo ' selected="selected"'; ?>>50</option>
 				</select>
 				<a href="#" class="js-wpv-display-all-items"><?php _e('Display all items', 'wpv-views'); ?></a>
 			</div><!-- .tablenav-pages -->
@@ -557,7 +559,7 @@ function wpv_add_v_icon_to_codemirror( $editor_id, $inline = false ) {
     $WP_Views->editor_addon = new Editor_addon('wpv-views', 
             __('Insert Views Shortcodes', 'wpv-views'), 
             WPV_URL . '/res/js/views_editor_plugin.js', 
-            WPV_URL . '/res/img/bw_icon16.png');
+            WPV_URL_EMBEDDED . '/res/img/views-icon-black_16X16.png');
 
     if ( !$inline ){ echo '<div class="wpv-vicon-for-posts'. $post_hidden .'">';}
     
@@ -785,6 +787,7 @@ function wpv_create_view( $args ) {
 				
 				$view_normal_layout_defaults['bootstrap_grid_cols'] = $args['cols'];
 				$view_normal_layout_defaults['bootstrap_grid_container'] = 'false';
+				$view_normal_layout_defaults['bootstrap_grid_row_class'] = 'false';
 				$view_normal_layout_defaults['bootstrap_grid_individual'] = '';
 				$view_normal_layout_defaults['style'] = 'bootstrap-grid';
 				$view_normal_layout_defaults['insert_at'] = 'insert_replace';

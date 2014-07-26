@@ -14,7 +14,7 @@ if( !function_exists('register_slider_cell_init') )
 					'name'						=>	__('Slider', 'ddl-layouts'),
 					'icon-css'					=>	'icon-exchange',
 					'description'				=>	__('Displays set of images using Bootstrap\'s carousel component', 'ddl-layouts'),
-					'category'					=>	__('Standard WordPress elements', 'ddl-layouts'),
+					'category'					=>	__('Text and Media', 'ddl-layouts'),
 					'category-icon-css'			=>	'icon-sun',
 					'button-text'				=>	__('Assign slider cell', 'ddl-layouts'),
 					'dialog-title-create'		=>	__('Create a new slider cell', 'ddl-layouts'),

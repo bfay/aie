@@ -37,7 +37,15 @@ DDLayout.DefaultDialog = function($)
 			self._manage_layout_selection();
 		});
 
+        // this trigger on any dialog when closes up.
+        WPV_Toolset.Utils.eventDispatcher.listenTo(WPV_Toolset.Utils.eventDispatcher, 'color_box_closed', self.generic_dialog_close_callback);
 	};
+
+    self.generic_dialog_close_callback = function( event )
+    {
+        if( jQuery('.js-element-box-message-container').is('p') )
+        jQuery('.js-element-box-message-container').wpvToolsetMessage('destroy');
+    };
 
 	self._show_new_dialog = function ( caller ) {
 
@@ -48,6 +56,9 @@ DDLayout.DefaultDialog = function($)
 			target_cell_view = DDLayout.ddl_admin_page.get_new_target_cell(),
 			allow_multiples = jQuery(caller).data('allow-multiple'),
 			cell_name = self._create_default_cell_name(jQuery(caller).data('cell-name'), main_layout);
+
+
+        jQuery('.js-element-box-message-container').wpvToolsetMessage('destroy');
 
 		if (allow_multiples === false) {
 			var layout = DDLayout.ddl_admin_page.get_layout();
@@ -62,6 +73,7 @@ DDLayout.DefaultDialog = function($)
 			}
 		}
 
+
 		var dialog_title = jQuery(caller).data('dialog-title-create');
 		var cellDescription = function() {
 			var desc = jQuery(caller).data('cell-description');
@@ -71,6 +83,9 @@ DDLayout.DefaultDialog = function($)
 			return desc;
 		}();
 		var $editWindow = jQuery('#ddl-default-edit');
+        
+        var $save_button = $editWindow.find('.js-dialog-edit-save');
+        $save_button.html($save_button.data('create-text'));
 
 		$editWindow
 			.data('mode', 'new-cell')
@@ -128,6 +143,8 @@ DDLayout.DefaultDialog = function($)
 			href: '#ddl-default-edit',
 			closeButton: false,
 			escKey : false,
+            overlayClose: false,
+
 			onComplete: function() {
 
 				self._cleanup_required = true;
@@ -141,11 +158,10 @@ DDLayout.DefaultDialog = function($)
 				// prevent tinyMCE to bother when dialog opens
 				// jQuery("#celltexteditor").focus();
 				if (jQuery('#ddl-default-edit [name="ddl-layout-content"]').length) {
-					jQuery("#celltexteditor-tmce").trigger("click");
 					jQuery("#celltexteditor").css("visibility", "visible");
 				}
                 
-                jQuery('.js-dialog-edit-save').prop('disabled', false); // just in case it's disabled.
+				self.disable_save_button(false); // just in case it's disabled.
 
 				jQuery('#ddl-default-edit').trigger('ddl-default-dialog-open');
 
@@ -186,6 +202,8 @@ DDLayout.DefaultDialog = function($)
 
 	};
 
+
+
 	self.clean_up = function () {
 		if (self._cleanup_required) {
 
@@ -194,7 +212,7 @@ DDLayout.DefaultDialog = function($)
 				if( tinyMCE.get("celltexteditor") ) {
 					tinyMCE.get("celltexteditor").remove();
 				}
-				jQuery("#celltexteditor-html").trigger("click");
+				//jQuery("#celltexteditor-html").trigger("click");
 			}
 
 			jQuery('#ddl-default-edit .ddl-dialog-content .js-default-dialog-content').children().appendTo('#ddl-cell-dialog-' + self._cell_type);
@@ -249,6 +267,10 @@ DDLayout.DefaultDialog = function($)
 				.data('mode', 'edit-cell')
 				.data('cell_view', cell_view)
 				.data('cell-type', cell_type);
+                
+            var $save_button = $editWindow.find('.js-dialog-edit-save');
+            $save_button.html($save_button.data('update-text'));
+                
 
 			jQuery('input[name="ddl-default-edit-cell-name"]').val( cellName );
             var css_classes = cell_view.model.get('additionalCssClasses');
@@ -278,6 +300,8 @@ DDLayout.DefaultDialog = function($)
 		if (self.is_new_cell()) {
 
 			target_cell_view = DDLayout.ddl_admin_page.get_new_target_cell();
+
+            jQuery('#ddl-default-edit').data('cell_view', target_cell_view);
 
 		} else if (jQuery('#ddl-default-edit').data('mode') == 'edit-cell') {
 
@@ -317,6 +341,9 @@ DDLayout.DefaultDialog = function($)
 				{
 					var width = DDLayout.ddl_admin_page._add_cell.getColumnsToAdd();
 					DDLayout.ddl_admin_page.replace_selected_cell(target_cell, width);
+
+                    DDLayout.ddl_admin_page.instance_layout_view.eventDispatcher.trigger('created_new_cell', target_cell );
+
 				} else {
 					DDLayout.ddl_admin_page.replace_selected_cell(target_cell);
 				}
@@ -390,7 +417,9 @@ DDLayout.DefaultDialog = function($)
 						if ( tinyMCE.editors['celltexteditor'].isHidden() ) {
 							data_val = jQuery(this).val();
 						} else {
+
 							data_val = tinyMCE.editors['celltexteditor'].getContent();
+							data_val = window.switchEditors.pre_wpautop(data_val);
 						}
 					} else {
 						data_val = jQuery(this).val();
@@ -610,6 +639,26 @@ DDLayout.DefaultDialog = function($)
 		}
 
 	};
+    
+    self.get_target_cell_view = function () {
+        return jQuery('#ddl-default-edit').data('cell_view');
+    }
+    
+    self.get_cell_type = function () {
+        return self._cell_type;
+    }
+	
+	self.disable_save_button = function (state) {
+		jQuery('#ddl-default-edit .js-dialog-edit-save').prop('disabled', state);
+	}
+	
+	self.insert_spinner_before = function (element) {
+		return jQuery('<div class="spinner ajax-loader"></div>').insertBefore(element).show();
+	}
+
+	self.insert_spinner_after = function (element) {
+		return jQuery('<div class="spinner ajax-loader"></div>').insertAfter(element).show();
+	}
 
 	self.init();
 };

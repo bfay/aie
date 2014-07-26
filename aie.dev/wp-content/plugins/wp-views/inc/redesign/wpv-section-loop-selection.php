@@ -63,7 +63,7 @@ function render_view_loop_selection_form( $view_id = 0 ) {
 			<?php
 			$show_asterisk = false;
 			$checked = ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
-			if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+			if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id && $options['view_' . $loop] != 0 ) {
 				$show_asterisk = true;
 				$show_asterisk_explanation = true;
 			}
@@ -101,7 +101,7 @@ function render_view_loop_selection_form( $view_id = 0 ) {
 			<?php
 			$show_asterisk = false;
 			$checked = ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
-			if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+			if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id && $options['view_' . $loop] != 0 ) {
 				$show_asterisk = true;
 				$show_asterisk_explanation = true;
 			}
@@ -140,7 +140,7 @@ function render_view_loop_selection_form( $view_id = 0 ) {
 			$name = $category->name;
 			$show_asterisk = false;
 			$checked = ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] == $view_id ) ? ' checked="checked"' : '';
-			if ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] != $view_id ) {
+			if ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] != $view_id && $options['view_taxonomy_loop_' . $name ] != 0 ) {
 				$show_asterisk = true;
 				$show_asterisk_explanation = true;
 			}

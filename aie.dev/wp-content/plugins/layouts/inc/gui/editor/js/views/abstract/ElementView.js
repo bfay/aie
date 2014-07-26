@@ -72,7 +72,6 @@ DDLayout.views.abstract.ElementView = Backbone.View.extend({
 				self.template = _.template( jQuery('#'+itemEditorCssBaseClass+'-template').html() );
 			}
 		}
-
 		self._doTemplate();
 
 		self._makeElementNameEditable();
@@ -126,7 +125,7 @@ DDLayout.views.abstract.ElementView = Backbone.View.extend({
 
 			var el = jQuery(this),
 				parent = el.parent(),
-				value = el.text(),
+				value = el.text().replace(/"/g, "&quot;"),
 				index = el.index(),
 				input,
 				text_len = value.length,

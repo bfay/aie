@@ -5,14 +5,14 @@
   Description: Define custom post types, custom taxonomy and custom fields.
   Author: ICanLocalize
   Author URI: http://wp-types.com
-  Version: 1.6b3
+  Version: 1.6b4
  */
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/wpcf.php $
- * $LastChangedDate: 2014-06-12 15:03:49 +0000 (Thu, 12 Jun 2014) $
- * $LastChangedRevision: 23560 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/wpcf.php $
+ * $LastChangedDate: 2014-07-23 11:48:17 +0000 (Wed, 23 Jul 2014) $
+ * $LastChangedRevision: 25224 $
+ * $LastChangedBy: juan $
  *
  */
 // Added check because of activation hook and theme embedded code
@@ -20,7 +20,7 @@ if ( !defined( 'WPCF_VERSION' ) ) {
     /**
      * make sure that WPCF_VERSION in embedded/bootstrap.php is the same!
      */
-    define( 'WPCF_VERSION', '1.6b3' );
+    define( 'WPCF_VERSION', '1.6b4' );
 }
 
 define( 'WPCF_REPOSITORY', 'http://api.wp-types.com/' );
@@ -37,6 +37,10 @@ require_once WPCF_INC_ABSPATH . '/constants.php';
  * Since Types 1.2 we load all embedded code without conflicts
  */
 require_once WPCF_ABSPATH . '/embedded/types.php';
+
+require_once WPCF_ABSPATH . '/embedded/onthego-resources/onthegosystems-branding-loader.php';
+ont_set_on_the_go_systems_uri_and_start(WPCF_RELPATH . '/embedded/onthego-resources/' );
+
 
 // Plugin mode only hooks
 add_action( 'plugins_loaded', 'wpcf_init' );

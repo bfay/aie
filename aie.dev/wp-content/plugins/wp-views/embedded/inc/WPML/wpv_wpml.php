@@ -641,12 +641,18 @@ function wpv_register_wpml_strings( $content ) {
 * Hooks into the String Translation activation, registering all Views wpml-string shortcodes and all translatable strings in wpv-control shortcodes
 *
 * @since 1.5.0
+* @since 1.6.2 change of the hook to init as the user capabilities are not reliable before that (and they are used in get_posts())
 */
 
-add_action('plugins_loaded', 'wpv_register_wpml_strings_on_activation', 99);
+add_action('init', 'wpv_register_wpml_strings_on_activation', 99);
 
 function wpv_register_wpml_strings_on_activation() {
-	if ( function_exists( 'icl_register_string' ) && defined( 'WPML_ST_VERSION' ) && !get_option( 'wpv_strings_translation_initialized', false ) ) {
+	if (
+		function_exists( 'icl_register_string' ) &&
+		defined( 'WPML_ST_VERSION' ) &&
+		!get_option( 'wpv_strings_translation_initialized', false ) &&
+		current_user_can( 'manage_options' )
+	) {
 		// Register strings from Views
 		$views = get_posts('post_type=view&post_status=any&posts_per_page=-1');
 		foreach ( $views as $key => $post ) {

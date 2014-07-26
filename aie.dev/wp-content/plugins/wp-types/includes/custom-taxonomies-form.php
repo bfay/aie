@@ -3,7 +3,7 @@
  *
  * Custom taxonomies form
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/includes/custom-taxonomies-form.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/includes/custom-taxonomies-form.php $
  * $LastChangedDate: 2014-05-08 13:13:42 +0000 (Thu, 08 May 2014) $
  * $LastChangedRevision: 22156 $
  * $LastChangedBy: marcin $

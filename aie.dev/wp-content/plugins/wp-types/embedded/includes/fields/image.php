@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/fields/image.php $
+ * $LastChangedDate: 2014-07-15 14:18:54 +0000 (Tue, 15 Jul 2014) $
+ * $LastChangedRevision: 24974 $
+ * $LastChangedBy: marcin $
+ *
+ */
 add_filter( 'wpcf_fields_type_image_value_get', 'wpcf_fields_image_value_filter' );
 add_filter( 'wpcf_fields_type_image_value_save',
         'wpcf_fields_image_value_filter' );

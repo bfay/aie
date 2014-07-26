@@ -93,7 +93,7 @@ function display_breadcrumb_tree ( $parent_id, $available_parents ) {
 						</select>
 						<?php // FIXME: This message should be shown using .wpvToolsetMessage() ?>
 						<p class="toolset-alert toolset-alert-info js-diabled-width">
-							<?php _e("The width is fixed to 12 columns for fluid layouts.", 'ddl-layouts'); ?>
+							<?php _e("The Layout width is always 12 columns for fluid Layouts.", 'ddl-layouts'); ?>
 						</p>
 					</div>
 				</li>

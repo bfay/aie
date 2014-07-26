@@ -2,9 +2,9 @@
 
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Views-1.6.1-Types-1.5.7/toolset-forms/classes/class.field_factory.php $
- * $LastChangedDate: 2014-05-19 09:12:04 +0000 (Mon, 19 May 2014) $
- * $LastChangedRevision: 22437 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.field_factory.php $
+ * $LastChangedDate: 2014-06-10 14:01:59 +0000 (Tue, 10 Jun 2014) $
+ * $LastChangedRevision: 23441 $
  * $LastChangedBy: marcin $
  *
  */
@@ -108,6 +108,18 @@ abstract class FieldFactory extends FieldAbstract
     public function getSettings()
     {
         return isset( $this->_settings ) ? $this->_settings : array();
+    }
+
+    public function isRepetitive()
+    {
+        return (bool)$this->_data['repetitive'];
+    }
+
+    public function getAttr() {
+        if ( array_key_exists( 'attribute', $this->_data ) ) {
+            return $this->_data['attribute'];
+        }
+        return array();
     }
 
     public static function registerScripts() {}

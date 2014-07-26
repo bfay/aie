@@ -1,9 +1,9 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.file.php $
- * $LastChangedDate: 2014-06-12 12:25:54 +0000 (Thu, 12 Jun 2014) $
- * $LastChangedRevision: 23546 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.file.php $
+ * $LastChangedDate: 2014-07-12 08:38:18 +0000 (Sat, 12 Jul 2014) $
+ * $LastChangedRevision: 24908 $
  * $LastChangedBy: gen $
  *
  */
@@ -21,30 +21,31 @@ class WPToolset_Field_File extends WPToolset_Field_Textfield
     //protected $_defaults = array('filename' => '', 'button_style' => 'btn2');
 
     public function init() {
-        self::_registerScripts();    
+        WPToolset_Field_File::file_enqueue_scripts();
     }
 
-    protected static function _registerScripts() {
+    public static function file_enqueue_scripts() {
         wp_register_script( 'wptoolset-field-file',
                 WPTOOLSET_FORMS_RELPATH . '/js/file.js', array('jquery'),
                 WPTOOLSET_FORMS_VERSION, true );
         wp_register_style( 'wptoolset-field-file',
                 WPTOOLSET_FORMS_RELPATH . '/css/file.css', array(),
                 WPTOOLSET_FORMS_VERSION );
-    }
-
-    public function enqueueScripts() {
-        if ( wp_script_is( 'wptoolset-field-file', 'enqueued' ) ) return;
-        wp_enqueue_script( 'wptoolset-field-file' );
-        add_thickbox();
-        global $post;
-        $for_post = (!empty( $post->ID ) ? 'post_id=' . $post->ID . '&' : '');
-        $js_data = array('title' => __( 'Select file' ), 'for_post' => $for_post, 'adminurl' => admin_url());
-        wp_localize_script( 'wptoolset-field-file', 'wptFileData', $js_data );
+        if ( !wp_script_is( 'wptoolset-field-file', 'enqueued' ) ) {
+			wp_enqueue_script( 'wptoolset-field-file' );
+			add_thickbox();
+			global $post;
+			$for_post = (!empty( $post->ID ) ? 'post_id=' . $post->ID . '&' : '');
+			$js_data = array('title' => __( 'Select file', 'wpv-views' ), 'for_post' => $for_post, 'adminurl' => admin_url());
+			wp_localize_script( 'wptoolset-field-file', 'wptFileData', $js_data );
+		}
+		if ( !wp_style_is( 'wptoolset-field-file' ) ) {
+			wp_enqueue_style( 'wptoolset-field-file' );
+		}
     }
 
     public function enqueueStyles() {
-        wp_enqueue_style( 'wptoolset-field-file' );
+        
     }
 
     public function metaform() {
@@ -74,14 +75,18 @@ class WPToolset_Field_File extends WPToolset_Field_Textfield
         }
 
         // Set button
-        $button = '<a href="#" class="js-wpt-file-upload button-secondary">'
-                . sprintf( __( 'Select %s' ), $this->getType() ) . '</a>';
+        $button = sprintf(
+            '<a href="#" class="js-wpt-file-upload button-secondary" data-wpt-type="%s">%s</a>',
+            $this->getType(),
+            sprintf( __( 'Select %s', 'wpv-views' ), $this->getType() )
+        );
 
         // Set form
         $form[] = array(
             '#type' => 'textfield',
             '#name' => $this->getName(),
             '#title' => $this->getTitle(),
+			'#description' => $this->getDescription(),
             '#value' => $value,
             '#suffix' => '&nbsp;' . $button,
             '#validate' => $this->getValidationData(),
@@ -97,9 +102,7 @@ class WPToolset_Field_File extends WPToolset_Field_Textfield
     }
 
     public static function mediaPopup() {
-        self::_registerScripts();
-        wp_enqueue_script( 'wptoolset-field-file' );
-        wp_enqueue_style( 'wptoolset-field-file' );
+        WPToolset_Field_File::file_enqueue_scripts();
         // Add types button
         add_filter( 'attachment_fields_to_edit',
                 array('WPToolset_Field_File', 'attachmentFieldsToEditFilter'),
@@ -131,7 +134,7 @@ class WPToolset_Field_File extends WPToolset_Field_Textfield
             . '" class="js-wpt-file-insert-button'
             . ' button-primary" onclick="wptFile.mediaInsertTrigger(\''
             . $url . '\', \'' . $type . '\')">'
-            . __( 'Use as field value', 'wpcf' ) . '</a><br /><br />',
+            . __( 'Use as field value', 'wpv-views' ) . '</a><br /><br />',
         );
         return $form_fields;
     }
@@ -160,7 +163,7 @@ class WPToolset_Field_File extends WPToolset_Field_Textfield
             ?>
                 jQuery(document).ready(function($) {
                     $('#media-upload-header').after('<div class="message updated"><p><?php
-            printf( esc_js( __( 'Please note that not all video and audio formats are supported by the WordPress media player. Before you upload media files, have a look at %ssupported media formats%s.' ) ),
+            printf( esc_js( __( 'Please note that not all video and audio formats are supported by the WordPress media player. Before you upload media files, have a look at %ssupported media formats%s.', 'wpv-views' ) ),
                     '<a href="http://wp-types.com/documentation/user-guides/adding-audio-video-and-other-embedded-content-to-your-site/?utm_source=typesplugin&utm_campaign=types&utm_medium=types-field-media-popup&utm_term=supported media formats" target="_blank">',
                     '</a>' );
 

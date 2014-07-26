@@ -22,7 +22,10 @@ DDLayout.EmbeddedManager = function()
 	{
 		jQuery("[class*='span'] video,iframe,.wp-video").each( function () {
 			var span = jQuery(this).closest("[class*='span']");
-			self.ddl_fit_videos_to_cell_size(jQuery(this), span);
+            if( span.length > 0 )
+            {
+                self.ddl_fit_videos_to_cell_size(jQuery(this), span);
+            }
 		});
 	};
 
@@ -30,7 +33,10 @@ DDLayout.EmbeddedManager = function()
 	{
 		jQuery("[class*='col-sm-'] video,iframe,.wp-video").each( function () {
 			var span = jQuery(this).closest("[class*='col-sm-']");
-			self.ddl_fit_videos_to_cell_size(jQuery(this), span);
+            if( span.length > 0 )
+            {
+                self.ddl_fit_videos_to_cell_size(jQuery(this), span);
+            }
 		})
 	};
 

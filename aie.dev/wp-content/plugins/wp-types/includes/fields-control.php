@@ -2,9 +2,9 @@
 /*
  * Custom Fields Control Screen
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/includes/fields-control.php $
- * $LastChangedDate: 2014-05-19 15:54:18 +0000 (Mon, 19 May 2014) $
- * $LastChangedRevision: 22454 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/includes/fields-control.php $
+ * $LastChangedDate: 2014-06-26 10:57:18 +0000 (Thu, 26 Jun 2014) $
+ * $LastChangedRevision: 24376 $
  * $LastChangedBy: marcin $
  *
  */
@@ -273,9 +273,6 @@ function wpcf_admin_custom_fields_control_js()
             }
         });
 <?php } ?>
-            jQuery('#wpcf-custom-fields-control-form .actions select').change(function(){
-                return wpcfAdminCustomFieldsControlSubmit(jQuery(this));
-            });
             jQuery('#wpcf-custom-fields-control-form #doaction, #wpcf-custom-fields-control-form #doaction2').click(function(){
                 return wpcfAdminCustomFieldsControlSubmit(jQuery(this).prev());
             });

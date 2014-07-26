@@ -36,7 +36,7 @@
  * [wpv-if evaluate="my_func() = '1'"]my_func returns 1[/wpv-if]
  *
  * Link:
- * <a href="http://wp-types.com/documentation/user-guides/conditional-html-output-in-views/">Conditional HTML output in Views</a>
+ * <a href="http://wp-types.com/documentation/user-guides/conditional-html-output-in-views/?utm_source=viewsplugin&utm_campaign=views&utm_medium=views-conditional-help-link&utm_term=Conditional HTML output in Views">Conditional HTML output in Views</a>
  *
  * Note:
  *
@@ -194,9 +194,19 @@ add_filter( 'wpv-extra-condition-filters', 'wpv_add_wpv_if_functions_support', 1
 
 function wpv_add_wpv_if_functions_support($evaluate) {
 	$occurences = preg_match_all('/(\\w+:?:?\\w+?)\(([\\w",. \'-]*)\)/', $evaluate, $matches);
-	if($occurences > 0) {
-		for($i = 0; $i < $occurences; $i++) {
+	if ( $occurences > 0 ) {
+		global $WP_Views;
+		$options = $WP_Views->get_options();
+		$allowed_functions = array();
+		if ( isset( $options['wpv_custom_conditional_functions'] ) && is_array( $options['wpv_custom_conditional_functions'] ) ) {
+			$allowed_functions = $options['wpv_custom_conditional_functions'];
+		}
+		for ( $i = 0; $i < $occurences; $i++ ) {
 			$real_func = $matches[1][$i];
+			$real_function_trimmed = trim( $real_func );
+			if ( !in_array( $real_function_trimmed, $allowed_functions ) ) {
+				return $evaluate;
+			}
 			if ( strpos( $real_func, '::' ) != false ) {
 				$real_func = array_map('trim', explode('::', $real_func));
 			}
@@ -234,6 +244,9 @@ function wpv_add_wpv_if_functions_support($evaluate) {
 						}
 					} else if ( is_numeric( $resulting_thing ) ) {
 						$replace = $resulting_thing;
+						if ( $replace == 1 ) {
+							$replace = "'1'";
+						}
 					} else {
 						$replace = "'" . $resulting_thing . "'";
 					}

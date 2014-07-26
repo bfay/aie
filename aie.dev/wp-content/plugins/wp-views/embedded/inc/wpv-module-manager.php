@@ -46,21 +46,103 @@ function wpv_module_manager_init() {
 		add_filter( 'wpmodules_import_pluginversions_'._VIEWS_MODULE_MANAGER_KEY_, 'wpv_modules_views_pluginversion_used' );
 		add_filter( 'wpmodules_import_pluginversions_'._VIEW_TEMPLATES_MODULE_MANAGER_KEY_, 'wpv_modules_views_pluginversion_used' );
 		
+		/*Link to read-only versions of elements in installed modules*/
+		add_action( 'wpmodules_library_link_components', 'wpv_modules_library_link_components', 10, 2 );
+		
 	}
 	
 }
 
+/**
+* wpv_modules_library_link_components
+*
+* Hooks into the Module Manager Library listing and offers links to edit/readonly versions of each Views component
+*
+* @param $current_module
+* @param $modman_modules (array) installed modules as stored in the Options table
+*
+* @since 1.6.2
+*/
+
+function wpv_modules_library_link_components( $current_module = array(), $modman_modules = array() ) {
+	$this_module_data = array();//echo '<pre>';print_r($installed_modules_data);echo '</pre>';echo '<pre>';print_r($modules_rendered);echo '</pre>';
+	foreach ( $modman_modules as $hackey => $hackhack ) {
+		if ( strtolower( $hackey ) == strtolower( $current_module['name'] ) ) {
+			$this_module_data = $hackhack;
+		}
+	}
+	//echo '<pre>';print_r( $this_module_data );echo '</pre>';
+	if ( 
+		( isset( $this_module_data[_VIEWS_MODULE_MANAGER_KEY_] ) && is_array( $this_module_data[_VIEWS_MODULE_MANAGER_KEY_] ) ) 
+		||
+		( isset( $this_module_data[_VIEW_TEMPLATES_MODULE_MANAGER_KEY_] ) && is_array( $this_module_data[_VIEW_TEMPLATES_MODULE_MANAGER_KEY_] ) ) 
+	) {
+		global $wpdb, $WP_Views;
+		$embedded = $WP_Views->is_embedded();
+	?>
+	<div class="module-elements-container">
+		<h4><?php _e( 'Views elements in this Module', 'wpv-views' ); ?></h4>
+		<ul class="module-elements">
+		<?php
+		if ( isset( $this_module_data[_VIEWS_MODULE_MANAGER_KEY_] ) && is_array( $this_module_data[_VIEWS_MODULE_MANAGER_KEY_] ) ) {
+			$view_titles = array();
+			foreach ( $this_module_data[_VIEWS_MODULE_MANAGER_KEY_] as $this_view ) {
+				$view_titles[] = $this_view['title'];
+			}
+			$view_titles_flat = implode( "','", $view_titles );
+			$view_pairs = $wpdb->get_results( "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_title IN ('{$view_titles_flat}') AND post_type = 'view'" );
+			if ( $view_pairs ) {
+				$suffix = 'editor';
+				if ( $embedded ) {
+					$suffix = 'embedded';
+				}
+				foreach ( $view_pairs as $view_data ) {
+					$prefix = 'views';
+					if ( $WP_Views->is_archive_view( $view_data->ID ) ) {
+						$prefix = 'view-archives';
+					}
+					echo '<li class="views-element"><a href="' . admin_url() . 'admin.php?page=' . $prefix . '-' . $suffix . '&view_id=' . $view_data->ID . '"><i class="icon-views ont-icon-19 ont-color-orange"></i>' . $view_data->post_title . '</a></li>';
+				}
+			}
+		}
+		if ( isset( $this_module_data[_VIEW_TEMPLATES_MODULE_MANAGER_KEY_] ) && is_array( $this_module_data[_VIEW_TEMPLATES_MODULE_MANAGER_KEY_] ) ) {
+			$template_titles = array();
+			foreach ( $this_module_data[_VIEW_TEMPLATES_MODULE_MANAGER_KEY_] as $this_template ) {
+				$template_titles[] = $this_template['title'];
+			}
+			$template_titles_flat = implode( "','", $template_titles );
+			$template_pairs = $wpdb->get_results( "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_title IN ('{$template_titles_flat}') AND post_type = 'view-template'" );
+			if ( $template_pairs ) {
+				foreach ( $template_pairs as $template_data ) {
+					if ( $embedded ) {
+						echo '<li class="views-element"><a href="' . admin_url() . 'admin.php?page=view-templates-embedded&view_id=' . $template_data->ID . '"><i class="icon-views ont-icon-19 ont-color-orange"></i>' . $template_data->post_title . '</a></li>';
+					} else {
+						echo '<li class="views-element"><a href="' . admin_url() . 'post.php?post=' . $template_data->ID . '&action=edit"><i class="icon-views ont-icon-19 ont-color-orange"></i>' . $template_data->post_title . '</a></li>';
+					}
+				}
+			}
+		}
+		?>
+		</ul>
+	</div>
+	<?php
+	}
+}
+
 // Register sections in Module Manager
 
+//TODO: change with new icons
 function wpv_register_modules_sections( $sections ) {
 	$sections[_VIEW_TEMPLATES_MODULE_MANAGER_KEY_] = array(
 		'title' => __( 'Content Templates','wpv-views' ),
-		'icon' => WPV_URL . '/res/img/icon12.png'
+		'icon' => WPV_URL_EMBEDDED . '/res/img/views-icon-color_12X12.png',
+        'icon_css' => 'icon-views ont-icon-22 ont-color-orange'
 	);
 
 	$sections[_VIEWS_MODULE_MANAGER_KEY_] = array(
 		'title' => __( 'Views','wpv-views' ),
-		'icon' => WPV_URL . '/res/img/icon12.png'
+		'icon' => WPV_URL_EMBEDDED . '/res/img/views-icon-color_12X12.png',
+        'icon_css' => 'icon-views ont-icon-22 ont-color-orange'
 	);
 	return $sections;
 }
@@ -412,172 +494,175 @@ function wpv_admin_export_selected_data( $items, $type = 'view', $mode = 'xml' )
 							$data['views']['view-' . $post['ID']]['attachments'] = array();
 							if ('module_manager' == $mode ) $hash_data['attachments'] = array();
 							foreach ( $attachments as $attachment ) {
-								// Add the attachment to the exported data
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID] = array();
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['title'] = $attachment->post_title;
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['content'] = $attachment->post_content;
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['excerpt'] = $attachment->post_excerpt;
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['status'] = $attachment->post_status;
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['alt'] = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
-								$imdata = base64_encode(file_get_contents($attachment->guid));
-								if ('module_manager' == $mode ) $hash_data['attachments'][] = md5($imdata);
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['data'] = $imdata;
-								preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
-								$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['filename'] = basename( $matches[0] );
-								$this_settings = get_post_meta($post['ID'], '_wpv_settings', true);
-								$this_layout_settings = get_post_meta($post['ID'], '_wpv_layout_settings', true);
-								if ( isset( $this_settings['pagination']['spinner_image_uploaded'] ) && $attachment->guid == $this_settings['pagination']['spinner_image_uploaded'] ) {
-									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['custom_spinner'] = 'this';
-									if ( 'module_manager' == $mode ) {
-										$hash_data['meta']['_wpv_settings']['pagination']['spinner_image_uploaded'] = md5($imdata);
-									}
-								}
-								// Get the src for every attachment size
-								$imthumbs = array();
-								foreach ($attached_images_sizes as $ts) {
-									$imthumbs[$ts] = wp_get_attachment_image_src( $attachment->ID, $ts );
-								}
-								// Adjust the Filter MetaHTML content
-								if ( isset( $this_settings['filter_meta_html'] ) ) {
-									$pos = strpos( $this_settings['filter_meta_html'], $attachment->guid );
-									if ($pos !== false) {
-										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html'] = $attachment->guid;
+								$image_type = get_post_mime_type($attachment->ID);	
+								if ( $image_type && ($image_type == 'image/jpeg' || $image_type == 'image/png' || $image_type == 'image/gif') ){
+									// Add the attachment to the exported data
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID] = array();
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['title'] = $attachment->post_title;
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['content'] = $attachment->post_content;
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['excerpt'] = $attachment->post_excerpt;
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['status'] = $attachment->post_status;
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['alt'] = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
+									$imdata = base64_encode(file_get_contents($attachment->guid));
+									if ('module_manager' == $mode ) $hash_data['attachments'][] = md5($imdata);
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['data'] = $imdata;
+									preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
+									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['filename'] = basename( $matches[0] );
+									$this_settings = get_post_meta($post['ID'], '_wpv_settings', true);
+									$this_layout_settings = get_post_meta($post['ID'], '_wpv_layout_settings', true);
+									if ( isset( $this_settings['pagination']['spinner_image_uploaded'] ) && $attachment->guid == $this_settings['pagination']['spinner_image_uploaded'] ) {
+										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['custom_spinner'] = 'this';
 										if ( 'module_manager' == $mode ) {
-											$hash_data['meta']['_wpv_settings']['filter_meta_html'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['filter_meta_html']);
+											$hash_data['meta']['_wpv_settings']['pagination']['spinner_image_uploaded'] = md5($imdata);
 										}
 									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $this_settings['filter_meta_html'], $thumbdata[0] );
-											if ($pos !== false) {
-												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_sizes'][$thumbsize] = $thumbdata[0];
-												if ( 'module_manager' == $mode ) {
-													$hash_data['meta']['_wpv_settings']['filter_meta_html'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['filter_meta_html']);
-												}
-											}
-										}
+									// Get the src for every attachment size
+									$imthumbs = array();
+									foreach ($attached_images_sizes as $ts) {
+										$imthumbs[$ts] = wp_get_attachment_image_src( $attachment->ID, $ts );
 									}
-								}
-								// Adjust the Filter MetaHTML CSS content
-								if ( isset( $this_settings['filter_meta_html_css'] ) ) {
-									$pos = strpos( $this_settings['filter_meta_html_css'], $attachment->guid );
-									if ($pos !== false) {
-										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_css'] = $attachment->guid;
-										if ( 'module_manager' == $mode ) {
-											$hash_data['meta']['_wpv_settings']['filter_meta_html_css'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['filter_meta_html_css']);
-										}
-									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $this_settings['filter_meta_html_css'], $thumbdata[0] );
-											if ($pos !== false) {
-												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_css_sizes'][$thumbsize] = $thumbdata[0];
-												if ( 'module_manager' == $mode ) {
-													$hash_data['meta']['_wpv_settings']['filter_meta_html_css'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['filter_meta_html_css']);
-												}
-											}
-										}
-									}
-								}
-								// Adjust the Filter MetaHTML JS content
-								if ( isset( $this_settings['filter_meta_html_js'] ) ) {
-									$pos = strpos( $this_settings['filter_meta_html_js'], $attachment->guid );
-									if ($pos !== false) {
-										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_js'] = $attachment->guid;
-										if ( 'module_manager' == $mode ) {
-											$hash_data['meta']['_wpv_settings']['filter_meta_html_js'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['filter_meta_html_js']);
-										}
-									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $this_settings['filter_meta_html_js'], $thumbdata[0] );
-											if ($pos !== false) {
-												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_js_sizes'][$thumbsize] = $thumbdata[0];
-												if ( 'module_manager' == $mode ) {
-													$hash_data['meta']['_wpv_settings']['filter_meta_html_js'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['filter_meta_html_js']);
-												}
-											}
-										}
-									}
-								}
-								// Adjust the Layout MetaHTML content
-								if ( isset( $this_layout_settings['layout_meta_html'] ) ) {
-									$pos = strpos( $this_layout_settings['layout_meta_html'], $attachment->guid );
-									if ($pos !== false) {
-										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html'] = $attachment->guid;
-										if ( 'module_manager' == $mode ) {
-											$hash_data['meta']['_wpv_layout_settings']['layout_meta_html'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_layout_settings']['layout_meta_html']);
-										}
-									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $this_layout_settings['layout_meta_html'], $thumbdata[0] );
-											if ($pos !== false) {
-												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_sizes'][$thumbsize] = $thumbdata[0];
-												if ( 'module_manager' == $mode ) {
-													$hash_data['meta']['_wpv_layout_settings']['layout_meta_html'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_layout_settings']['layout_meta_html']);
-												}
-											}
-										}
-									}
-								}
-								// Adjust the Layout MetaHTML CSS content
-								if ( isset( $this_settings['layout_meta_html_css'] ) ) {
-									$pos = strpos( $this_settings['layout_meta_html_css'], $attachment->guid );
-									if ($pos !== false) {
-										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_css'] = $attachment->guid;
-										if ( 'module_manager' == $mode ) {
-											$hash_data['meta']['_wpv_settings']['layout_meta_html_css'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['layout_meta_html_css']);
-										}
-									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $this_settings['layout_meta_html_css'], $thumbdata[0] );
-											if ($pos !== false) {
-												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_css_sizes'][$thumbsize] = $thumbdata[0];
-												if ( 'module_manager' == $mode ) {
-													$hash_data['meta']['_wpv_settings']['layout_meta_html_css'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['layout_meta_html_css']);
-												}
-											}
-										}
-									}
-								}
-								// Adjust the Layout MetaHTML JS content
-								if ( isset( $this_settings['layout_meta_html_js'] ) ) {
-									$pos = strpos( $this_settings['layout_meta_html_js'], $attachment->guid );
-									if ($pos !== false) {
-										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_js'] = $attachment->guid;
-										if ( 'module_manager' == $mode ) {
-											$hash_data['meta']['_wpv_settings']['layout_meta_html_js'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['layout_meta_html_js']);
-										}
-									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $this_settings['layout_meta_html_js'], $thumbdata[0] );
-											if ($pos !== false) {
-												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_js_sizes'][$thumbsize] = $thumbdata[0];
-												if ( 'module_manager' == $mode ) {
-													$hash_data['meta']['_wpv_settings']['layout_meta_html_js'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['layout_meta_html_js']);
-												}
-											}
-										}
-									}
-								}
-								// Adjust the full content
-								$poscont = strpos( $data['views']['view-' . $post['ID']]['post_content'], $attachment->guid );
-								if ($poscont !== false) {
-									$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_post_content'] = $attachment->guid;
-									if ( 'module_manager' == $mode ) {
-										$hash_data['post_content'] = str_replace($attachment->guid, md5($imdata), $hash_data['post_content']);
-									}
-								}
-								foreach ($imthumbs as $thumbsize => $thumbdata) {
-									if (!empty($thumbdata) && isset($thumbdata[0])) {
-										$pos = strpos( $data['views']['view-' . $post['ID']]['post_content'], $thumbdata[0] );
+									// Adjust the Filter MetaHTML content
+									if ( isset( $this_settings['filter_meta_html'] ) ) {
+										$pos = strpos( $this_settings['filter_meta_html'], $attachment->guid );
 										if ($pos !== false) {
-											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_post_content_sizes'][$thumbsize] = $thumbdata[0];
+											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html'] = $attachment->guid;
 											if ( 'module_manager' == $mode ) {
-												$hash_data['post_content'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['post_content']);
+												$hash_data['meta']['_wpv_settings']['filter_meta_html'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['filter_meta_html']);
+											}
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $this_settings['filter_meta_html'], $thumbdata[0] );
+												if ($pos !== false) {
+													$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_sizes'][$thumbsize] = $thumbdata[0];
+													if ( 'module_manager' == $mode ) {
+														$hash_data['meta']['_wpv_settings']['filter_meta_html'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['filter_meta_html']);
+													}
+												}
+											}
+										}
+									}
+									// Adjust the Filter MetaHTML CSS content
+									if ( isset( $this_settings['filter_meta_html_css'] ) ) {
+										$pos = strpos( $this_settings['filter_meta_html_css'], $attachment->guid );
+										if ($pos !== false) {
+											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_css'] = $attachment->guid;
+											if ( 'module_manager' == $mode ) {
+												$hash_data['meta']['_wpv_settings']['filter_meta_html_css'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['filter_meta_html_css']);
+											}
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $this_settings['filter_meta_html_css'], $thumbdata[0] );
+												if ($pos !== false) {
+													$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_css_sizes'][$thumbsize] = $thumbdata[0];
+													if ( 'module_manager' == $mode ) {
+														$hash_data['meta']['_wpv_settings']['filter_meta_html_css'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['filter_meta_html_css']);
+													}
+												}
+											}
+										}
+									}
+									// Adjust the Filter MetaHTML JS content
+									if ( isset( $this_settings['filter_meta_html_js'] ) ) {
+										$pos = strpos( $this_settings['filter_meta_html_js'], $attachment->guid );
+										if ($pos !== false) {
+											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_js'] = $attachment->guid;
+											if ( 'module_manager' == $mode ) {
+												$hash_data['meta']['_wpv_settings']['filter_meta_html_js'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['filter_meta_html_js']);
+											}
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $this_settings['filter_meta_html_js'], $thumbdata[0] );
+												if ($pos !== false) {
+													$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_filter_meta_html_js_sizes'][$thumbsize] = $thumbdata[0];
+													if ( 'module_manager' == $mode ) {
+														$hash_data['meta']['_wpv_settings']['filter_meta_html_js'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['filter_meta_html_js']);
+													}
+												}
+											}
+										}
+									}
+									// Adjust the Layout MetaHTML content
+									if ( isset( $this_layout_settings['layout_meta_html'] ) ) {
+										$pos = strpos( $this_layout_settings['layout_meta_html'], $attachment->guid );
+										if ($pos !== false) {
+											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html'] = $attachment->guid;
+											if ( 'module_manager' == $mode ) {
+												$hash_data['meta']['_wpv_layout_settings']['layout_meta_html'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_layout_settings']['layout_meta_html']);
+											}
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $this_layout_settings['layout_meta_html'], $thumbdata[0] );
+												if ($pos !== false) {
+													$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_sizes'][$thumbsize] = $thumbdata[0];
+													if ( 'module_manager' == $mode ) {
+														$hash_data['meta']['_wpv_layout_settings']['layout_meta_html'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_layout_settings']['layout_meta_html']);
+													}
+												}
+											}
+										}
+									}
+									// Adjust the Layout MetaHTML CSS content
+									if ( isset( $this_settings['layout_meta_html_css'] ) ) {
+										$pos = strpos( $this_settings['layout_meta_html_css'], $attachment->guid );
+										if ($pos !== false) {
+											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_css'] = $attachment->guid;
+											if ( 'module_manager' == $mode ) {
+												$hash_data['meta']['_wpv_settings']['layout_meta_html_css'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['layout_meta_html_css']);
+											}
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $this_settings['layout_meta_html_css'], $thumbdata[0] );
+												if ($pos !== false) {
+													$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_css_sizes'][$thumbsize] = $thumbdata[0];
+													if ( 'module_manager' == $mode ) {
+														$hash_data['meta']['_wpv_settings']['layout_meta_html_css'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['layout_meta_html_css']);
+													}
+												}
+											}
+										}
+									}
+									// Adjust the Layout MetaHTML JS content
+									if ( isset( $this_settings['layout_meta_html_js'] ) ) {
+										$pos = strpos( $this_settings['layout_meta_html_js'], $attachment->guid );
+										if ($pos !== false) {
+											$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_js'] = $attachment->guid;
+											if ( 'module_manager' == $mode ) {
+												$hash_data['meta']['_wpv_settings']['layout_meta_html_js'] = str_replace($attachment->guid, md5($imdata), $hash_data['meta']['_wpv_settings']['layout_meta_html_js']);
+											}
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $this_settings['layout_meta_html_js'], $thumbdata[0] );
+												if ($pos !== false) {
+													$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_layout_meta_html_js_sizes'][$thumbsize] = $thumbdata[0];
+													if ( 'module_manager' == $mode ) {
+														$hash_data['meta']['_wpv_settings']['layout_meta_html_js'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['meta']['_wpv_settings']['layout_meta_html_js']);
+													}
+												}
+											}
+										}
+									}
+									// Adjust the full content
+									$poscont = strpos( $data['views']['view-' . $post['ID']]['post_content'], $attachment->guid );
+									if ($poscont !== false) {
+										$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_post_content'] = $attachment->guid;
+										if ( 'module_manager' == $mode ) {
+											$hash_data['post_content'] = str_replace($attachment->guid, md5($imdata), $hash_data['post_content']);
+										}
+									}
+									foreach ($imthumbs as $thumbsize => $thumbdata) {
+										if (!empty($thumbdata) && isset($thumbdata[0])) {
+											$pos = strpos( $data['views']['view-' . $post['ID']]['post_content'], $thumbdata[0] );
+											if ($pos !== false) {
+												$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['on_post_content_sizes'][$thumbsize] = $thumbdata[0];
+												if ( 'module_manager' == $mode ) {
+													$hash_data['post_content'] = str_replace($thumbdata[0], md5($imdata) . '_' . $thumbsize, $hash_data['post_content']);
+												}
 											}
 										}
 									}
@@ -651,60 +736,63 @@ function wpv_admin_export_selected_data( $items, $type = 'view', $mode = 'xml' )
 						if ( $attachments ) {
 							$post_data['attachments'] = array();
 							foreach ( $attachments as $attachment ) {
-								$post_data['attachments']['attach_'.$attachment->ID] = array();
-								$post_data['attachments']['attach_'.$attachment->ID]['title'] = $attachment->post_title;
-								$post_data['attachments']['attach_'.$attachment->ID]['content'] = $attachment->post_content;
-								$post_data['attachments']['attach_'.$attachment->ID]['excerpt'] = $attachment->post_excerpt;
-								$post_data['attachments']['attach_'.$attachment->ID]['status'] = $attachment->post_status;
-								$post_data['attachments']['attach_'.$attachment->ID]['alt'] = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
-								$imdata = base64_encode(file_get_contents($attachment->guid));
-								$post_data['attachments']['attach_'.$attachment->ID]['data'] = $imdata;
-								preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
-								$post_data['attachments']['attach_'.$attachment->ID]['filename'] = basename( $matches[0] );
-								$imthumbs = array();
-								foreach ($attached_images_sizes as $ts) {
-									$imthumbs[$ts] = wp_get_attachment_image_src( $attachment->ID, $ts );
-								}
-								// Adjust images in CSS
-								if ( isset( $template_extra_css ) ) {
-									$pos = strpos( $template_extra_css, $attachment->guid );
-									if ($pos !== false) {
-										$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_css'] = $attachment->guid;
+								$image_type = get_post_mime_type($attachment->ID);	
+								if ( $image_type && ($image_type == 'image/jpeg' || $image_type == 'image/png' || $image_type == 'image/gif') ){
+									$post_data['attachments']['attach_'.$attachment->ID] = array();
+									$post_data['attachments']['attach_'.$attachment->ID]['title'] = $attachment->post_title;
+									$post_data['attachments']['attach_'.$attachment->ID]['content'] = $attachment->post_content;
+									$post_data['attachments']['attach_'.$attachment->ID]['excerpt'] = $attachment->post_excerpt;
+									$post_data['attachments']['attach_'.$attachment->ID]['status'] = $attachment->post_status;
+									$post_data['attachments']['attach_'.$attachment->ID]['alt'] = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
+									$imdata = base64_encode(file_get_contents($attachment->guid));
+									$post_data['attachments']['attach_'.$attachment->ID]['data'] = $imdata;
+									preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
+									$post_data['attachments']['attach_'.$attachment->ID]['filename'] = basename( $matches[0] );
+									$imthumbs = array();
+									foreach ($attached_images_sizes as $ts) {
+										$imthumbs[$ts] = wp_get_attachment_image_src( $attachment->ID, $ts );
 									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $template_extra_css, $thumbdata[0] );
-											if ($pos !== false) {
-												$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_css_sizes'][$thumbsize] = $thumbdata[0];
-											}
-										}
-									}
-								}
-								// Adjust images in JS
-								if ( isset( $template_extra_js ) ) {
-									$posjs = strpos( $template_extra_js, $attachment->guid );
-									if ($posjs !== false) {
-										$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_js'] = $attachment->guid;
-									}
-									foreach ($imthumbs as $thumbsize => $thumbdata) {
-										if (!empty($thumbdata) && isset($thumbdata[0])) {
-											$pos = strpos( $template_extra_js, $thumbdata[0] );
-											if ($pos !== false) {
-												$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_js_sizes'][$thumbsize] = $thumbdata[0];
-											}
-										}
-									}
-								}
-								//Adjust images in content
-								$poscont = strpos( $post_data['post_content'], $attachment->guid );
-								if ($poscont !== false) {
-									$post_data['attachments']['attach_'.$attachment->ID]['on_post_content'] = $attachment->guid;
-								}
-								foreach ($imthumbs as $thumbsize => $thumbdata) {
-									if (!empty($thumbdata) && isset($thumbdata[0])) {
-										$pos = strpos( $post_data['post_content'], $thumbdata[0] );
+									// Adjust images in CSS
+									if ( isset( $template_extra_css ) ) {
+										$pos = strpos( $template_extra_css, $attachment->guid );
 										if ($pos !== false) {
-											$post_data['attachments']['attach_'.$attachment->ID]['on_post_content_sizes'][$thumbsize] = $thumbdata[0];
+											$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_css'] = $attachment->guid;
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $template_extra_css, $thumbdata[0] );
+												if ($pos !== false) {
+													$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_css_sizes'][$thumbsize] = $thumbdata[0];
+												}
+											}
+										}
+									}
+									// Adjust images in JS
+									if ( isset( $template_extra_js ) ) {
+										$posjs = strpos( $template_extra_js, $attachment->guid );
+										if ($posjs !== false) {
+											$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_js'] = $attachment->guid;
+										}
+										foreach ($imthumbs as $thumbsize => $thumbdata) {
+											if (!empty($thumbdata) && isset($thumbdata[0])) {
+												$pos = strpos( $template_extra_js, $thumbdata[0] );
+												if ($pos !== false) {
+													$post_data['attachments']['attach_'.$attachment->ID]['on_meta_html_js_sizes'][$thumbsize] = $thumbdata[0];
+												}
+											}
+										}
+									}
+									//Adjust images in content
+									$poscont = strpos( $post_data['post_content'], $attachment->guid );
+									if ($poscont !== false) {
+										$post_data['attachments']['attach_'.$attachment->ID]['on_post_content'] = $attachment->guid;
+									}
+									foreach ($imthumbs as $thumbsize => $thumbdata) {
+										if (!empty($thumbdata) && isset($thumbdata[0])) {
+											$pos = strpos( $post_data['post_content'], $thumbdata[0] );
+											if ($pos !== false) {
+												$post_data['attachments']['attach_'.$attachment->ID]['on_post_content_sizes'][$thumbsize] = $thumbdata[0];
+											}
 										}
 									}
 								}

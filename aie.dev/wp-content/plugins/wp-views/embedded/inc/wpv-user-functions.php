@@ -1,6 +1,8 @@
 <?php
 
-include_once WPV_PATH_EMBEDDED . '/common/wpv-filter-date-embedded.php';
+if (!function_exists('wpv_filter_parse_date')) {
+	include_once WPV_PATH_EMBEDDED . '/common/wpv-filter-date-embedded.php';
+}
 
 $no_parameter_found = 'WPV_NO_PARAM_FOUND';
 

@@ -1,7 +1,7 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/fields/checkbox.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/fields/checkbox.php $
  * $LastChangedDate: 2014-05-19 13:20:06 +0000 (Mon, 19 May 2014) $
  * $LastChangedRevision: 22450 $
  * $LastChangedBy: marcin $

@@ -305,16 +305,15 @@ DDLayout.NewLayoutDialogPostTypesHandler = function($)
 
 			if( open === false )
 			{
-				$(this).find('i.icon-caret-down').remove();
-				if( !$('.icon-caret-up').is('i') ) $(this).append('<i class="icon-caret-up" />');
+
+                $('i.icon-caret-down').removeClass('icon-caret-down').addClass('icon-caret-up');
 				dropdown_list.slideDown(function(){
 					open = true;
 				});
 			}
 			else if( open === true )
 			{
-				$(this).find('i.icon-caret-up').remove();
-				if( !$('.icon-caret-down').is('i') ) $(this).append('<i class="icon-caret-down" />');
+                $('i.icon-caret-up').removeClass('icon-caret-up').addClass('icon-caret-down')
 				dropdown_list.slideUp(function(){
 					open = false;
 				});

@@ -2,7 +2,7 @@
 /*
  * Post relationship class.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/classes/relationship.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/classes/relationship.php $
  * $LastChangedDate: 2014-05-05 11:46:14 +0000 (Mon, 05 May 2014) $
  * $LastChangedRevision: 22006 $
  * $LastChangedBy: marcin $

@@ -23,36 +23,9 @@ jQuery(function($) {
 		if( DDLayout.ddl_admin_page !== undefined )
 		DDLayout.ddl_admin_page.is_colorbox_opened = true;
 
-		var handleEnterKey = function() {
-			// Trigger save button click when ENTER key is pressed
-			$(document).on('keyup.colorbox', function(e) {
-				var keycode = parseInt((e.keyCode ? e.keyCode : e.which),10);
-				if (keycode === 13 && jQuery(e.target).is('textarea') !== true ) {
-					$('#cboxWrapper .js-save-dialog-settings').trigger('click');
-				}
-			});
 
-			$(document).trigger('ddl-editor-dialog-complete');
-		};
-		handleEnterKey();
+		$(document).trigger('ddl-editor-dialog-complete');
 
-		// Unbind ENTER key when select2 has focus
-		$(document).on('select2-focus', function() {
-			$(document).off('keyup.colorbox');
-		});
-
-		// Bind ENTER key again in blur
-		$(document).on('select2-blur', function() {
-			handleEnterKey();
-		});
-
-		// Disable enter key for some inputs
-		$('.js-edit-css-id,#ddl-default-edit-cell-name,#ddl-row-edit-row-name').focus( function () {
-			$(document).off('keyup.colorbox');
-		});
-		$('.js-edit-css-id,#ddl-default-edit-cell-name,#ddl-row-edit-row-name').blur( function () {
-			handleEnterKey();
-		});
 		
 		$('#cboxWrapper .js-select2').select2({
 			'width': 'resolve'
@@ -89,6 +62,7 @@ jQuery(function($) {
 		if( DDLayout.ddl_admin_page !== undefined )
 		DDLayout.ddl_admin_page.is_colorbox_opened = false;
 		$(this).trigger('color_box_closes', event);
+        WPV_Toolset.Utils.eventDispatcher.trigger('color_box_closed', event, this );
 	});
 
 

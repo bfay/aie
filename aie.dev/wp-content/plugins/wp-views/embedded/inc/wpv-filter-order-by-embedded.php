@@ -138,85 +138,40 @@ function wpv_filter_get_order_arg($query, $view_settings) {
     $orderby_meta = array();
     // See if filtering by custom fields and sorting by custom field too
     if (isset($query['meta_key']) && isset($query['meta_query'])) {
-	$thirdsorting = true; // flag to know if sorting by one of the filtering custom fields or by another custom field
-	// See if the orderby is the same as a custom field filter
-        foreach($query['meta_query'] as $index => $meta) {
-            if (isset($meta['key']) && ($meta['key'] == $query['meta_key'])) {
-                // Found it.
-                // We need to add a post_orderby filter directly to sort by the same field.
-                $thirdsorting = false;
-                $orderby_meta['order_by'] = $query['orderby'];
-                $orderby_meta['meta_key'] = $query['meta_key'];
-                $orderby_meta['order'] = $query['order'];
-                unset($query['meta_key']);
-                add_filter('posts_where', 'wpv_post_where_meta', 10, 2);
-                add_filter('posts_orderby', 'wpv_post_order_by_meta', 10, 2);
-                break;
-            }
-        }
-        if ($thirdsorting) { // if filtering by custom fields and sorting by another custom field
-		$refinedquery = $query;
-		unset($refinedquery['orderby']);
-		unset($refinedquery['meta_key']);
-		$refinedquery['posts_per_page'] = -1; // remove the limit in the main query to get all the relevant IDs
-		// first query only for filtering
-		$filtered_query = new WP_Query( $refinedquery );
-		$filtered_ids = array();
-		while ( $filtered_query->have_posts() ) :
-			$filtered_query->next_post();
-			$filtered_ids[] = $filtered_query->post->ID;
-		endwhile;
-		// remove the fields filter from the original query and add the filtered IDs
-		unset($query['meta_query']);
-		// we can replace the $query['post__in'] argument because it was applied on the auxiliar query before
-		if ( count( $filtered_ids ) ) {
-			$query['post__in'] = $filtered_ids;
-		} else {
-			$query['post__in'] = array(-1);
-		}
+		// We only need to do something if the relation is OR
+		// When the relation is AND it does not matter if we sort by one of the filtering fields, because the filter will add an existence clause anyway
+		// When the relation is OR, the natural query will generate an OR clause on the sorting field existence:
+		// - if it is one of the filtering fields, it will make its clause useless because just existence will make it pass
+		// - if it is not one of the filtering fields it will add an OR clause on this field existence that might pass for results that do not match any of the other requirements
+		// See also: https://core.trac.wordpress.org/ticket/25538
+		if ( isset( $query['meta_query']['relation'] ) && $query['meta_query']['relation'] == 'OR'  ) {
+			$refinedquery = $query;
+			unset($refinedquery['orderby']);
+			unset($refinedquery['meta_key']);
+			$refinedquery['posts_per_page'] = -1; // remove the limit in the main query to get all the relevant IDs
+			$refinedquery['fields'] = 'ids';
+			// first query only for filtering
+			$filtered_query = new WP_Query( $refinedquery );
+			$filtered_ids = array();
+			if ( is_array( $filtered_query->posts ) && !empty( $filtered_query->posts ) ) {
+				$filtered_ids = $filtered_query->posts;
+			}
+			// remove the fields filter from the original query and add the filtered IDs
+			unset($query['meta_query']);
+			// we can replace the $query['post__in'] argument because it was applied on the auxiliar query before
+			if ( count( $filtered_ids ) ) {
+				$query['post__in'] = $filtered_ids;
+			} else {
+				$query['post__in'] = array('0');
+			}
         }
         
     }
     return $query;
 }
 
-function wpv_post_where_meta($where, $query) {
-    global $orderby_meta;
-    if (isset($orderby_meta['meta_key'])) {
-        $regex = '/([^\(]*)\\.meta_key\s+=\s+\'' . $orderby_meta['meta_key'] . '\'/siU';
-        if(preg_match($regex, $where, $matches)) {
-            $orderby_meta['join'] = $matches[1];
-        }
-    }
-
-    remove_filter('posts_where', 'wpv_post_where_meta', 10, 2);
-
-    return $where;
-}
-
-function wpv_post_order_by_meta($orderby, $query) {
-    global $orderby_meta, $wpdb;
-    if (isset($orderby_meta['meta_key'])) {
-        
-        $order_by_value = 'meta_value';
-        if ($orderby_meta['order_by'] == 'meta_value_num') {
-            $order_by_value .= '+0';
-        }
-
-        // We need to set a specific order.        
-        $post_ids = $wpdb->get_col("SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key='{$orderby_meta['meta_key']}' ORDER BY {$order_by_value} {$orderby_meta['order']}");
-        $orderby = 'CASE ' . $wpdb->prefix . 'posts.ID ';
-        for ($i = 0; $i < count($post_ids); $i++) {
-            $orderby .= " WHEN '" . $post_ids[$i] . "' THEN " . $i;
-        }
-        $orderby .= ' ELSE ' . $i;
-        $orderby .= ' END, id';
-        
-    }
-    
-    remove_filter('posts_orderby', 'wpv_post_order_by_meta');
-    return $orderby;
-}
+// TODO review this function: a Types field created outside Types will not pass this test
+// TODO use a common function to check Types field types
 
 function _wpv_is_numeric_field($field_name) {
     $opt = get_option('wpcf-fields');

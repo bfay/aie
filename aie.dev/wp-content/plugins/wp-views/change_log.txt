@@ -1,4 +1,45 @@
 -------------------------------------------------------------------------------------------------------------------
+Views 1.6.2
+	- New: create a standalone plugin out of the Embedded Views directory
+		* add read-only summary pages for every Views object, accessible when this new plugin is activated
+		* move a bunch of files to the embedded side (CodeMirror, summaries, admin messages, CSS files, etc)
+	- New: add option to Views listing users so we can get users of any role
+	- New: filter by post author: set by the author of the current page
+	- New: admin message when a View lists posts but no post type has been selected
+	- New: button-primary-toolset styling button
+	- New: execute an action before and after each element on a View loop
+	- Parametric search:
+		* add counters to each option of each input based on a new format="..." attribute using %%NAME%% and %%COUNT%% as placeholders
+		* remove one remove_filter call that broke dependency when the relevant View was not the first on a page
+		* fix post status arguments: when querying inside an AJAX call, they should not return protected statuses by default
+		* save a meta_query filter when the filter by custom field uses the IN comparison and one of the passed values is empty (meaning we should return all results)
+		* fix filters getting multiple values (multi-select and checkboxes) and AJAX pagination
+		* fix filter by post relationship: sometimes, the default value is 0 and not array(0)
+		* fix adding a filter by a custom field created outside Types
+		* fix filters by a taxonomy on multisite
+		* stop rollover if set when selecting an option of the form
+		* fix nested Views
+	- Fix: trashing flow for Content Templates and WordPress Archives is cleaner and leaves no traces
+	- Fix: Views Media Manager can now handle BMP and TIFF files
+	- Fix: normalize the output so it will return all post types in that case
+	- Fix: security issue - force users to register valid functions used inside wpv-if evaluations
+	- Fix: better manage functions returning a numeric 1 inside wpv-if evaluations
+	- Fix: move automatic registering of strings for WPML to the init hook, as before that the current user capabilities are not reliable
+	- Fix: do not use -1 as the ID in post__in argument to get an empty query: use a 0 instead
+	- Fix: do not use -1 as the ID in include argument to get an empty users query: use a 0 instead
+	- Optimization: better create View popup
+	- Optimization: better parametric search add filter popup
+	- Optimization: better summary messages
+	- Compatibility: Layouts
+		* fix CodeMirror on the inline Content Template editor
+		* fix CodeMirror on all the HTML textareas on Internet Explorer
+	- Compatibility: Module Manager
+		* link to read-only summaries or edit screens on installed items in the Module Library tab
+	- Update: CodeMirror to its latest release
+	- Clean: remove a great bunch of legacy deprecated code
+	- Experimental: "limit" and "offset" Views shortcode attributes
+
+-------------------------------------------------------------------------------------------------------------------
 Version 1.6.1
 	- New: general View setting to disable frontend edit links to Views objects
 	- New: better copy on the parametric search popup

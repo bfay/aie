@@ -53,19 +53,58 @@
 	}
 
 	/* .h-lt-X classes are added dynamicaly to the HTML tag. See more details in dd_layouts_common_scripts.js */
-	.h-lt-1100 .ddl-dialog-content { max-height: 870px; }
-	.h-lt-1050 .ddl-dialog-content { max-height: 820px; }
-	.h-lt-1000 .ddl-dialog-content { max-height: 770px; }
-	.h-lt-950 .ddl-dialog-content { max-height: 720px; }
-	.h-lt-900 .ddl-dialog-content { max-height: 670px; }
-	.h-lt-850 .ddl-dialog-content { max-height: 620px; }
-	.h-lt-800 .ddl-dialog-content { max-height: 570px; }
-	.h-lt-750 .ddl-dialog-content { max-height: 520px; }
-	.h-lt-700 .ddl-dialog-content { max-height: 470px; }
-	.h-lt-650 .ddl-dialog-content { max-height: 420px; }
-	.h-lt-600 .ddl-dialog-content { max-height: 370px; }
-	.h-lt-550 .ddl-dialog-content { max-height: 320px; }
-	.h-lt-500 .ddl-dialog-content { max-height: 220px; }
+	.h-lt-1100 .ddl-dialog-content,
+	.h-lt-1100 .layouts-views-loading {
+		max-height: 870px;
+	}
+	.h-lt-1050 .ddl-dialog-content,
+	.h-lt-1050 .layouts-views-loading {
+		max-height: 820px;
+	}
+	.h-lt-1000 .ddl-dialog-content,
+	.h-lt-1000 .layouts-views-loading {
+		max-height: 770px;
+	}
+	.h-lt-950 .ddl-dialog-content,
+	.h-lt-950 .layouts-views-loading {
+		max-height: 720px;
+	}
+	.h-lt-900 .ddl-dialog-content,
+	.h-lt-900 .layouts-views-loading{
+		max-height: 670px;
+	}
+	.h-lt-850 .ddl-dialog-content,
+	.h-lt-850 .layouts-views-loading {
+		max-height: 620px;
+	}
+	.h-lt-800 .ddl-dialog-content,
+	.h-lt-800 .layouts-views-loading {
+		max-height: 570px;
+	}
+	.h-lt-750 .ddl-dialog-content,
+	.h-lt-750 .layouts-views-loading {
+		max-height: 520px;
+	}
+	.h-lt-700 .ddl-dialog-content,
+	.h-lt-700 .layouts-views-loading {
+		max-height: 470px;
+	}
+	.h-lt-650 .ddl-dialog-content,
+	.h-lt-650 .layouts-views-loading {
+		max-height: 420px;
+	}
+	.h-lt-600 .ddl-dialog-content,
+	.h-lt-600 .layouts-views-loading {
+		max-height: 370px;
+	}
+	.h-lt-550 .ddl-dialog-content,
+	.h-lt-550 .layouts-views-loading {
+		max-height: 320px;
+	}
+	.h-lt-500 .ddl-dialog-content,
+	.h-lt-500 .layouts-views-loading {
+		max-height: 220px;
+	}
 
 	.ddl-dialog-content::-webkit-scrollbar {
 		width: 12px;
@@ -100,6 +139,7 @@
 		/* Dialog tabs */
 		.ddl-dialog .ui-tabs-nav {
 			border-bottom: 1px solid #ddd;
+            overflow: hidden;
 		}
 
 			.ddl-dialog .ui-tabs-nav li {
@@ -112,6 +152,7 @@
 				border: 1px solid #ddd;
 				border-radius: 3px 3px 0 0;
 				background: #eee;
+                float:left;
 			}
 		   .ddl-dialog .ui-tabs-nav .ui-tabs-active {
 				border-bottom: 1px solid #fff;
@@ -128,6 +169,18 @@
 			border-left: 1px solid #ddd;
 			padding: 10px 0 0 10px;
 		}
+		
+		.ddl-popup-tab-full {
+			margin-top: -14px;
+			margin-bottom: 5px;
+			border: 1px solid #ddd;
+			padding: 10px 0 0 10px;
+		}
+		
+		.ddl-tab-right {
+			float: right !important;
+		}
+		
 		/* Dialog tabs END */
 
 		.ddl-video-toolbar {

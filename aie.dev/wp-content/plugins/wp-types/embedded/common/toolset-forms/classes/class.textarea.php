@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.textarea.php $
- * $LastChangedDate: 2014-06-03 17:25:39 +0000 (Tue, 03 Jun 2014) $
- * $LastChangedRevision: 23085 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.textarea.php $
+ * $LastChangedDate: 2014-07-10 08:46:40 +0000 (Thu, 10 Jul 2014) $
+ * $LastChangedRevision: 24820 $
+ * $LastChangedBy: francesco $
  *
  */
 require_once 'class.field_factory.php';
@@ -18,6 +18,8 @@ class WPToolset_Field_Textarea extends FieldFactory
 {
 
     public function metaform() {
+        $attributes = $this->getAttr();
+        
         $metaform = array();
         $metaform[] = array(
             '#type' => 'textarea',
@@ -27,6 +29,7 @@ class WPToolset_Field_Textarea extends FieldFactory
             '#value' => $this->getValue(),
             '#validate' => $this->getValidationData(),
             '#repetitive' => $this->isRepetitive(),
+            '#attributes' => $attributes
         );
         return $metaform;
     }

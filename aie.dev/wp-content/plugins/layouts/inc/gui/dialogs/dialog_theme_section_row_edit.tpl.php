@@ -72,6 +72,6 @@ $sections = $wpddlayout->registered_theme_sections->get_theme_sections();
 	<div class="info-box info-box-info js-info-box" data-cell-type="bs-header-cell">
 		<i class="icon-remove js-remove-info-box"></i>
 		<div class="info-box-header"><?php _e('Theme section description','ddl-layouts') ?></div>
-		<p><%- description %></p>
+		<p>{{ description }}</p>
 	</div>
 </script>

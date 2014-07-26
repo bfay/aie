@@ -9,6 +9,12 @@ $fields_access = new Post_Fields_Access;
  *
  * @author Gen gen.i@icanlocalize.com
  * @since Types 1.3
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/usermeta-init.php $
+ * $LastChangedDate: 2014-07-08 13:48:33 +0000 (Tue, 08 Jul 2014) $
+ * $LastChangedRevision: 24731 $
+ * $LastChangedBy: marcin $
+ *
  */
 function wpcf_admin_menu_edit_user_fields_hook() {
     do_action( 'wpcf_admin_page_init' );
@@ -449,67 +455,7 @@ function types_render_usermeta( $field_id, $params, $content = null, $code = '' 
     // Get field
     $field = wpcf_fields_get_field_by_slug( $field_id, 'wpcf-usermeta' );
 
-    //If Access plugin activated
-    if ( function_exists( 'wpcf_access_register_caps' ) ) {
-        $forbidden_self = false;
-        $forbidden_other = false;
-        $forbidden = false;
-        $cache_group = 'types_access_cache_forbidden';
-		$cache_key = md5( 'access::types_render_usermeta' . $field_id );
-		$cached_object = wp_cache_get( $cache_key, $cache_group );
-		$current_user_object = wp_get_current_user();
-		if ( false === $cached_object ) {
-			
-			require_once WPCF_EMBEDDED_INC_ABSPATH . '/fields.php';
-			$field_groups = wpcf_admin_fields_get_groups_by_field( $field_id,
-					'wp-types-user-group' );
-			if ( !empty( $field_groups ) ) {
-				foreach ( $field_groups as $field_group ) {
-					if ( $user_id == $current_user ) {
-						if ( !current_user_can( 'view_own_on_site_' . $field_group['slug'] ) ) {
-							$forbidden_self = true;
-							$forbidden = true;
-						}
-					} else {
-						if ( !current_user_can( 'view_others_on_site_' . $field_group['slug'] ) ) {
-							$forbidden_other = true;
-							$forbidden = true;
-						}
-					}
-				}
-			}
-			foreach ( $current_user_object->roles as $role ) {
-				if ( $forbidden_self ) {
-					$cache_data[$role]['self'] = 'disallow';
-				} else {
-					$cache_data[$role]['self'] = 'allow';
-				}
-				if ( $forbidden_other ) {
-					$cache_data[$role]['other'] = 'disallow';
-				} else {
-					$cache_data[$role]['other'] = 'allow';
-				}
-			}
-			wp_cache_add( $cache_key, $cache_data, $cache_group );
-		} else {
-			if ( $user_id == $current_user ) {
-				foreach ( $current_user_object->roles as $role ) {
-					if ( is_array( $cached_object ) && isset( $cached_object[$role] ) && is_array( $cached_object[$role] ) && isset( $cached_object[$role]['self'] ) && $cached_object[$role]['self'] == 'disallow' ) {
-						$forbidden = true;
-					}
-				}
-			} else {
-				foreach ( $current_user_object->roles as $role ) {
-					if ( is_array( $cached_object ) && isset( $cached_object[$role] ) && is_array( $cached_object[$role] ) && isset( $cached_object[$role]['other'] ) && $cached_object[$role]['other'] == 'disallow' ) {
-						$forbidden = true;
-					}
-				}
-			}
-		}
-        if ( $forbidden ) {
-			return;
-        }
-    }
+    
     // If field not found return empty string
     if ( empty( $field ) ) {
 
@@ -591,21 +537,24 @@ function types_render_usermeta( $field_id, $params, $content = null, $code = '' 
             return '';
         }
     } else {
-
-        $params['field_value'] = get_user_meta( $user_id,
-                wpcf_types_get_meta_prefix( $field ) . $field['slug'], true );
+        $params['field_value'] = get_user_meta( $user_id, wpcf_types_get_meta_prefix( $field ) . $field['slug'], true );
+        if ( 'select-eye-color' == $params['usermeta'] ) {
+        }
+        /**
+         * get default value for radio && select
+         */
+        if (
+            '' == $params['field_value']
+            && preg_match( '/^(radio|select)$/i', $field['type'] )
+            && array_key_exists( 'default', $field['data']['options'] )
+            && $field['data']['options']['default']
+        ) {
+            $params['field_value'] = $field['data']['options'][$field['data']['options']['default']]['value'];
+        }
         if ( $params['field_value'] == '' && $field['type'] != 'checkbox' ) {
             return '';
         }
         $html = types_render_field_single( $field, $params, $content, $code );
-        //print_r($params);
-        //print "$html <br><br>";
-        /* if ( !empty($params['field_value']) && $field['type'] != 'date' ){
-          $html = types_render_field_single( $field, $params, $content, $code );
-          }
-          if ( $field['type'] == 'date' && !empty($params['field_value']['timestamp']) ){
-          $html = types_render_field_single( $field, $params );
-          } */
     }
 
     // API filter
@@ -783,6 +732,11 @@ function wpcf_admin_user_profile_load_hook( $user ){
 /**
  * Add styles to admin fields groups
  */
+
+add_action('admin_head-profile.php', 'wpcf_admin_fields_usermeta_styles' );
+add_action('admin_head-user-edit.php', 'wpcf_admin_fields_usermeta_styles' );
+add_action('admin_head-user-new.php', 'wpcf_admin_fields_usermeta_styles' );
+
 function wpcf_admin_fields_usermeta_styles(){
 
     if ( !wpcf_is_embedded() ) {
@@ -792,16 +746,17 @@ function wpcf_admin_fields_usermeta_styles(){
     require_once WPCF_EMBEDDED_INC_ABSPATH . '/usermeta.php';
     require_once WPCF_EMBEDDED_INC_ABSPATH . '/fields-post.php';
     require_once WPCF_EMBEDDED_INC_ABSPATH . '/usermeta-post.php';
-
     $groups = wpcf_admin_fields_get_groups( 'wp-types-user-group' );
-    echo '<style type="text/css">';
+    $content = '';
     if ( !empty( $groups ) ) {
         foreach ( $groups as $group ) {
-            echo str_replace( "}", "}\n",
-                    wpcf_admin_get_groups_admin_styles_by_group( $group['id'] ) );
+            $content .= str_replace( "}", '}'.PHP_EOL, wpcf_admin_get_groups_admin_styles_by_group( $group['id'] ) );
+            $content .= PHP_EOL;
         }
     }
-    echo '</style>';
+    if ( $content ) {
+        printf('<style type="text/css">%s</style>%s', $content, PHP_EOL );
+    }
 }
 
 /**
@@ -867,10 +822,10 @@ class Usermeta_Access
         $default_role = 'guest'; //'administrator';
         //List of caps with default permissions
         $usermeta_caps = array(
-            array('view_own_on_site', $default_role, __( 'View own fields on site',
+           /* array('view_own_on_site', $default_role, __( 'View own fields on site',
                         'wpcf' )),
             array('view_others_on_site', $default_role, __( 'View others fields on site',
-                        'wpcf' )),
+                        'wpcf' )),*/
             array('view_own_in_profile', $default_role, __( 'View own fields in profile',
                         'wpcf' )),
             array('modify_own', $default_role, __( 'Modify own fields', 'wpcf' )),
@@ -983,8 +938,8 @@ class Post_Fields_Access
         $default_role = 'guest'; //'administrator';
         //List of caps with default permissions
         $fields_caps = array(
-            array('view_fields_on_site', $default_role, __( 'View Fields On Site',
-                        'wpcf' )),
+            /*array('view_fields_on_site', $default_role, __( 'View Fields On Site',
+                        'wpcf' )),*/
             array('view_fields_in_edit_page', $default_role, __( 'View Fields In Edit Page',
                         'wpcf' )),
             array('modify_fields_in_edit_page', 'author', __( 'Modify Fields In Edit Page',

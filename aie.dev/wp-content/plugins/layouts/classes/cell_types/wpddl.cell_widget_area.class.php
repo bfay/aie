@@ -33,11 +33,12 @@ class WPDD_layout_cell_widget_area_factory extends WPDD_layout_cell_factory{
 		$template['icon-css'] = 'icon-cogs';
 		$template['preview-image-url'] = WPDDL_RES_RELPATH . '/images/widget-area.png';
 		$template['name'] = __('Widget Area', 'ddl-layouts');
-		$template['description'] = __('Displays a widget area.', 'ddl-layouts');
+		$template['description'] = __('A cell that displays a WordPress Widget area.', 'ddl-layouts');
 		$template['button-text'] = __('Assign Widget Area Box', 'ddl-layouts');
 		$template['dialog-title-create'] = __('Create a new Widget Area Cell', 'ddl-layouts');
 		$template['dialog-title-edit'] = __('Edit Widget Area Cell', 'ddl-layouts');
 		$template['dialog-template'] = $this->_dialog_template();
+		$template['category'] = __('WordPress UI', 'ddl-layouts');
 		return $template;
 	}
 
@@ -45,10 +46,10 @@ class WPDD_layout_cell_widget_area_factory extends WPDD_layout_cell_factory{
 		ob_start();
 		?>
 			<div class="cell-content">
-				<p class="cell-name"><%- name %></p>
-			<% if( content.widget_area ){ %>
-				<div class="cell-preview"><%- content.widget_area %></div>
-			<% } %>
+				<p class="cell-name">{{ name }}</p>
+			<# if( content.widget_area ){ #>
+				<div class="cell-preview">{{ content.widget_area }}</div>
+			<# } #>
 			</div>
 		<?php
 		return ob_get_clean();

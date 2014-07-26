@@ -64,6 +64,20 @@ class WPDDL_Options_Manager{
 		return false;
 	}
 
+	public function delete_option( $option )
+	{
+		$options = $this->get_options( );
+
+		if( isset( $options[$option] ) )
+		{
+			unset( $options[$option] );
+			$this->options = $options;
+
+			return $this->save_options( );
+		}
+		return false;
+	}
+
 	public function remove_options_item( $sub, $value, $option = WPDDL_GENERAL_OPTIONS )
 	{
 			$options = $this->get_options( $option );
@@ -77,7 +91,7 @@ class WPDDL_Options_Manager{
 
 	public  function update_options( $option, $data, $overwrite = false )
 	{
-		if ($overwrite) {
+		if ( $overwrite && isset($this->options[$option]) ) {
 			unset($this->options[$option]);
 		}
 		
@@ -88,13 +102,6 @@ class WPDDL_Options_Manager{
 		}
 
 		return $this->save_options( );
-	}
-
-	public function get_cached_options( $option = '' )
-	{
-		if( $option ) return $this->options[$option];
-
-		return $this->options;
 	}
 
 	public function options_get_name()

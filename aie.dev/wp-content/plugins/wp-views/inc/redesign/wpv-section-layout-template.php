@@ -18,7 +18,7 @@ function add_view_layout_template( $view_settings, $view_layout_settings, $view_
         for ( $i=0; $i<$attached_templates; $i++ ) {
 			if ( is_numeric( $templates[$i] ) ) {
 				$template_post = get_post( $templates[$i] );
-				if ( is_object( $template_post ) ) {
+				if ( is_object( $template_post ) && $template_post->post_status  == 'publish' && $template_post->post_type == 'view-template' ) {
 					$template_list .= wpv_list_view_ct_item( $template_post, $templates[$i], $view_id );
 				} else {
 					unset( $valid_templates[$i] ); // remove Templates that might have been deleted or are missing

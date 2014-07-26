@@ -14,7 +14,7 @@ if( !function_exists('register_menu_cell_init') )
 					'name'						=> __('Menu', 'ddl-layouts'),
 					'icon-css'					=>	'icon-list',
 					'description'				=> __('Displays Bootstrap\'s compatible vertical or horizontal menu', 'ddl-layouts'),
-					'category'					=> __('Standard WordPress elements', 'ddl-layouts'),
+					'category'					=> __('WordPress UI', 'ddl-layouts'),
 					'category-icon-css'			=> 'icon-sun',
 					'button-text'				=> __('Assign menu cell', 'ddl-layouts'),
 					'dialog-title-create'		=> __('Create a new menu cell', 'ddl-layouts'),

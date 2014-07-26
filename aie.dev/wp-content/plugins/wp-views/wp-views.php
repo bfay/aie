@@ -1,16 +1,16 @@
 <?php
 /*
 Plugin Name: WP Views
-Plugin URI: http://wp-types.com/
+Plugin URI: http://wp-types.com/?utm_source=viewsplugin&utm_campaign=views&utm_medium=plugins-list-full-version&utm_term=Visit plugin site
 Description: When you need to create lists of items, Views is the solution. Views will query the content from the database, iterate through it and let you display it with flair. You can also enable pagination, search, filtering and sorting by site visitors.
 Author: ICanLocalize
 Author URI: http://wpml.org
-Version: 1.6.1
+Version: 1.6.2
 */
 
 if(defined('WPV_VERSION')) return;
 
-define('WPV_VERSION', '1.6.1');
+define('WPV_VERSION', '1.6.2');
 define('WPV_PATH', dirname(__FILE__));
 define('WPV_PATH_EMBEDDED', dirname(__FILE__) . '/embedded');
 define('WPV_FOLDER', basename(WPV_PATH));
@@ -22,6 +22,10 @@ if ( ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN ) || is_ssl() ) {
 }
 define('WPV_URL_EMBEDDED', WPV_URL . '/embedded');
 
+// load on the go resources
+require_once WPV_PATH_EMBEDDED . '/onthego-resources/onthegosystems-branding-loader.php';
+ont_set_on_the_go_systems_uri_and_start( WPV_URL_EMBEDDED . '/onthego-resources/' );
+
 // Module Manager integration
 require WPV_PATH_EMBEDDED . '/inc/wpv-module-manager.php';
 
@@ -30,9 +34,10 @@ if (!defined('EDITOR_ADDON_RELPATH')) {
 }
 
 require WPV_PATH . '/inc/constants.php';
-require WPV_PATH . '/inc/wpv-admin-messages.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-admin-messages.php';
 require WPV_PATH_EMBEDDED . '/inc/functions-core-embedded.php';
 require WPV_PATH . '/inc/functions-core.php';
+require WPV_PATH . '/inc/wpv-deprecated.php';
 require WPV_PATH . '/inc/wpv-admin-ajax.php';
 require WPV_PATH . '/inc/wpv-admin-ajax-layout-wizard.php';
 if ( !function_exists( 'wplogger' ) ) {
@@ -51,11 +56,15 @@ require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes-gui.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-meta-html-embedded.php';
 
 require WPV_PATH_EMBEDDED . '/inc/wpv-widgets.php';
-require WPV_PATH . '/inc/wpv-layout.php'; // DEPRECATED test NOTE maybe Victor is using something from here
-require WPV_PATH . '/inc/wpv-filter-controls.php'; // DEPRECATED test
-require WPV_PATH . '/inc/wpv-admin-changes.php';
+require WPV_PATH . '/inc/wpv-admin-changes.php';// Review contents, there might be DEPRECATED things
 require WPV_PATH_EMBEDDED . '/inc/wpv-layout-embedded.php';
-require WPV_PATH . '/inc/wpv-filter.php'; // DEPRECATED test
+
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-types-embedded.php';// surely not needed here at all
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-post-types-embedded.php';// surely not needed here at all
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-taxonomy-embedded.php';// surely not needed here at all
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-order-by-embedded.php';// surely not needed here at all
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-limit-embedded.php';// surely not needed here at all
+
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-pagination-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-archive-loop.php';
@@ -99,10 +108,9 @@ require_once( WPV_PATH . '/inc/redesign/wpv-content-templates-listing-page.php')
 require_once( WPV_PATH . '/inc/redesign/wpv-archive-listing-page.php');
 require_once( WPV_PATH . '/inc/wpv-archive-add-edit.php');
 
-//if (is_admin()) {
-    require WPV_PATH_EMBEDDED . '/inc/wpv-import-export-embedded.php';
-    require WPV_PATH . '/inc/wpv-import-export.php';
-//}
+//Including file for export/import
+require WPV_PATH_EMBEDDED . '/inc/wpv-import-export-embedded.php';
+require WPV_PATH . '/inc/wpv-import-export.php';
     
 require WPV_PATH_EMBEDDED . '/inc/wpv-condition.php';
 
@@ -114,6 +122,9 @@ $WP_Views = new WP_Views_plugin;
 require WPV_PATH . '/inc/views-templates/functions-templates.php';
 require WPV_PATH . '/inc/views-templates/wpv-template-plugin.class.php';
 $WPV_templates = new WPV_template_plugin();
+
+require WPV_PATH_EMBEDDED . '/inc/wpv-summary-embedded.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-readonly-embedded.php';
 
 register_activation_hook(__FILE__, 'wpv_views_plugin_activate');
 register_deactivation_hook(__FILE__, 'wpv_views_plugin_deactivate');

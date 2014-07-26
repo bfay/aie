@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.checkbox.php $
- * $LastChangedDate: 2014-06-05 12:29:27 +0000 (Thu, 05 Jun 2014) $
- * $LastChangedRevision: 23216 $
- * $LastChangedBy: francesco $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.checkbox.php $
+ * $LastChangedDate: 2014-07-17 03:25:34 +0000 (Thu, 17 Jul 2014) $
+ * $LastChangedRevision: 25032 $
+ * $LastChangedBy: bruce $
  *
  */
 require_once 'class.field_factory.php';
@@ -19,19 +19,34 @@ class WPToolset_Field_Checkbox extends FieldFactory
     public function metaform()
     {
         global $post;
-
         $value = $this->getValue();
         $data = $this->getData();
-
+        $checked = null;
         /**
-         * turn off autocheck for saved posts
+         * autocheck for new posts
          */
-        if (isset($post) && 'auto-draft' != $post->post_status && empty( $data['value'] )) {
-            $data['checked'] = false;
+        if (isset($post) && 'auto-draft' == $post->post_status && array_key_exists( 'checked', $data ) && $data['checked']) {
+            $checked = true;
+        }
+        /**
+         * is checked?
+         */
+        if ( isset($data['options']) && array_key_exists( 'checked', $data['options'] ) ) {
+            $checked = $data['options']['checked'];
+        }
+        if ( array_key_exists('default_value', $data) && $value == $data['default_value'] ) {
+            $checked = true;
         }
         
-        $form = array();
-        $form[] = array(
+        // Comment out broken code. This tries to set the previous state after validation fails
+        //if (!$checked&&$this->getValue()==1) {
+        //    $checked=true;
+        //}
+        
+        /**
+         * metaform
+         */
+        $form = array(
             '#type' => 'checkbox',
             '#value' => $value,
             '#default_value' => array_key_exists( 'default_value', $data )? $data['default_value']:null,
@@ -39,9 +54,9 @@ class WPToolset_Field_Checkbox extends FieldFactory
             '#title' => $this->getTitle(),
             '#validate' => $this->getValidationData(),
             '#after' => '<input type="hidden" name="_wptoolset_checkbox[' . $this->getId() . ']" value="1" />',
-            '#checked' => isset($data['options']) ? (array_key_exists( 'checked', $data['options'] ) ? $data['options']['checked']:null) : null,
+            '#checked' => $checked,
             '#repetitive' => $this->isRepetitive(),
         );
-        return $form;
+        return array($form);
     }
 }

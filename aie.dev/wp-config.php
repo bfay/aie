@@ -16,13 +16,13 @@
 
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define('DB_NAME', 'aieDB8s0ve');
+define('DB_NAME', 'aieDBltk60');
 
 /** MySQL database username */
-define('DB_USER', 'aieDB8s0ve');
+define('DB_USER', 'aieDBltk60');
 
 /** MySQL database password */
-define('DB_PASSWORD', 'VPYVgpgpmx');
+define('DB_PASSWORD', '5jEPv5YmEP');
 
 /** MySQL hostname */
 define('DB_HOST', 'localhost');
@@ -42,14 +42,14 @@ define('DB_COLLATE', '');
  *
  * @since 2.6.0
  */
-define('AUTH_KEY',         '~wO15#;.PW9DDL;mtWeaiLS]t+x~hpH]1.<qyP2AAE<;bPXXeDLx*ut+ai;6]bjIQ');
-define('SECURE_AUTH_KEY',  'mpa;*+pDH5.y$PEA;2qPbLP<mximE.JNBjUgjY^v$^7>37{UIMJ>cRVgFzor@c4,>');
-define('LOGGED_IN_KEY',    '+A{A*TIBF3nMUIM,uqfj7{<yQTI0^YcQMBF@cjYc3z,>yQ}0|NCFR0oYcoN|>z,');
-define('NONCE_KEY',        'H9tieO#]~#lDH5iXb2y.uxP;AD2aPTePxmqnM.<y.jAE3.<fPLAE$bYcQyjuyn,');
-define('AUTH_SALT',        'X$yrY}^rF}3,jUcM^ngRszk4|}@cNUFvgVGzoZ}z!rRCJ4oVO8shR|w-k84C:gNH1');
-define('SECURE_AUTH_SALT', 'H52mSaL~te;~xuI2A]bLTDxmW]xqbA{3.TEM6qbP.u8[cNgR|vzk8>@RB1!VGNK~o');
-define('LOGGED_IN_SALT',   '1C_d~p1eSdd~xm_;iPI2miqb{+qE;2.XTM7rXfQ,yj7.{$bMF0jQYJjrb}$uUF@k');
-define('NONCE_SALT',       'L3nMXIM,jqfjA^{$^X637}gFQUJrgnrf>$^>$F374|NCFR0orcoN,>@,kBF4hR[:!');
+define('AUTH_KEY',         'O1dZp1S-[#Op5GCl|UQf<IrnyEf<.nyuAM.{Fg>73c$FBM,3cYjBMIr^mxu6L.;');
+define('SECURE_AUTH_KEY',  '|lKZ|8koJY,7jFfbr3U$y,Nc|!}kzB7J!}YUg7JFn@iuq2T+{<Pq2;Em<Peb.EXUj');
+define('LOGGED_IN_KEY',    '}!4Vk4JvVk0Fv,RUEq^Pf{q*Pf{m+Fv,Qf^br7Q${q]2x5O1S5OtSZ;T6DtWeH');
+define('NONCE_KEY',        'nz}IXy<Xm2HuTi;Ht.Qq^Mb{AmMb<6i+Wl1HhxDS_1dtS~:Pe]9mp5Lx]WlLx#k-');
+define('AUTH_SALT',        'zUv>U|4gzFV!|Rg0Fr!gAQ${bq6Mm$IX.6iyFrQf{Br^Mb${XqLa#l+HW#5ix1Ht');
+define('SECURE_AUTH_SALT', 'nQg62E+<TPb2EAiyPbX*;mxu<7u^$Ef{73b$EAMy3bXjGS~-|do51C-|!NZ1C8g!5');
+define('LOGGED_IN_SALT',   '+et9THx]Wpe;HiXm6P*u<Tm6{Eu<THa]E2w#Wpd:Cs|-KZ[C1h-K8Rp_SHa#9pexH');
+define('NONCE_SALT',       'V0Co@k_:Zp1Gs_OZ|5hOdy>Qf{7jyEU${XnUr!NY,4gr7Nz>Qg}<6iyAP+{Ti;Dm+');
 
 /**#@-*/
 

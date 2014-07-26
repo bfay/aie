@@ -21,5 +21,9 @@ DDLayout.listing.models.ListingGroup = Backbone.Model.extend({
 	is_unassigned:function()
 	{
 		return this.get('id') === 1;
+	},
+	is_loops:function()
+	{
+		return this.get('id') === 4;
 	}
 });

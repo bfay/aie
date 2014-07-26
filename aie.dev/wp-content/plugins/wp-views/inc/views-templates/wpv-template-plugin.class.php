@@ -209,7 +209,7 @@ class WPV_template_plugin extends WPV_template
                         content : "<p><?php _e( "This Content Template will display in the ‘content’ area of ", 'wpv-views' ); ?><?php echo $wpv_list_of_types;?><?php if ( $wpv_list_of_types == ''){_e( " the content types you assign it to.", 'wpv-views' );} ?></p>"+
                         "<p><?php _e( "It starts empty and you should add fields to it. To add fields, click on the V icon below. You can add HTML and CSS to style the fields and design the page template.", 'wpv-views' ); ?></p>",
                         tutorialButtonText : "Content Template documentation", // null as default
-                        tutorialButtonURL : "http://wp-types.com/documentation/user-guides/view-templates/#tutorial", // null as default
+                        tutorialButtonURL : "http://wp-types.com/documentation/user-guides/view-templates/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-content-templatet-page-new-ct&utm_term=Content Template documentation#tutorial", // null as default
                         close: true, // true as default
                         <?php if( $show_option == 1){?>hidden: true, <?php }?>
                         onClose: function(){
@@ -587,12 +587,12 @@ class WPV_template_plugin extends WPV_template
 
     function view_settings_help() { ?>
             <p>
-                <a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/view-templates/"><?php_e( 'What is a Content Template', 'wpv-views' ); ?> &raquo;</a>
+                <a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/view-templates/?utm_source=viewsplugin&utm_campaign=views&utm_medium=content-template-help-link-what-is-ct&utm_term=What is a Content Template"><?php_e( 'What is a Content Template', 'wpv-views' ); ?> &raquo;</a>
             </p>
             <p>
-                <a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/editing-view-templates/"><?php _e( 'Editing instructions', 'wpv-views' )?>  &raquo;</a></p>
+                <a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/editing-view-templates/?utm_source=viewsplugin&utm_campaign=views&utm_medium=content-template-help-link-editing-instructions&utm_term=Editing instructions"><?php _e( 'Editing instructions', 'wpv-views' )?>  &raquo;</a></p>
             <p>
-                <a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/setting-view-templates-for-single-pages/"><?php_e( 'How to apply Content Templates to content', 'wpv-views' ); ?>  &raquo;</a>
+                <a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/setting-view-templates-for-single-pages/?utm_source=viewsplugin&utm_campaign=views&utm_medium=content-template-help-link-how-to-apply&utm_term=How to apply Content Templates to content"><?php_e( 'How to apply Content Templates to content', 'wpv-views' ); ?>  &raquo;</a>
             </p>
         <?php
     }
@@ -916,7 +916,7 @@ class WPV_template_plugin extends WPV_template
                     </ul>
 
                     <p>
-                        <?php _e('Need help?', 'wpv-views'); ?> <a href="http://wp-types.com/documentation/multilingual-sites-with-types-and-views/#3" target="_blank"> <?php _e('Translating Views and Content Templates with WPML', 'wpv-views'); ?> &raquo; </a>
+                        <?php _e('Need help?', 'wpv-views'); ?> <a href="http://wp-types.com/documentation/multilingual-sites-with-types-and-views/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-content-template-wpml-and-views-help&utm_term=Translating Views and Content Templates with WPML#3" target="_blank"> <?php _e('Translating Views and Content Templates with WPML', 'wpv-views'); ?> &raquo; </a>
                     </p>
 
                     <p class="update-button-wrap">
@@ -1485,7 +1485,7 @@ class WPV_template_plugin extends WPV_template
                 echo '<div id="message" class="error">';
                 echo sprintf( __( '<strong>This template includes single-ended shortcodes</strong>. Please close all shortcodes to avoid processing errors. %sRead more%s',
                                 'wpv-views' ),
-                        '<a href="http://wp-types.com/faq/why-do-types-shortcodes-have-to-be-closed/" target="_blank">',
+                        '<a href="http://wp-types.com/faq/why-do-types-shortcodes-have-to-be-closed/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-content-template-not-closed-shortcodes-message&utm_term=Read more" target="_blank">',
                         ' &raquo;</a>' );
                 echo '</div>';
             }

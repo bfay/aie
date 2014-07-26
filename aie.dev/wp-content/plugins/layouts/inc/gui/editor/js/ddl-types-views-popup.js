@@ -23,6 +23,9 @@ DDLayout.typesViewsPopup = function($)
 		self._wpv_insert_translatable_string_popup = window.wpv_insert_translatable_string_popup;
 		window.wpv_insert_translatable_string_popup = self._wpv_insert_translatable_string;
 		
+		// We need special handling for Views search terms as this uses colorbox.
+		self._wpv_insert_search_term_function = window.wpv_insert_search_term_popup;
+		window.wpv_insert_search_term_popup = self._wpv_insert_search_term_popup
 		
 	}
 	
@@ -31,6 +34,7 @@ DDLayout.typesViewsPopup = function($)
 		// restore original functions.
 		
 		window.wpv_insert_translatable_string_popup = self._wpv_insert_translatable_string_popup;
+		window.wpv_insert_search_term_popup = self._wpv_insert_search_term_function;
 		window.wpv_insert_view_form_popup = self._views_insert_form_function;
 		window.wpcfFieldsEditorCallback = self._wpcfFieldsEditorCallback_function;
 	}
@@ -51,6 +55,12 @@ DDLayout.typesViewsPopup = function($)
 		self._override_jquery_colorbox_functions();
 		
 		self._wpv_insert_translatable_string_popup();
+	}
+	
+	self._wpv_insert_search_term_popup = function () {
+		self._override_jquery_colorbox_functions();
+		
+		self._wpv_insert_search_term_function();
 	}
 	
 	
@@ -156,7 +166,7 @@ DDLayout.typesViewsPopup = function($)
 	self._position_popup = function (params) {
 		var offset = jQuery(self._positioning_element).offset();
 			
-		jQuery('#ddl-colorbox-2').css({top : offset.top + 16,
+		jQuery('#ddl-colorbox-2').css({top : offset.top + 16 - jQuery(window).scrollTop(),
 									   left : offset.left,
 									   width: params['width']});
 	}

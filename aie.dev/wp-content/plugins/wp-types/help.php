@@ -2,7 +2,7 @@
 /*
  * Plugin contextual help
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/help.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/help.php $
  * $LastChangedDate: 2014-05-27 10:35:12 +0000 (Tue, 27 May 2014) $
  * $LastChangedRevision: 22805 $
  * $LastChangedBy: marcin $

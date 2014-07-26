@@ -53,12 +53,12 @@ if(is_admin()){
 	*/
 
 	function wpv_get_list_item_ui_post_post_relationship( $selected, $view_settings = null ) {
-		global $wpdb;
+		global $wpdb, $sitepress;
 
 		if ( isset( $view_settings['post_relationship_mode'] ) && is_array( $view_settings['post_relationship_mode'] ) ) {
 			$view_settings['post_relationship_mode'] = $view_settings['post_relationship_mode'][0];
 		}
-		if ( function_exists('icl_object_id') && isset( $view_settings['post_relationship_id'] ) ) {
+		if ( isset($sitepress) && function_exists('icl_object_id') && isset( $view_settings['post_relationship_id'] ) ) {
 			// Adjust for WPML support
 			$target_post_type = $wpdb->get_var("SELECT post_type FROM {$wpdb->posts} WHERE ID='{$view_settings['post_relationship_id']}'");
 			if ( $target_post_type ) {
@@ -94,34 +94,7 @@ if(is_admin()){
 		<?php
 		$res = ob_get_clean();
 		return $res;
-		/*
-		ob_start();
-		wpv_render_post_relationship(array('mode' => 'edit',
-				'view_settings' => $view_settings));
-		$data = ob_get_clean();
-
-		$td = "<p class='wpv-filter-post-relationship-edit-summary js-wpv-filter-summary js-wpv-filter-post-relationship-summary'>\n";
-		$td .= wpv_get_filter_post_relationship_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-post-relationship-edit-open' title='". __('Edit this filter','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='" . esc_attr( __('Delete this filter', 'wpv-views') ) . "' data-nonce='". wp_create_nonce( 'wpv_view_filter_post_relationship_delete_nonce' ) . "'></i>\n</p>";
 		
-		$td .= wpv_get_post_relationship_test($view_settings['post_type']);
-		$td .= "<div id=\"wpv-filter-post-relationship-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
-
-		$td .= '<fieldset>';
-		$td .= '<p><strong>' . __('Post Relationship - Post is a child of', 'wpv-views') . ':</strong></p>';
-		$td .= '<div>' . $data . '</div>';
-		$td .= '</fieldset>';
-		ob_start();
-		?>
-		<p>
-			<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-post-relationship-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_post_relationship_nonce' ); ?>" />
-		</p>
-		<?php
-		$td .= ob_get_clean();
-		$td .= '</div>';
-
-		return $td;
-		*/
 	}
 	
 	/**
@@ -360,55 +333,11 @@ function wpv_render_post_relationship($args) {
             </li>
         </ul>
         <p>
-			<a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/querying-and-displaying-child-posts/">
+			<a class="wpv-help-link" target="_blank" href="http://wp-types.com/documentation/user-guides/querying-and-displaying-child-posts/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-view-relationships-filter&utm_term=Querying and Displaying Child Posts">
 				<?php _e('Querying and Displaying Child Posts', 'wpv-views'); ?>
 			</a>
 		</p>
 	<?php
-}
-
-/**
-* Render post relationship filter summary text
-*/
-
-function wpv_get_filter_post_relationship_summary_txt($view_settings, $short=false) {
-	global $wpdb;
-	
-	if ( !isset( $view_settings['post_relationship_shortcode_attribute'] ) ) $view_settings['post_relationship_shortcode_attribute'] = '';
-	if ( !isset( $view_settings['post_relationship_url_parameter'] ) ) $view_settings['post_relationship_url_parameter'] = '';
-
-	ob_start();
-
-	if ($view_settings['post_relationship_mode'] == 'current_page') {
-		_e('Select posts that are <strong>children</strong> of the <strong>Post where this View is inserted</strong>.', 'wpv-views');
-	} else if ($view_settings['post_relationship_mode'] == 'parent_view') {
-		_e('Select posts that are a <strong>children</strong> of the <strong>Post set by parent View</strong>.', 'wpv-views');
-	} else if ($view_settings['post_relationship_mode'] == 'shortcode_attribute') {
-		echo sprintf( __('Select posts that are <strong>children</strong> of the <strong>Post with ID set by the shortcode attribute %s</strong>.', 'wpv-views'), $view_settings['post_relationship_shortcode_attribute'] );
-		echo '<br /><code>' .sprintf( __(' eg. [wpv-view name="view-name" <strong>%s="123"</strong>]', 'wpv-views'), $view_settings['post_relationship_shortcode_attribute'] ) . '</code>';
-	} else if ($view_settings['post_relationship_mode'] == 'url_parameter') {
-		echo sprintf( __('Select posts that are <strong>children</strong> of the <strong>Post with ID set by the URL parameter %s</strong>.', 'wpv-views'), $view_settings['post_relationship_url_parameter'] );
-		echo '<br /><code>' .sprintf( __(' eg. http://www.example.com/my-page/?<strong>%s=123</strong>', 'wpv-views'), $view_settings['post_relationship_url_parameter'] ) . '</code>';
-	} else {
-		if (isset($view_settings['post_relationship_id']) && $view_settings['post_relationship_id'] > 0) {
-		$selected_title = $wpdb->get_var($wpdb->prepare("
-			SELECT post_title FROM {$wpdb->prefix}posts WHERE ID=%d", $view_settings['post_relationship_id']));
-		} else {
-		$selected_title = 'None';
-		}
-		echo sprintf(__('Select posts that are children of <strong>%s</strong>.', 'wpv-views'), $selected_title);
-	}
-
-	$data = ob_get_clean();
-
-		if ($short) {
-			if (substr($data, -1) == '.') {
-				$data = substr($data, 0, -1);
-			}
-		}
-
-	return $data;
-
 }
 
 /**

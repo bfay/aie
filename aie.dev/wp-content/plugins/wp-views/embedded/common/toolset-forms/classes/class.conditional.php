@@ -40,8 +40,12 @@
  *  'custom' => '($wpcf-text = show) OR ($wpcf-date > '21-01-2014')'
  * );
  */
-require_once WPTOOLSET_COMMON_PATH . '/functions.php';
-require_once WPTOOLSET_COMMON_PATH . '/wpv-filter-date-embedded.php';
+if ( !defined( 'ICL_COMMON_FUNCTIONS' ) ) {
+	require_once WPTOOLSET_COMMON_PATH . '/functions.php';
+}
+if (!function_exists('wpv_filter_parse_date')) {
+	require_once WPTOOLSET_COMMON_PATH . '/wpv-filter-date-embedded.php';
+}
 require_once 'class.custom_conditional.php';
 
 /**
@@ -181,19 +185,19 @@ class WPToolset_Forms_Conditional
                     break;
 
                 case '>':
-                    $passed = intval( $value ) > intval( $compare );
+                    $passed = floatval( $value ) > floatval( $compare );
                     break;
 
                 case '>=':
-                    $passed = intval( $value ) >= intval( $compare );
+                    $passed = floatval( $value ) >= floatval( $compare );
                     break;
 
                 case '<':
-                    $passed = intval( $value ) < intval( $compare );
+                    $passed = floatval( $value ) < floatval( $compare );
                     break;
 
                 case '<=':
-                    $passed = intval( $value ) <= intval( $compare );
+                    $passed = floatval( $value ) <= floatval( $compare );
                     break;
 
                 case '===':
@@ -209,7 +213,7 @@ class WPToolset_Forms_Conditional
                     break;
 
                 case 'between':
-                    $passed = intval( $value ) > intval( $compare ) && intval( $value ) < intval( $c['args'][1] );
+                    $passed = floatval( $value ) > floatval( $compare ) && floatval( $value ) < floatval( $c['args'][1] );
                     break;
 
                 default:

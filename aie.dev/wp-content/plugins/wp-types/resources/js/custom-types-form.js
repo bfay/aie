@@ -2,7 +2,7 @@
  *
  * Custom Types form JS
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/resources/js/custom-types-form.js $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/resources/js/custom-types-form.js $
  * $LastChangedDate: 2014-05-13 10:49:25 +0000 (Tue, 13 May 2014) $
  * $LastChangedRevision: 22267 $
  * $LastChangedBy: marcin $

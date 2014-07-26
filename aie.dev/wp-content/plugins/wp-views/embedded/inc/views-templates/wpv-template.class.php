@@ -145,7 +145,7 @@ class WPV_template{
 
 				if (isset($_GET['trid'])) {
 					// we are creating a translated post
-					if (isset($sitepress)) {
+					if ( isset($sitepress)  && function_exists('icl_object_id')) {
 						$translations = $sitepress->get_element_translations($_GET['trid'], 'post_' . $post->post_type);
 
 						if (isset($translations[$_GET['source_lang']])) {
@@ -165,8 +165,8 @@ class WPV_template{
 					$options = $WP_Views->get_options();
 
 					if (isset($options['views_template_for_' . $post_type])) {
-						$template_selected = $options['views_template_for_' . $post_type];
-						if ($template_selected != 0 && function_exists('icl_object_id')) {
+						$template_selected = $options['views_template_for_' . $post_type];						
+						if ($template_selected != 0 && isset($sitepress) && function_exists('icl_object_id')) {
 							// use a translsation if we have one.
 							$template_selected = icl_object_id($template_selected, 'view-template', true);
 						}
@@ -187,13 +187,13 @@ class WPV_template{
         $none->post_title = __('None', 'wpv-views');
         array_unshift($view_tempates_available, $none);
 
-        if (function_exists('icl_object_id')) {
+        if (isset($sitepress) && function_exists('icl_object_id')) {
             $template_selected = icl_object_id($template_selected, 'view-template', true);
         }
 
         foreach($view_tempates_available as $template) {
 
-			if (isset($sitepress)) {
+			if (isset($sitepress) && function_exists('icl_object_id')) {
 				// See if we should only display the one for the correct lanuage.
 				$lang_details = $sitepress->get_element_language_details($template->ID, 'post_view-template');
 				if ($lang_details) {
@@ -322,7 +322,7 @@ class WPV_template{
 	 */
 
     function the_content($content) {
-        global $id, $post, $wpdb, $WP_Views, $wp_query, $wplogger, $WPVDebug;
+        global $id, $post, $wpdb, $WP_Views, $wp_query, $wplogger, $WPVDebug, $sitepress;
 
 		$post = get_post( $post );
 		if ( is_null( $post ) ) {
@@ -505,7 +505,7 @@ class WPV_template{
 		$WPVDebug->update_template_id($template_selected);
 
         if ($template_selected) {
-			if (function_exists('icl_object_id')) {
+			if (isset($sitepress) && function_exists('icl_object_id')) {
 				$template_selected = icl_object_id($template_selected, 'view-template', true);
 			}
 			$this->view_template_used_ids[] = $template_selected;
@@ -642,7 +642,7 @@ class WPV_template{
             $this->editor_addon = new Editor_addon('wpv-views',
                                                    __('Insert Views Shortcode', 'wpv-views'),
                                                    WPV_URL . '/res/js/views_editor_plugin.js',
-                                                   WPV_URL . '/res/img/bw_icon16.png');
+                                                    '', true, 'icon-views ont-icon-25');
 
             add_short_codes_to_js(array('post', 'view', 'view-form','body-view-templates'), $this->editor_addon);
         }
@@ -852,7 +852,7 @@ class WPV_template{
  */
 
 function render_view_template($view_template_id, $post_in = null, $current_user_in = null) {
-	global $WPV_templates, $post, $current_user, $authordata;
+	global $WPV_templates, $post, $current_user, $authordata, $sitepress;
 	if ( $post_in ) {
 		$post = $post_in;
 		$authordata = new WP_User($post->post_author);
@@ -860,7 +860,7 @@ function render_view_template($view_template_id, $post_in = null, $current_user_
 	if ( $current_user_in ) {
 		$current_user = $current_user_in;
 	}
-	if (function_exists('icl_object_id')) {
+	if (isset($sitepress) && function_exists('icl_object_id')) {
 		$view_template_id = icl_object_id($view_template_id, 'view-template', true);
 	}
 	$content = $WPV_templates->get_template_content($view_template_id);

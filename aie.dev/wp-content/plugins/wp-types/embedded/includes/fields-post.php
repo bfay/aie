@@ -4,10 +4,10 @@
  * Edit post page functions
  *
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/fields-post.php $
- * $LastChangedDate: 2014-06-06 08:10:39 +0000 (Fri, 06 Jun 2014) $
- * $LastChangedRevision: 23257 $
- * $LastChangedBy: francesco $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/fields-post.php $
+ * $LastChangedDate: 2014-07-10 02:31:44 +0000 (Thu, 10 Jul 2014) $
+ * $LastChangedRevision: 24814 $
+ * $LastChangedBy: bruce $
  *
  * Core file with stable and working functions.
  * Please add hooks if adjustment needed, do not add any more new code here.
@@ -388,10 +388,16 @@ function wpcf_admin_post_meta_box_preview( $post, $group, $echo = '' ){
  * 
  * @param type $post
  * @param type $group 
+ * @param type $echo
+ * @param type boolean $open_style_editor if true use code for open style editor when edit group
  */
-function wpcf_admin_post_meta_box( $post, $group, $echo = '' )
+function wpcf_admin_post_meta_box( $post, $group, $echo = '', $open_style_editor = false )
 {
-    if ( defined( 'WPTOOLSET_FORMS_VERSION' ) ) {
+
+    if (
+        false === $open_style_editor
+        && defined( 'WPTOOLSET_FORMS_VERSION' ) 
+    ) {
         if ( isset( $group['args']['html'] ) ) {
             foreach ( $group['args']['html'] as $field ) {
                 echo is_array( $field ) ? wptoolset_form_field( 'post',
@@ -400,6 +406,8 @@ function wpcf_admin_post_meta_box( $post, $group, $echo = '' )
         }
         return;
     }
+
+
 
     global $wpcf;
     /**
@@ -476,7 +484,12 @@ function wpcf_admin_post_meta_box( $post, $group, $echo = '' )
                 $field['#id'] = wpcf_unique_id( serialize( $field ) );
             }
             // Render form elements
-            if ( wpcf_compare_wp_version() && $field['#type'] == 'wysiwyg' && !isset( $field['#attributes']['disabled'] ) ) {
+            if (
+                wpcf_compare_wp_version()
+                && array_key_exists( '#type', $field )
+                && 'wysiwyg' == $field['#type']
+                && !isset( $field['#attributes']['disabled'] ) 
+            ) {
                 //                if ( isset( $field['#attributes']['disabled'] ) ) {
                 //                    $field['#editor_settings']['tinymce'] = false;
                 //                    $field['#editor_settings']['teeny'] = false;
@@ -503,7 +516,10 @@ function wpcf_admin_post_meta_box( $post, $group, $echo = '' )
                 $group_output .= isset( $field['#after'] ) ? $field['#after'] : '';
                 $group_output .= '</div><br /><br />';
             } else {
-                if ( $field['#type'] == 'wysiwyg' ) {
+                if (
+                    array_key_exists( '#type', $field )
+                    && 'wysiwyg' == $field['#type']
+                ) {
                     $field['#type'] = 'textarea';
                 }
                 if ( !empty( $echo ) ) {
@@ -550,6 +566,8 @@ function wpcf_admin_post_meta_box( $post, $group, $echo = '' )
  */
 function wpcf_admin_post_save_post_hook( $post_ID, $post )
 {
+
+
     if ( defined( 'WPTOOLSET_FORMS_VERSION' ) ) {
 
         global $wpcf;
@@ -560,32 +578,34 @@ function wpcf_admin_post_save_post_hook( $post_ID, $post )
                         array('revision', 'view', 'view-template', 'cred-form',
                             'nav_menu_item', 'mediapage') ) ) {
             return false;
-        }
-        // Save meta fields
-        if ( !empty( $_POST['wpcf'] ) ) {
+                            }
 
+        $_post_wpcf = array();
+        if ( !empty( $_POST['wpcf'] ) ) {
+            $_post_wpcf= $_POST['wpcf'];
+        }
+        /**
+         * handle checkbox
+         */
+        if ( array_key_exists( '_wptoolset_checkbox', $_POST ) && is_array($_POST['_wptoolset_checkbox']) ) {
+            foreach ( $_POST['_wptoolset_checkbox'] as $key => $field_value ) {
+                $field_slug = preg_replace( '/^wpcf\-/', '', $key );
+                if ( array_key_exists( $field_slug, $_post_wpcf) ) {
+                    continue;
+                }
+                $_post_wpcf[$field_slug] = false;
+            }
+        }
+
+        if ( count( $_post_wpcf ) ) {
             /**
              * check some attachment to delete
              */
             $delete_attachments = apply_filters( 'wpcf_delete_attachments', true );
             $images_to_delete = array();
-            if ( $delete_attachments && array_key_exists( 'delete-image', $_POST['wpcf'] ) && is_array( $_POST['wpcf']['delete-image'] ) ) {
+            if ( $delete_attachments && isset($_POST['wpcf']) && array_key_exists( 'delete-image', $_POST['wpcf'] ) && is_array( $_POST['wpcf']['delete-image'] ) ) {
                 foreach( $_POST['wpcf']['delete-image'] as $image ) {
                     $images_to_delete[$image] = 1;
-                }
-            }
-
-            $_post_wpcf= $_POST['wpcf'];
-            /**
-             * handle checkbox
-             */
-            if ( array_key_exists( '_wptoolset_checkbox', $_POST ) && is_array($_POST['_wptoolset_checkbox']) ) {
-                foreach ( $_POST['_wptoolset_checkbox'] as $key => $field_value ) {
-                    $field_slug = preg_replace( '/^wpcf\-/', '', $key );
-                    if ( array_key_exists( $field_slug, $_post_wpcf) ) {
-                        continue;
-                    }
-                    $_post_wpcf[$field_slug] = false;
                 }
             }
             foreach ( $_post_wpcf as $field_slug => $field_value ) {
@@ -598,6 +618,7 @@ function wpcf_admin_post_save_post_hook( $post_ID, $post )
                 if ( isset( $_POST['wpcf_repetitive_copy'][$field['slug']] ) ) {
                     continue;
                 }
+
                 $_field_value = !types_is_repetitive( $field ) ? array($field_value) : $field_value;
                 // Set config
                 $config = wptoolset_form_filter_types_field( $field, $post_ID );
@@ -644,9 +665,7 @@ function wpcf_admin_post_save_post_hook( $post_ID, $post )
                     $wpcf->field->set( $post_ID, $field );
                     $wpcf->field->save( $field_value );
                 }
-
                 do_action( 'wpcf_post_field_saved', $post_ID, $field );
-
                 // TODO Move to checkboxes
                 if ( $field['type'] == 'checkboxes' ) {
                     if ( !empty( $field['data']['options'] ) ) {
@@ -660,8 +679,7 @@ function wpcf_admin_post_save_post_hook( $post_ID, $post )
                                 $update_data[$option_id] = $_POST['wpcf'][$field['id']][$option_id];
                             }
                         }
-                        update_post_meta( $post_ID, $field['meta_key'],
-                                $update_data );
+                        update_post_meta( $post_ID, $field['meta_key'], $update_data );
                     }
                 }
             }
@@ -684,12 +702,10 @@ function wpcf_admin_post_save_post_hook( $post_ID, $post )
             }
 
         }
-
         if ( $errors ) {
             update_post_meta( $post_ID, '__wpcf-invalid-fields', true );
         }
         do_action( 'wpcf_post_saved', $post_ID );
-//        die('ss');
         return;
     }
     
@@ -1682,7 +1698,7 @@ function wpcf_admin_post_add_to_editor_js() {
     $editor_addon = new Editor_addon( 'types',
             __( 'Insert Types Shortcode', 'wpcf' ),
             WPCF_EMBEDDED_RES_RELPATH . '/js/types_editor_plugin.js',
-            WPCF_EMBEDDED_RES_RELPATH . '/images/bw-logo-16.png' );
+            '', true, 'icon-types ont-icon-22' );
 
     foreach ( $groups as $group ) {
         if ( empty( $group['fields'] ) ) {

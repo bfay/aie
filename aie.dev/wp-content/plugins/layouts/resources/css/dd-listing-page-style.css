@@ -46,7 +46,7 @@ input.select-all-layouts{position:absolute;top:3px;}
 /*links*/
 .strike{text-decoration:line-through;color:#0074a2;}
 .strike a:hover{text-decoration:line-through;color:lightgray;}
-a.views-list-sort i.icon-sort-by-attributes-alt{display:none;}
+a.views-list-sort i.icon-sort-by-attributes-alt{/*display:none;*/}
 .row-actions span a{cursor:pointer;}
 
 
@@ -91,4 +91,7 @@ a.views-list-sort i.icon-sort-by-attributes-alt{display:none;}
 	background: url('../images/ajax-loader-overlay2.gif') center center no-repeat;
 }
 
-table.dd-layouts-list i.icon-sort{display:none;}
+table.dd-layouts-list i.icon-sort{}
+
+.sort-icon-active{color:#0074a2 !important;}
+.sort-icon-inactive{color:#ccc !important;}

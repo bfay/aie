@@ -3,16 +3,24 @@
 class WPDD_layout_cell_post_content extends WPDD_layout_cell {
 
 	function __construct($name, $width, $css_class_name = '', $content = null, $css_id = '') {
-		parent::__construct($name, $width, $css_class_name, 'cell-post-content-template', $content, $css_id);
+		parent::__construct($name, $width, $css_class_name, 'cell-post-content', $content, $css_id);
 
 		$this->set_cell_type('cell-post-content');
 	}
 
 	function frontend_render_cell_content($target) {
-		global $WPV_templates;
+		global $WPV_templates, $post, $id, $authordata;
+		
 		$cell_content = $this->get_content();
-		if (isset($WPV_templates) && isset($cell_content['view_template']) && $cell_content['view_template'] != 'None') {
-			$content_template_id = $WPV_templates->get_template_id( $cell_content['view_template'] );
+		
+		if ($cell_content['page'] == 'current_page') {
+			do_action('ddl-layouts-render-start-post-content');
+		}
+		
+		// View template support is only here for backwards support before 0.9.2.
+		// It's not used for post content cells for 0.9.2 and later.
+		if (isset($WPV_templates) && isset($cell_content['ddl_view_template_id']) && $cell_content['ddl_view_template_id'] != 'None') {
+			$content_template_id = $cell_content['ddl_view_template_id'];
 			if ($cell_content['page'] == 'current_page') {
 				global $post;
 				$content = render_view_template($content_template_id, $post );
@@ -22,18 +30,72 @@ class WPDD_layout_cell_post_content extends WPDD_layout_cell {
 			}
 		} else {
 
-			global $post;
-			$content = '';
-			if ($cell_content['page'] == 'current_page') {
-				$content = apply_filters('the_content', $post->post_content);
-			} elseif ($cell_content['page'] == 'this_page') {
-				$other_post = get_post($cell_content['selected_post']);
-				if (isset($other_post->post_content)) {
-					$content = apply_filters('the_content', $other_post->post_content);
-				}
+			if (isset($WPV_templates)) {
+				remove_filter('the_content', array($WPV_templates, 'the_content'), 1, 1);
 			}
+
+			$content = '';
+			if( $target->is_layout_argument_set( 'post-content-callback' ) && function_exists( $target->get_layout_arguments( 'post-content-callback' ) ) ) {
+				
+	            global $wp_query;
+
+                // prevent any other override to bother
+                remove_all_actions( 'loop_start' );
+                remove_all_actions('loop_end' );
+
+				if ($cell_content['page'] == 'this_page') {
+					// need to switch the post.
+					$original_query = isset( $wp_query ) ? clone $wp_query : null;
+					$original_post = isset( $post ) ? clone $post : null;
+					$original_authordata = isset ($authordata) ? clone $authordata : null;
+					$original_id = $id;
+
+
+					$wp_query = new WP_Query(array('post_type' => 'any',
+                                                    'ignore_sticky_posts' => true,
+												   'post__in' => array( $cell_content['selected_post'] ) ) );
+
+
+				    }
+
+				ob_start();
+
+				call_user_func( $target->get_layout_arguments( 'post-content-callback' ) );
+				$content = ob_get_clean();
+				
+				if ($cell_content['page'] == 'this_page') {
+					// restore the global wp_query.
+					$wp_query = isset( $original_query ) ? clone $original_query : null;
+					$post = isset( $original_post ) ? clone $original_post : null;
+					$authordata = isset( $original_authordata ) ? clone $original_authordata : null;
+					$id = $original_id;
+				}
+				
+			} else {
+
+				if ( $cell_content['page'] == 'current_page' && is_object($post) && property_exists($post, 'post_content')) {
+					$content = apply_filters('the_content', $post->post_content);
+				} elseif ($cell_content['page'] == 'this_page') {
+					$other_post = get_post($cell_content['selected_post']);
+					if ( is_object($other_post) && property_exists($other_post, 'post_content') ) {
+						$content = apply_filters('the_content', $other_post->post_content);
+					}
+				}
+				
+			}
+			
+			if (isset($WPV_templates)) {
+				add_filter('the_content', array($WPV_templates, 'the_content'), 1, 1);
+			}
+			
+			
 		}
 		$target->cell_content_callback($content);
+		
+		if ($cell_content['page'] == 'current_page') {
+			do_action('ddl-layouts-render-end-post-content');
+		}
+		
 	}
 
 }
@@ -43,8 +105,6 @@ class WPDD_layout_cell_post_content_factory extends WPDD_layout_cell_factory{
 	function __construct() {
 		if( is_admin()){
 			add_action('wp_ajax_get_posts_for_post_content', array($this, 'get_posts_for_post_content_callback') );
-			add_action('wp_ajax_dll_refresh_ct_list', array($this, 'get_ct_select_box'));
-			add_action('wp_ajax_ddl_content_template_preview', array($this, 'get_content_template'));
 		}
 
 	}
@@ -57,11 +117,12 @@ class WPDD_layout_cell_post_content_factory extends WPDD_layout_cell_factory{
 		$template['icon-css'] = 'icon-file-text';
 		$template['preview-image-url'] = WPDDL_RES_RELPATH . '/images/post-content.png';
 		$template['name'] = __('Post content', 'ddl-layouts');
-		$template['description'] = __('Displays the post content.', 'ddl-layouts');
+		$template['description'] = __('Displays the content of the current post or a specific post.', 'ddl-layouts');
 		$template['button-text'] = __('Assign Post content Box', 'ddl-layouts');
 		$template['dialog-title-create'] = __('Create a new Post content Cell', 'ddl-layouts');
 		$template['dialog-title-edit'] = __('Edit Post content Cell', 'ddl-layouts');
 		$template['dialog-template'] = $this->_dialog_template();
+		$template['category'] = __('Post display', 'ddl-layouts');
 		return $template;
 	}
 
@@ -69,32 +130,24 @@ class WPDD_layout_cell_post_content_factory extends WPDD_layout_cell_factory{
 		ob_start();
 		?>
 			<div class="cell-content">
-				<p class="cell-name"><%- name %></p>
-				<% if( content ) { %>
-				<div class="cell-preview">
-					<%
-					var preview = DDL_Helper.sanitizeHelper.stringToDom( DDLayout.post_content_cell.display_post_content_info(content, '<?php _e('Loading...', 'ddl-layouts'); ?>') );
-					print( preview.innerHTML );
-					%>
-				</div>
-			<% } %>
+				<p class="cell-name">{{ name }}</p>
+	                <div class="cell-preview">
+	                    <#
+							if (content) {
+								var preview = DDLayout.post_content_cell.get_preview(content, '<?php _e('Displays the content of the current page', 'ddl-layouts'); ?>', '<?php _e('Displays the content of %s', 'ddl-layouts'); ?>', '<?php _e('Loading', 'ddl-layouts'); ?>...' );
+								print( preview );
+							}
+	                    #>
+	                </div>
 			</div>
 		<?php
 		return ob_get_clean();
 	}
 
 	private function _dialog_template() {
-		global $WPV_templates, $WP_Views;
-
-		$views_1_6_available = defined('WPV_VERSION') && WPV_VERSION >= 1.6 && isset($WP_Views) && class_exists('WP_Views') && !$WP_Views->is_embedded();
-		$view_tempates_available = $this->_get_view_templates_available();
 
 		ob_start();
 		?>
-		<script type="text/javascript">
-			var ddl_new_ct_default_name = '<?php echo __('Post content for %s Layout', 'ddl-layouts'); ?>';
-		</script>
-
 		<ul class="ddl-form">
 			<li>
 				<fieldset>
@@ -140,71 +193,7 @@ class WPDD_layout_cell_post_content_factory extends WPDD_layout_cell_factory{
 					</div>
 				</fieldset>
 			</li>
-			<?php if ( $views_1_6_available || sizeof($view_tempates_available) > 0): ?>
-				<li>
-					<fieldset>
-						<legend><?php _e('How to display:', 'ddl-layouts'); ?></legend>
-						<div class="fields-group">
-							<ul>
-								<li>
-									<label class="post-content-page">
-										<input type="radio" name="use-ct" value="no" checked="checked"/>
-										<?php _e('Display only the post content', 'ddl-layouts'); ?>
-									</label>
-								</li>
-								<li>
-									<label class="post-content-page">
-										<input type="radio" name="use-ct" value="yes" />
-										<?php _e( 'Display the cell content using post fields', 'ddl-layouts' ); ?>
-									</label>
-								</li>
-							</ul>
-						</div>
-					</fieldset>
-				</li>
-			<?php endif; ?>
-
-			<?php if ($views_1_6_available || sizeof($view_tempates_available) > 0): ?>
-			<li>
-				<fieldset>
-					<div class="fields-group">
-						<ul>
-							<li class="js-post-content-ct js-ct-selector js-ct-select-box">
-								<?php echo $this->_get_view_template_select_box($view_tempates_available); ?>
-							</li>
-							<?php if ($views_1_6_available): ?>
-								<li class="js-post-content-ct js-ct-selector">
-									<?php _e('or', 'ddl-layouts'); ?> <a href="#" class="js-create-new-ct"><?php _e('Create a new one', 'ddl-layout'); ?></a>
-								</li>
-							<?php endif; ?>
-						</ul>
-					</div>
-				</fieldset>
-			</li>
-
-			<?php endif; ?>
-
-
-			<?php if( $views_1_6_available ): ?>
-				<li class="js-post-content-ct js-ct-edit">
-					<input class="js-ct-edit-name" type="text" style="float: left; width: 50%" /><span class="js-ct-editing"><strong><?php _e('Editing', 'ddl-layouts'); ?> :</strong> <span class="js-ct-name"></span></span> <a style="float: right" href="#" class="js-load-different-ct"><?php _e('Load a different Content Template', 'ddl-layouts'); ?></a>
-				</li>
-				<li class="js-post-content-ct js-ct-edit">
-			        <div class="js-wpv-ct-inline-edit wpv-ct-inline-edit wpv-ct-inline-edit hidden"></div>
-				</li>
-			<?php else: ?>
-				<div class="toolset-alert">
-					<p>
-						<?php _e('This cell can display the post content using fields. Install and activate Views 1.6 or greater and you will be able to create Content Templates to display post fields.', 'ddl-layouts'); ?>
-						<br>
-						<a class="fieldset-inputs" href="http://wp-types.com/home/views-create-elegant-displays-for-your-content/" target="_blank">
-							<?php _e('Get Views plugin', 'ddl-layouts');?> &raquo;
-						</a>
-					</p>
-				</div>
-			<?php endif; ?>
-
-			
+		
 
 		</ul>
 		<?php ddl_add_help_link_to_dialog(WPDLL_POST_CONTENT_CELL, __('Learn about the Post Content cell', 'ddl-layouts')); ?>
@@ -214,44 +203,6 @@ class WPDD_layout_cell_post_content_factory extends WPDD_layout_cell_factory{
 		return ob_get_clean();
 	}
 
-	private function _get_view_templates_available() {
-		global $wpdb;
-
-		return $wpdb->get_results("SELECT ID, post_title, post_name FROM {$wpdb->posts} WHERE post_type='view-template' AND post_status in ('publish')");
-	}
-
-	private function _get_view_template_select_box($view_tempates_available) {
-
-		// Add a "None" type to the list.
-		$none = new stdClass();
-		$none->ID = 0;
-		$none->post_name = 'None';
-		$none->post_title = __('None', 'ddl-layouts');
-		array_unshift($view_tempates_available, $none);
-
-		ob_start();
-		?>
-		<label for="post-content-view-template"><?php _e('Choose an existing Content Template:', 'ddl-layouts'); ?> </label>
-		<select class="views_template_select" name="<?php echo $this->element_name('view_template'); ?>" id="post-content-view-template">';
-
-		<?php
-		foreach($view_tempates_available as $template) {
-			$title = $template->post_title;
-			if (!$title) {
-				$title = $template->post_name;
-			}
-
-			?>
-			<option value="<?php echo $template->post_name; ?>" data-ct-id="<?php echo $template->ID; ?>" ><?php echo $template->post_title; ?></option>
-			<?php
-		}
-		?>
-		</select>
-
-		<?php
-
-		return ob_get_clean();
-	}
 
 	public function enqueue_editor_scripts() {
 		wp_register_script( 'wp-post-content-editor', ( WPDDL_GUI_RELPATH . "editor/js/post-content-cell.js" ), array('jquery'), null, true );
@@ -325,29 +276,6 @@ class WPDD_layout_cell_post_content_factory extends WPDD_layout_cell_factory{
 		die();
 	}
 
-	function get_ct_select_box () {
-		if ( !isset($_POST["wpnonce"]) || !wp_verify_nonce($_POST["wpnonce"], 'wpv-ct-inline-edit') ) die("Undefined Nonce.");
-
-		$view_tempates_available = $this->_get_view_templates_available();
-		echo $this->_get_view_template_select_box($view_tempates_available);
-
-		die();
-	}
-	
-	function get_content_template () {
-		if ( !isset($_POST["wpnonce"]) || !wp_verify_nonce($_POST["wpnonce"], 'wpv-ct-inline-edit') ) die("Undefined Nonce.");
-		
-		global $WPV_templates;
-		if (isset($WPV_templates) && isset($_POST['view_template'])) {
-			$content_template_id = $WPV_templates->get_template_id( $_POST['view_template'] );
-			$content = $WPV_templates->get_template_content($content_template_id);
-			
-			echo $content;
-		}
-		
-		die();
-		
-	}
 }
 
 add_filter('dd_layouts_register_cell_factory', 'dd_layouts_register_cell_post_content_factory');
@@ -357,6 +285,17 @@ function dd_layouts_register_cell_post_content_factory($factories) {
 }
 
 
+add_action('wp_ajax_ddl_post_content_get_post_title', 'ddl_post_content_get_post_title_callback');
+function ddl_post_content_get_post_title_callback() {
+    if ( !isset($_POST["wpnonce"]) || !wp_verify_nonce($_POST["wpnonce"], 'ddl_layout_view_nonce') ) die("Undefined Nonce.");
+
+    global $wpdb;
+	
+	echo $wpdb->get_var("SELECT post_title FROM {$wpdb->posts} WHERE ID={$_POST['post_id']}");
+	
+	die();
+}
+
 add_action('wp_ajax_dll_add_view_template', 'ddl_add_view_template_callback');
 
 function ddl_add_view_template_callback() {
@@ -365,11 +304,12 @@ function ddl_add_view_template_callback() {
     if ( !isset($_POST["wpnonce"]) || !wp_verify_nonce($_POST["wpnonce"], 'wpv-ct-inline-edit') ) die("Undefined Nonce.");
 
 	$new_template = array(
-	  'post_title'    => $_POST['ct_name'],
-	  'post_type'      => 'view-template',
-	  'post_content'  => '',
-	  'post_status'   => 'publish',
-	  'post_author'   => 1,// TODO check why author here
+		'post_title'	=> $_POST['ct_name'],
+		'post_type'		=> 'view-template',
+		'post_status'	=> 'publish',
+		'post_author'	=> 1,// TODO check why author here
+		'post_content'	=> "<h1>[wpv-post-title]</h1>\n[wpv-post-body view_template=\"None\"]\n[wpv-post-featured-image]\n" .
+									sprintf(__('Posted by %s on %s', 'ddl-layouts'), '[wpv-post-author]', '[wpv-post-date]')
 	);
 	$ct_post_id = wp_insert_post( $new_template );
 	update_post_meta( $ct_post_id, '_wpv_view_template_mode', 'raw_mode');
@@ -379,3 +319,4 @@ function ddl_add_view_template_callback() {
 
     die();
 }
+

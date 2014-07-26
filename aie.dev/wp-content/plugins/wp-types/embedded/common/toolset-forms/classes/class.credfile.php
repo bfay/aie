@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.credfile.php $
- * $LastChangedDate: 2014-06-04 15:53:52 +0000 (Wed, 04 Jun 2014) $
- * $LastChangedRevision: 23158 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.credfile.php $
+ * $LastChangedDate: 2014-07-19 09:54:04 +0000 (Sat, 19 Jul 2014) $
+ * $LastChangedRevision: 25122 $
+ * $LastChangedBy: gen $
  *
  */
 require_once 'class.textfield.php';
@@ -17,26 +17,27 @@ require_once 'class.textfield.php';
 class WPToolset_Field_Credfile extends WPToolset_Field_Textfield
 {
 
-    public function init() {        
-    }
-
-    public static function registerScripts() {
-        wp_register_script( 'wpt-field-credfile',
+    public function init() {
+		wp_register_script( 'wpt-field-credfile',
                 WPTOOLSET_FORMS_RELPATH . '/js/credfile.js',
                 array('wptoolset-forms'), WPTOOLSET_FORMS_VERSION, true );
+		wp_enqueue_script( 'wpt-field-credfile' );
+	}
+
+    public static function registerScripts() {
+        
     }
 
     public static function registerStyles() {
-        wp_register_style( 'wpt-field-credfile',
-                WPTOOLSET_FORMS_RELPATH . '/css/credfile.css' );
+        
     }
 
     public function enqueueScripts() {
-        wp_enqueue_script( 'wpt-field-credfile' );
+        
     }
 
     public function enqueueStyles() {
-        wp_enqueue_style( 'wpt-field-credfile' );
+        
     }
 
     public function metaform() {
@@ -60,10 +61,6 @@ class WPToolset_Field_Credfile extends WPToolset_Field_Textfield
             'alt' => $value,
         );
 
-        if ( $this->isRepetitive() ) {
-            $attr_file['class'] .= ' js-wpt-repetitive';
-        }
-
         if ( !empty( $value ) ) {
             $preview_file = $value;
             $pathinfo = pathinfo( $value );
@@ -81,7 +78,7 @@ class WPToolset_Field_Credfile extends WPToolset_Field_Textfield
         if ( !empty( $value ) ) {
             $form[] = array(
                 '#type' => 'markup',
-                '#markup' => '<input type="button" value="' . __( 'Delete' ) . '" id="'.$id.'_button" name="switch" class="js-wpt-credfile-delete-button wpt-credfile-delete-button" onclick="_cred_switch(\''.$id.'\')"/>',
+                '#markup' => '<input type="button" value="' . __( 'Delete', 'wpv-views' ) . '" id="'.$id.'_button" name="switch" class="js-wpt-credfile-delete-button wpt-credfile-delete-button" onclick="_cred_switch(\''.$id.'\')"/>',
             );
         }
         $form[] = array(

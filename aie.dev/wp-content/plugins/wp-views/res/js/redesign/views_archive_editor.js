@@ -126,6 +126,12 @@ jQuery(function($){
 	if( typeof cred_cred != 'undefined'){
 		cred_cred.posts();
 	}
+	
+	if ( $( '.js-wpv-display-in-iframe' ).length == 1 ) {
+		if ( $( '.js-wpv-display-in-iframe' ).val() == 'yes' ) {
+			$( '.toolset-help a, .wpv-setting a' ).attr("target","_blank");
+		}
+	}
 });
 
 function wpv_extra_textarea_toggle_flag(element) {

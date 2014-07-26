@@ -27,10 +27,10 @@
  * @link http://enlimbo.net/forms
  * @author srdjan <srdjan@enlimbo.net>
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.eforms.php $
- * $LastChangedDate: 2014-06-12 10:53:06 +0000 (Thu, 12 Jun 2014) $
- * $LastChangedRevision: 23529 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.eforms.php $
+ * $LastChangedDate: 2014-07-22 15:05:16 +0000 (Tue, 22 Jul 2014) $
+ * $LastChangedRevision: 25193 $
+ * $LastChangedBy: gen $
  *
  */
 class Enlimbo_Forms
@@ -79,6 +79,7 @@ class Enlimbo_Forms
         $this->form_settings = array(
             'has_media_button' => true,
             'use_bootstrap' => false,
+            'load_cred_css' => true,
         );
         $this->_id = $id;
         if ( !is_admin() ) {
@@ -95,6 +96,7 @@ class Enlimbo_Forms
         $cred_cred_settings = get_option( 'cred_cred_settings' );
         if ( is_array($cred_cred_settings) ) {
             $this->form_settings['use_bootstrap'] = array_key_exists( 'use_bootstrap', $cred_cred_settings ) && $cred_cred_settings['use_bootstrap'];
+            $this->form_settings['load_cred_css'] = !( array_key_exists( 'dont_load_cred_css', $cred_cred_settings ) && $cred_cred_settings['dont_load_cred_css'] );
         }
     }
 
@@ -294,7 +296,7 @@ class Enlimbo_Forms
         return in_array($type,
                         array('select', 'checkboxes', 'checkbox', 'radios',
                     'radio', 'textfield', 'textarea', 'file', 'submit', 'reset',
-                    'hidden', 'fieldset', 'markup', 'button'));
+                    'hidden', 'fieldset', 'markup', 'button', 'password' ));
     }
 
     /**
@@ -306,6 +308,7 @@ class Enlimbo_Forms
     public function renderElements($elements)
     {
         $output = '';
+        if (!isset($elements)) return $output;
         foreach ($elements as $key => $element) {
             if (!isset($element['#type']) || !$this->_isValidType($element['#type'])) {
                 continue;
@@ -406,30 +409,32 @@ class Enlimbo_Forms
             $classes[] = $element['#type'];
         }
 
-        if (isset($element['#attributes'])) {
-            foreach ($element['#attributes'] as $attribute => $value) {
-                // Prevent undesired elements
-                if (in_array($attribute, array('id', 'name'))) {
-                    continue;
-                }
-                // Don't set disabled for checkbox
-                if ($attribute == 'disabled' && $element['#type'] == 'checkbox') {
-                    continue;
-                }
-                // Set return string
-                $attributes .= ' ' . $attribute . '="' . $value . '"';
-            }
-        }
-        if (isset($element['#attributes']['class'])) {
-            if ( $this->_isRepetitive($element) ) {
-               $element['#attributes']['class'] .= sprintf( ' %s', 'js-wpt-repetitive' );
-            }
-        } else {
-            if ( $this->_isRepetitive($element) ) {
-                $classes[] = 'js-wpt-repetitive';
-            }
-            $attributes .= sprintf( ' class="%s"', implode( ' ', $classes ) );
-        }
+        if ( isset( $element['#attributes'] )
+			&& !empty( $element['#attributes'] )
+		) {
+			if ( isset( $element['#attributes']['class'] ) ) {
+				$element['#attributes']['class'] .= ' ' . implode( ' ', $classes );
+			} else {
+				$element['#attributes']['class'] = implode( ' ', $classes );
+			}
+		} else {
+			$element['#attributes'] = array(
+				'class' => implode( ' ', $classes )
+			);
+		}
+			
+		foreach ($element['#attributes'] as $attribute => $value) {
+			// Prevent undesired elements
+			if (in_array($attribute, array('id', 'name'))) {
+				continue;
+			}
+			// Don't set disabled for checkbox
+			if ($attribute == 'disabled' && $element['#type'] == 'checkbox') {
+				continue;
+			}
+			// Set return string
+			$attributes .= ' ' . $attribute . '="' . $value . '"';
+		}
 
         return $attributes;
     }
@@ -468,9 +473,11 @@ class Enlimbo_Forms
             if ( $this->form_settings['use_bootstrap']) {
                 switch( $element['#type'] ) {
                 case 'checkbox':
+					$classes[] = 'checkbox';
                 case 'radio':
                     $classes[] = 'inline';
                     $classes[] = 'control-label';
+					$classes[] = 'radio';
                     break;
                 }
             }
@@ -695,12 +702,19 @@ class Enlimbo_Forms
         /**
          * type and data_id
          */
-        $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
         $element['_render']['element'] .= $this->_getDataWptId( $element );
 
         $element['_render']['element'] .= 'value="';
-        // Specific: if value is empty force 1 to be rendered
-        $element['_render']['element'] .= !empty($element['#value']) ? htmlspecialchars($element['#value']) : 1;
+        /**
+         * Specific: if value is empty force 1 to be rendered
+         * but if is defined default value, use default
+         */
+        $value = 1;
+        if ( array_key_exists( '#default_value', $element ) ) {
+            $value = $element['#default_value'];
+        }
+        $element['_render']['element'] .= ( empty($element['#value']) && !preg_match( '/^0$/', $element['#value']) )? $value:esc_attr($element['#value']);
         $element['_render']['element'] .= '"' . $element['_attributes_string'];
         if (
             (
@@ -779,10 +793,11 @@ class Enlimbo_Forms
         /**
          * type and data_id
          */
-        $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
         $element['_render']['element'] .= $this->_getDataWptId( $element );
 
         $element['_render']['element'] .= ' />';
+		
         $pattern = isset($element['#pattern']) ? $element['#pattern'] : '<BEFORE><PREFIX><ELEMENT>&nbsp;<LABEL><ERROR><SUFFIX><DESCRIPTION><AFTER>';
         $output = $this->_pattern($pattern, $element);
         $output = $this->_wrapElement($element, $output);
@@ -818,7 +833,13 @@ class Enlimbo_Forms
             $value['#disable'] = isset($element['#disable']) ? $element['#disable'] : false;
             $element['_render']['element'] .= $this->radio($value);
         }
-        $pattern = $this->_getStatndardPatern($element, '<BEFORE><PREFIX><DESCRIPTION><ELEMENT><SUFFIX><AFTER>');
+        if (is_admin()) {
+            $pattern = '<BEFORE><PREFIX><TITLE><DESCRIPTION><ELEMENT><SUFFIX><AFTER>';
+        } else {
+            $pattern = '<BEFORE><PREFIX><DESCRIPTION><ELEMENT><SUFFIX><AFTER>';
+        }
+        
+        $pattern = $this->_getStatndardPatern($element, $pattern);
         $output = $this->_pattern($pattern, $element);
         $output = $this->_wrapElement($element, $output);
         return $output;
@@ -834,9 +855,13 @@ class Enlimbo_Forms
     {
         $element['#type'] = 'select';
         $element = $this->_setRender($element);
-        $element['_render']['element'] = '<select id="' . $element['#id']
-                . '" name="' . $element['#name'] . '"'
-                . $element['_attributes_string'] . ">\r\n";
+
+        $element['_render']['element'] = '';
+        $element['_render']['element'] .= '<select id="' . $element['#id'];
+        $element['_render']['element'] .= '" name="' . $element['#name'] . '"';
+        $element['_render']['element'] .= $element['_attributes_string'];
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .=  ">\r\n";
         $count = 1;
         foreach ($element['#options'] as $id => $value) {
             if (!is_array($value)) {
@@ -847,10 +872,8 @@ class Enlimbo_Forms
                 $value['#value'] = $this->_count['select'] . '-' . $count;
                 $count += 1;
             }
-            $element['_render']['element'] .= '<option value="'
-                    . htmlspecialchars($value['#value']) . '"';
-            $element['_render']['element'] .= ( $element['#default_value']
-                    == $value['#value']) ? ' selected="selected"' : '';
+            $element['_render']['element'] .= '<option value="' . htmlspecialchars($value['#value']) . '"';
+            $element['_render']['element'] .= ( $element['#default_value'] == $value['#value']) ? ' selected="selected"' : '';
             $element['_render']['element'] .= $this->_setElementAttributes($value);
             if ( array_key_exists( '#types-value', $value ) ) {
                 $element['_render']['element'] .= sprintf( ' data-types-value="%s"', $value['#types-value'] );
@@ -858,17 +881,20 @@ class Enlimbo_Forms
             /**
              * type and data_id
              */
-            $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+            $element['_render']['element'] .= ' data-wpt-type="option" ';
             $element['_render']['element'] .= $this->_getDataWptId( $element );
 
             $element['_render']['element'] .= '>';
             $element['_render']['element'] .= isset($value['#title']) ? $value['#title'] : $value['#value'];
             $element['_render']['element'] .= "</option>\r\n";
         }
-        $element['_render']['element'] .= "</select>\r\n";
+        $element['_render']['element'] .= '</select>';
+        $element['_render']['element'] .= PHP_EOL;
+
         $pattern = $this->_getStatndardPatern( $element );
         $output = $this->_pattern($pattern, $element);
         $output = $this->_wrapElement($element, $output);
+
         return $output;
     }
 
@@ -884,9 +910,10 @@ class Enlimbo_Forms
         $element = $this->_setRender($element);
 
         $element['_render']['element'] = '<input type="text"';
-        $element['_render']['element'] .= sprintf( ' id="%s"', $element['#id']);
-        $element['_render']['element'] .= sprintf( ' name="%s"', $element['#name']);
-        $element['_render']['element'] .= sprintf( ' value="%s"', isset($element['#value']) ? esc_attr($element['#value']) : '' );
+        //$element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' id="%s" ', $element['#id']);
+        $element['_render']['element'] .= sprintf( ' name="%s" ', $element['#name']);
+        $element['_render']['element'] .= sprintf( ' value="%s" ', isset($element['#value']) ? esc_attr($element['#value']) : '' );
         $element['_render']['element'] .= $element['_attributes_string'];
         if (isset($element['#disable']) && $element['#disable']) {
             $element['_render']['element'] .= ' disabled="disabled"';
@@ -894,7 +921,7 @@ class Enlimbo_Forms
         /**
          * type and data_id
          */
-        $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
         $element['_render']['element'] .= $this->_getDataWptId( $element );
 
         $element['_render']['element'] .= ' />';
@@ -924,7 +951,7 @@ class Enlimbo_Forms
         /**
          * type and data_id
          */
-        $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
         $element['_render']['element'] .= $this->_getDataWptId( $element );
 
         $element['_render']['element'] .= ' />';
@@ -956,7 +983,7 @@ class Enlimbo_Forms
         /**
          * type and data_id
          */
-        $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
         $element['_render']['element'] .= $this->_getDataWptId( $element );
 
         $element['_render']['element'] .= '>';
@@ -988,7 +1015,7 @@ class Enlimbo_Forms
         /**
          * type and data_id
          */
-        $element['_render']['element'] .= sprintf( 'data-wpt-type="%s" ', __FUNCTION__ );
+        $element['_render']['element'] .= sprintf( ' data-wpt-type="%s" ', __FUNCTION__ );
         $element['_render']['element'] .= $this->_getDataWptId( $element );
 
         $element['_render']['element'] .= ' />';
@@ -1022,7 +1049,7 @@ class Enlimbo_Forms
         $output = '<input type="hidden" id="' . $element['#id'] . '"  name="'
                 . $element['#name'] . '" value="';
         $output .= isset($element['#value']) ? $element['#value'] : 1;
-        $output .= '"' . $element['_attributes_string'] . ' />';
+        $output .= '"' . $element['_attributes_string'] . ' ' . $this->_getDataWptId( $element ) . ' />';
         return $output;
     }
 
@@ -1126,15 +1153,21 @@ class Enlimbo_Forms
         $html = '';
         if ( array_key_exists( '#id', $element ) ) {
             if ( is_admin() ) {
-                $html .= sprintf( 'data-wpt-id="%s" ', preg_replace( '/\[/', '-', preg_replace( '/\]/', '', $element['#name'] ) ) );
+                $html .= sprintf( ' data-wpt-id="%s" ', preg_replace( '/\[/', '-', preg_replace( '/\]/', '', $element['#name'] ) ) );
             } else {
-                $html .= sprintf( 'data-wpt-id="%s_%s" ', $this->_id, $element['#id'] );
+                $html .= sprintf( ' data-wpt-id="%s_%s" ', $this->_id, $element['#id'] );
             }
             if ( array_key_exists( '#name', $element ) && $element['#name'] ) {
                 if ( !is_admin() && $this->_isRepetitive($element)) {
-                    $html .= sprintf( 'data-wpt-name="%s" ', preg_replace( '/\[.+$/', '', $element['#name'] ) );
+                    $html .= sprintf( ' data-wpt-name="%s" ', preg_replace( '/\[.+$/', '', $element['#name'] ) );
                 } else {
-                    $html .= sprintf( 'data-wpt-name="%s" ', $element['#name'] );
+                    if ( preg_match( '/^wpcf_post_relationship\[\d+\]\[\d+\]\[[^\]]+\]/', $element['#name'] ) ) {
+                        $html .= sprintf(
+                            ' data-wpt-name="%s" ',
+                            preg_replace( '/^wpcf_post_relationship\[\d+\]\[(\d+)\]\[wpcf-([^\]]+)\]/', "wpcf[$2-$1]", $element['#name'] ) );
+                    } else {
+                        $html .= sprintf( ' data-wpt-name="%s" ', $element['#name'] );
+                    }
                 }
             }
         }

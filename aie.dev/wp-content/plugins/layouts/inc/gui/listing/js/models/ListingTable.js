@@ -35,7 +35,7 @@ DDLayout.listing.models.ListingTable = Backbone.Model.extend({
 			data: jQuery.param(send),
 			type: 'POST',
 			success: function ( model, response, object ) {
-				if (typeof jQuery.colorbox != 'undefined') jQuery.colorbox.close();
+				//if (typeof jQuery.colorbox != 'undefined') jQuery.colorbox.close();
 				if( typeof callback != 'undefined' && typeof callback == 'function') {
 					callback.call( scope || self, model, response, object, args );
 				}
@@ -47,7 +47,6 @@ DDLayout.listing.models.ListingTable = Backbone.Model.extend({
 	},
 	parse:function( data, attrs )
 	{
-		//console.log('PARSE', data)
 		if( this.get('Groups') === null && data.Data === undefined ) return null;
 		if( this.get('Groups') !== null && data.Data === undefined ) return this.get('Groups');
 
@@ -59,9 +58,7 @@ DDLayout.listing.models.ListingTable = Backbone.Model.extend({
 		this.set('name', 'master');
 		this.unset('Data');
 
-		//console.log( 'the table', this );
-
-		return this.get('Groups');
+		return data.Data;
 	},
 	get_by_id:function( value )
 	{

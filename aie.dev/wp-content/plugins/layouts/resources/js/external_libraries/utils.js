@@ -13,7 +13,7 @@ WPV_Toolset.Utils.do_ajax_post = function( params, callback_object )
 {
 	jQuery.post(ajaxurl, params, function (response) {
 
-		if ( (typeof(response) !== 'undefined') && response !== null && response.message ) {
+		if ( (typeof(response) !== 'undefined') && response !== null && ( response.message || response.Data )  ) {
 
 			if( callback_object && callback_object.success && typeof callback_object.success == 'function'  )
 				callback_object.success.call( this, response );
@@ -30,7 +30,7 @@ WPV_Toolset.Utils.do_ajax_post = function( params, callback_object )
 		.fail(function (jqXHR, textStatus, errorThrown) {
 			console.log('Ajax call failed', textStatus, errorThrown)
 			if( callback_object && callback_object.fail && typeof callback_object.fail == 'function'  )
-				callback_object.fail.call(this);
+				callback_object.fail.call(this, errorThrown);
 				WPV_Toolset.Utils.eventDispatcher.trigger('on_ajax_fail', textStatus, errorThrown );
 		})
 		.always(function () {
@@ -494,15 +494,17 @@ WPV_Toolset.Utils.Loader = function()
 
 	self.loading = false; self.el = null;
 
-	self.loader = jQuery('<div class="ajax-loader spinner"></div>'),
+	self.loader = jQuery('<div class="ajax-loader spinner"></div>');
+
 	self.loadShow = function( el )
 	{
 		self.el = el;
 		self.loading = true;
 
-		self.loader.prependTo( self.el ).show();
+        self.loader.prependTo( self.el ).show();
 
-	},
+        return self.loader;
+	};
 	self.loadHide = function()
 	{
 		self.loader.fadeOut(400, function(){
@@ -510,6 +512,8 @@ WPV_Toolset.Utils.Loader = function()
 			self.loading = false;
 			jQuery(this).remove();
 		});
+
+        return self.loader;
 	};
 };
 

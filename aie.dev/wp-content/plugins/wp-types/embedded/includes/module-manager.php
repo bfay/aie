@@ -4,9 +4,9 @@
  *
  * Since Types 1.2
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/module-manager.php $
- * $LastChangedDate: 2014-05-20 14:56:59 +0000 (Tue, 20 May 2014) $
- * $LastChangedRevision: 22495 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/module-manager.php $
+ * $LastChangedDate: 2014-07-04 08:21:00 +0000 (Fri, 04 Jul 2014) $
+ * $LastChangedRevision: 24627 $
  * $LastChangedBy: marcin $
  *
  */
@@ -157,20 +157,23 @@ if ( defined( 'MODMAN_PLUGIN_NAME' ) ) {
     function wpcf_register_modules_sections( $sections ) {
         $sections[_TYPES_MODULE_MANAGER_KEY_] = array(
             'title' => __( 'Post Types', 'wpcf' ),
-            'icon' => WPCF_EMBEDDED_RES_RELPATH . '/images/logo-12.png'
+            'icon' => WPCF_EMBEDDED_RES_RELPATH . '/images/types-icon-color_12X12.png',
+            'icon_css' => 'icon-types ont-icon-20 ont-color-orange'
         );
         $sections[_GROUPS_MODULE_MANAGER_KEY_] = array(
             'title' => __( 'Field Groups', 'wpcf' ),
-            'icon' => WPCF_EMBEDDED_RES_RELPATH . '/images/logo-12.png'
+            'icon' => WPCF_EMBEDDED_RES_RELPATH . '/images/types-icon-color_12X12.png',
+            'icon_css' => 'icon-types ont-icon-20 ont-color-orange'
         );
         // no individual fields are exported
         /* $sections[_FIELDS_MODULE_MANAGER_KEY_]=array(
           'title'=>__('Fields','wpcf'),
-          'icon'=>WPCF_EMBEDDED_RES_RELPATH.'/images/logo-12.png'
+          'icon'=>WPCF_EMBEDDED_RES_RELPATH.'/images/types-icon-color_12X12.png'
           ); */
         $sections[_TAX_MODULE_MANAGER_KEY_] = array(
             'title' => __( 'Taxonomies', 'wpcf' ),
-            'icon' => WPCF_EMBEDDED_RES_RELPATH . '/images/logo-12.png'
+            'icon' => WPCF_EMBEDDED_RES_RELPATH . '/images/types-icon-color_12X12.png',
+            'icon_css' => 'icon-types ont-icon-20 ont-color-orange'
         );
 
         return $sections;
@@ -717,7 +720,10 @@ function wpcf_admin_export_selected_data ( array $items, $_type = 'all', $return
 
     if ( class_exists( 'ZipArchive' ) ) {
         $zipname = $sitename . 'types.' . date( 'Y-m-d' ) . '.zip';
-        $temp_dir = sys_get_temp_dir();
+        $temp_dir = wpcf_get_temporary_directory();
+        if ( empty( $temp_dir ) ) {
+            die(__('There is a problem with temporary directory.'));
+        }
         $file = tempnam( $temp_dir, "zip" );
         $zip = new ZipArchive();
         $zip->open( $file, ZipArchive::OVERWRITE );
@@ -949,12 +955,15 @@ function wpcf_admin_import_data_from_xmlstring( $data = '', $_type = 'types',
                 }
 
                 $field_data = array();
-                $field_data['id'] = $field['id'];
-                $field_data['name'] = $field['name'];
                 $field_data['description'] = isset( $field['description'] ) ? $field['description'] : '';
-                $field_data['type'] = $field['type'];
-                $field_data['slug'] = $field['slug'];
                 $field_data['data'] = (isset( $field['data'] ) && is_array( $field['data'] )) ? $field['data'] : array();
+
+                foreach( array( 'id', 'name', 'type', 'slug', 'meta_key', 'meta_type' ) as $key ) {
+                    if ( array_key_exists( $key, $field ) ) {
+                        $field_data[$key] = $field[$key];
+                    }
+                }
+
                 $fields_existing[$field_id] = $field_data;
                 $fields_check[] = $field_id;
 

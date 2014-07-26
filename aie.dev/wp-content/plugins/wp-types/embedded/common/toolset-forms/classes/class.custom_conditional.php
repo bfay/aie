@@ -69,8 +69,11 @@ class WPToolset_Forms_Custom_Conditional
 
         $logging_string = "Original expression: " . $evaluate;
 
-        add_filter( 'wpv-extra-condition-filters', 'wpv_add_time_functions' );
-        $evaluate = apply_filters( 'wpv-extra-condition-filters', $evaluate );
+		// Warning! those two lins below are copied directly from Views and have been modified
+		// So we will use the original flow: only parse date
+        //add_filter( 'wpv-extra-condition-filters', 'wpv_add_time_functions' );
+        //$evaluate = apply_filters( 'wpv-extra-condition-filters', $evaluate );
+		$evaluate = wpv_filter_parse_date( $evaluate );
 
         // evaluate empty() statements for variables
 //        $empties = preg_match_all( "/empty\(\s*\\$(\w+)\s*\)/", $evaluate,

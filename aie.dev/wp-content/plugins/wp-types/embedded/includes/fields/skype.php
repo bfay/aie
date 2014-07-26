@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/fields/skype.php $
+ * $LastChangedDate: 2014-07-14 09:05:44 +0000 (Mon, 14 Jul 2014) $
+ * $LastChangedRevision: 24915 $
+ * $LastChangedBy: marcin $
+ *
+ */
 
 /**
  * Register data (called automatically).
@@ -340,30 +348,36 @@ function wpcf_fields_skype_get_button_image( $skypename = '', $template = '' ) {
 }
 
 /**
+ *
  * View function.
- * 
- * @param type $params 
+ *
+ * @param type $params
+ *
+ * @return string
+ *
  */
-function wpcf_fields_skype_view( $params ) {
+function wpcf_fields_skype_view( $params )
+{
     if ( empty( $params['field_value']['skypename'] ) ) {
         return '__wpcf_skip_empty';
     }
     // Button style
     $button_style = 'default';
     // First check if passed by parameter
-    if ( !empty( $params['button_style'] ) ) {
+    if ( array_key_exists( 'button_style', $params ) && $params['button_style'] ) {
         $button_style = $params['button_style'];
         // Otherwise use saved value
-    } else if ( !empty( $params['field_value']['style'] ) ) {
+    } else if ( array_key_exists( 'style', $params['field_value'] ) && $params['field_value']['style'] ) {
         $button_style = $params['field_value']['style'];
+    } else if ( array_key_exists( 'button_style', $params['field_value'] ) && $params['field_value']['button_style'] ) {
+        $button_style = $params['field_value']['button_style'];
     }
     // Style can be overrided by params (shortcode)
     if ( !isset( $params['field_value']['style'] ) ) {
         $params['field_value']['style'] = '';
     }
     $class = empty( $params['class'] ) ? false : $params['class'];
-    $content = wpcf_fields_skype_get_button( $params['field_value']['skypename'],
-            $button_style, $class );
+    $content = wpcf_fields_skype_get_button( $params['field_value']['skypename'], $button_style, $class );
     return $content;
 }
 

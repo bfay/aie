@@ -144,7 +144,6 @@ class WPDDL_scripts_manager
 
 	private function __initialize_styles()
 	{
-
 		$this->styles['toolset-select2-css'] = new WPDDL_style('toolset-select2-css', WPDDL_RES_RELPATH . '/css/external_libraries/select2/select2.css');
 		$this->styles['layouts-select2-overrides-css'] = new WPDDL_style('layouts-select2-overrides-css', WPDDL_RES_RELPATH . '/css/external_libraries/select2/select2-overrides.css');
 		$this->styles['ddl_post_edit_page_css'] = new WPDDL_style('wp-layouts-pages', WPDDL_RES_RELPATH . '/css/dd-general.css');
@@ -156,6 +155,7 @@ class WPDDL_scripts_manager
 		$this->styles['layouts-global-css'] = new WPDDL_style('layouts-global-css', WPDDL_GUI_RELPATH . 'global/css/dd-general.css');
 		$this->styles['wp-editor-layouts-css'] = new WPDDL_style('wp-editor-layouts-css', WPDDL_GUI_RELPATH . 'editor/css/editor.css');
 		$this->styles['wp-layouts-pages'] = new WPDDL_style('wp-layouts-pages', WPDDL_RES_RELPATH . '/css/dd-general.css');
+		$this->styles['toolset-common'] = new WPDDL_style('toolset-common', WPDDL_TOOLSET_COMMON_RELPATH. '/res/css/toolset-common.css');
 
 		# dialogs css
 		$this->styles['layouts-meta-html-codemirror-css'] = new WPDDL_style('layouts-meta-html-codemirror-css', WPDDL_RES_RELPATH . '/codemirror/lib/codemirror.css');
@@ -163,18 +163,25 @@ class WPDDL_scripts_manager
 
 		$this->styles['wp-layouts-jquery-ui-slider'] = new WPDDL_style('wp-layouts-jquery-ui-slider', WPDDL_GUI_RELPATH . 'dialogs/css/jquery-ui-slider.css');
 		$this->styles['ddl-dialogs-forms-css'] = new WPDDL_style('ddl-dialogs-forms-css', WPDDL_RES_RELPATH  . '/css/dd-dialogs-forms.css');
-		$this->styles['views-dialogs-css'] = new WPDDL_style('views-dialogs-css', WPV_URL_EMBEDDED . '/res/css/dialogs.css', array(), WPV_VERSION);
+		if (defined('WPV_URL_EMBEDDED')) {
+			$this->styles['views-dialogs-css'] = new WPDDL_style('views-dialogs-css', WPV_URL_EMBEDDED . '/res/css/dialogs.css', array(), WPV_VERSION);
+		}
 		$this->styles['ddl-dialogs-general-css'] = new WPDDL_style('ddl-dialogs-general-css', WPDDL_RES_RELPATH . "/css/dd-dialogs-general.css");
 		$this->styles['ddl-dialogs-css'] = new WPDDL_style('ddl-dialogs-css', WPDDL_RES_RELPATH . "/css/dd-dialogs.css", array('ddl-dialogs-general-css'));
 
 		# common
-		$this->styles['views-pagination-style'] = new WPDDL_style( 'views-pagination-style', WPV_URL_EMBEDDED . '/res/css/wpv-pagination.css');
+		if (defined('WPV_URL_EMBEDDED')) {
+			$this->styles['views-pagination-style'] = new WPDDL_style( 'views-pagination-style', WPV_URL_EMBEDDED . '/res/css/wpv-pagination.css');
+		}
+		
 
 		#listing pages
 
 		$this->styles['dd-listing-page-style'] = new WPDDL_style('dd-listing-page-style', WPDDL_RES_RELPATH . '/css/dd-listing-page-style.css', array());
 
 		#FE styles
+
+        $this->styles['ddl-front-end'] = new WPDDL_style('ddl-front-end', WPDDL_RES_RELPATH . "/css/ddl-front-end.css");
 		$this->styles['menu-cells-front-end'] = new WPDDL_style('menu-cells-front-end', WPDDL_RES_RELPATH . "/css/cell-menu-css.css");
 	}
 
@@ -194,13 +201,10 @@ class WPDDL_scripts_manager
 		//listing//////
 		$this->scripts['ddl_create_new_layout'] = new WPDDL_script('ddl_create_new_layout', (WPDDL_RES_RELPATH . "/js/dd_create_new_layout.js"), array('jquery'), null, true);
 		$this->scripts['wp-layouts-colorbox-script'] = new WPDDL_script('wp-layouts-colorbox-script', WPDDL_RES_RELPATH . '/js/external_libraries/jquery.colorbox-min.js', array('jquery'));
-	//	$this->scripts['layouts-utils-script'] = new WPDDL_script('layouts-utils-script', WPDDL_RES_RELPATH . '/js/external_libraries/utils.js', array('jquery', 'underscore', 'backbone'), null, true );
 		$this->scripts['ddl_post_edit_page'] = new WPDDL_script('ddl_post_edit_page', (WPDDL_RES_RELPATH . "/js/dd_layouts_post_edit_page.js"), array('jquery'), null, true);
 
-		$this->scripts['ddl-post-type-options-script'] = new WPDDL_script('ddl-post-type-options-script', (WPDDL_GUI_RELPATH . "editor/js/ddl-post-types-options.js"), array('ddl-editor-main'), null, true);
-		$this->scripts['wp-layouts-dialogs-script'] = new WPDDL_script('wp-layouts-dialogs-script', WPDDL_GUI_RELPATH . 'dialogs/js/dialogs.js', array('jquery', 'editor', 'thickbox', 'media-upload'));
+		$this->scripts['wp-layouts-dialogs-script'] = new WPDDL_script('wp-layouts-dialogs-script', WPDDL_GUI_RELPATH . 'dialogs/js/dialogs.js', array('jquery', 'editor', 'thickbox', 'media-upload', 'toolset-utils'));
 
-		$this->scripts['ddl-layouts-listing-page'] = new WPDDL_script('ddl-layouts-listing-page', WPDDL_RES_RELPATH . '/js/ddl-listing-page.js', array('jquery'));
 		$this->scripts['ddl-post-types'] = new WPDDL_script('ddl-post-types', WPDDL_RES_RELPATH . '/js/ddl-post-types.js', array('jquery'));
 
 
@@ -233,20 +237,31 @@ class WPDDL_scripts_manager
 			$this->scripts['ddl-sanitize-html'] = new WPDDL_script('ddl-sanitize-html', WPDDL_RES_RELPATH . '/js/external_libraries/sanitize/sanitize.js', array() );
 			$this->scripts['ddl-sanitize-helper'] = new WPDDL_script('ddl-sanitize-helper', WPDDL_GUI_RELPATH . 'editor/js/ddl-sanitize-helper.js', array('underscore', 'ddl-sanitize-html', 'jquery') );
 			$this->scripts['icl_editor-script'] = new WPDDL_script('icl_editor-script',
-				WPDDL_RELPATH . '/embedded-views/common/visual-editor/res/js/icl_editor_addon_plugin.js',
+				WPDDL_RELPATH . '/toolset-common/visual-editor/res/js/icl_editor_addon_plugin.js',
 				array('views-codemirror-script'));
 		}
 		// listing
 		if( isset($_GET['page']) && $_GET['page'] === 'dd_layouts' )
 		{
-			$this->styles['dd-listing-page-main'] = new WPDDL_script('dd-listing-page-main', (WPDDL_GUI_RELPATH . "listing/js/main.js"), array('headjs', 'jquery', 'backbone', 'jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-dialog', 'jquery-ui-tooltip'), null, true);
+			$this->styles['dd-listing-page-main'] = new WPDDL_script('dd-listing-page-main', (WPDDL_GUI_RELPATH . "listing/js/main.js"), array('headjs', 'jquery', 'backbone', 'jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-dialog', 'jquery-ui-tooltip', 'jquery', 'jquery-ui-tabs'), null, true);
 		}
 
 		// Common
-		$this->scripts['views-utils-script'] = new WPDDL_script('views-utils-script' , WPV_URL_EMBEDDED . '/res/js/lib/utils.js', array('jquery','toolset-colorbox', 'views-select2-script'), WPV_VERSION);
+		if (defined('WPV_URL_EMBEDDED')) {
+			$this->scripts['views-utils-script'] = new WPDDL_script('views-utils-script' , WPV_URL_EMBEDDED . '/res/js/lib/utils.js', array('jquery','toolset-colorbox', 'views-select2-script'), WPV_VERSION);
+		}
 
 		// Front End Scripts
 		$this->scripts['ddl-layouts-frontend'] = new WPDDL_script('ddl-layouts-frontend', WPDDL_RES_RELPATH . '/js/ddl-layouts-frontend.js', array('jquery'));
+		
+		// Views support
+		if( isset( $_GET['in-iframe-for-layout']) && $_GET['in-iframe-for-layout'] == 1 &&
+			(isset( $_GET['page'] ) && (('views-editor' == $_GET['page']) ||
+										('views-embedded' == $_GET['page']) ||
+										('view-archives-embedded' == $_GET['page']) ||
+										('view-archives-editor' == $_GET['page']) ))) {
+			$this->scripts['ddl-layouts-views-support'] = new WPDDL_script('ddl-layouts-views-support', WPDDL_RES_RELPATH . '/js/dd-layouts-views-support.js', array('jquery'));
+		}
 
 	}
 

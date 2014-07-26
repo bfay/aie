@@ -97,8 +97,11 @@
 
 	.dd-layouts-header {
 		margin: 0 0 15px 0;
+        float:left;
+        position:relative;
+        display:block;
+        width:100%;
 	}
-
 		.dd-layouts-header i {
 			margin: 0 0 0 10px;
 			color: #999;
@@ -150,6 +153,22 @@
 			margin-top: 5px;
 		}
 
+.dd-layouts-header h2{padding:0 0 20px 0;}
+/*edit settings in header box */
+.dd-layouts-header .edit-layout-settings{font-size:18px;margin:0 0 0 6px;}
+
+#edit-slug-box{}
+#edit-slug-box label{vertical-align: top;}
+.edit-layout-slug{font-size: 13px;height: 22px;margin: 0;width: 16em;}
+#edit-slug-buttons-active{display:none;}
+
+/* edit buttons and view layout box in header */
+#edit-slug-buttons-active a.cancel{}
+.ddl-layout-assigned-to-many li{}
+.ddl-layout-assigned-to-many{}
+.ddl-layout-assigned-to-many ul{}
+.dd-layouts-header #edit-slug-box{display: inline-block;float:left;position:relative;}
+
 /* Layout editor header END */
 
 /* --------------------  */
@@ -188,11 +207,12 @@
 /* ------------------------  */
 /* Layout where used wrapper */
 /* ------------------------- */
+.where-used-ui{display:none;}
 
 .dd-layouts-where-used {
 	padding: 10px 16px;
 	background: #fff;
-	border: 1px solid #dfdfdf
+	border: 1px solid #dfdfdf;
 }
 
 	.dd-layouts-where-used .apply-for-all {
@@ -205,6 +225,12 @@
 		color: #d54e21;
 		margin: 0 2px 0 5px;
 	}
+    li.post-type-li-in-where-used-list{color:#666;font-weight:bold;}
+    li.padding-top{padding-top:10px;}
+    .ddl-layout-assigned-to-many li.post-type{color:#666;font-weight:bold;padding-bottom:0;margin-bottom:0;}
+    .show_all_wrap{float:right;}
+    .where-used-title-wrap{width:100%;}
+
 
 /* Layout where used wrapper END */
 
@@ -228,8 +254,8 @@
 		box-sizing: border-box;
 		margin: 1px;
 		padding: 3px;
-		border: 1px solid transparent;
-		border-radius: 3px;
+	/*	border: 1px solid transparent;
+		border-radius: 3px;*/
 		-ms-box-sizing: border-box;
 	}
 	.dd-layouts-breadcrumbs .layout-title:hover {
@@ -1550,7 +1576,7 @@
 .grid-designer-wrap {
 	position: relative;
 	float: left;
-	padding: 10px 5px 5px 10px;
+	padding: 10px 0px 5px 10px;
 }
 
 	.grid-info-wrap {
@@ -1582,40 +1608,41 @@
 		.grid-designer .grid-row {
 			clear: both;
 			overflow: hidden;
+            width:536px;
 		}
 
 			.grid-designer .grid-cell {
 				float: left;
 				margin: 0 5px 5px 0;
-				width: 25px;
+				width: 2.88em;
 				height: 25px;
 				border: 1px solid #ccc;
 				background: #ddd;
 			}
 
 			.grid-designer .grid-cell-2 {
-				width: 57px;
+				width: 82px;
 			}
 
 			.grid-designer .grid-cell-3 {
-				width: 89px;
+			     width: 9.73em;;
 			}
 
 			.grid-designer .grid-cell-4 {
-				width: 121px;
+				width: 171px;
 			}
 
 			.grid-designer .grid-cell-6 {
-				width: 185px;
+				width: 260px;
 			}
 
 			.grid-designer .grid-cell-12 {
-				width: 377px;
+				width: 527px;
 			}
 
 .horizontal-slider {
 	margin: 0 0 0 21px;
-	width: 377px;
+	width: 536px;
 	cursor: pointer;
 }
 
@@ -1631,7 +1658,7 @@
 	cursor: pointer;
 }
 
-#js-fluid-views-grid-slider-horizontal {
+.js-fluid-views-grid-slider-horizontal {
 	margin-left: 0px !important;
 }
 
@@ -1701,6 +1728,16 @@
 .ajax-loader-bar {
 	width: 100%;
 	background: url('../../../../resources/images/ajax-loader-overlay.gif') center center no-repeat;
+}
+
+/* View selector in Views Content Grid cell */
+
+.ddl-view-select {
+	margin-bottom: 10px;
+}
+
+.views-grid-button {
+	margin-top: 20px !important;
 }
 
 /*

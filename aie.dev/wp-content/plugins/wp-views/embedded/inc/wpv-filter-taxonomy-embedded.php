@@ -38,7 +38,7 @@ function wpv_taxonomy_default_settings( $view_settings ) {
 }
 
 function get_taxonomy_query($view_settings) {
-    global $WP_Views, $wpdb, $WPVDebug;
+    global $WP_Views, $wpdb, $WPVDebug, $sitepress;
 
     $taxonomies = get_taxonomies('', 'objects');
     $view_id = $WP_Views->get_current_view();
@@ -123,7 +123,7 @@ function get_taxonomy_query($view_settings) {
 			case 'this_parent':
 			$parent_id = $view_settings['taxonomy_parent_id'];
 
-			if ( function_exists('icl_object_id') && isset( $view_settings['taxonomy_type'][0] ) && !empty( $parent_id ) ) {
+			if ( isset($sitepress) && function_exists('icl_object_id') && isset( $view_settings['taxonomy_type'][0] ) && !empty( $parent_id ) ) {
 				// Adjust for WPML support
 				$parent_id = icl_object_id( $parent_id, $view_settings['taxonomy_type'][0], true );
 			}
@@ -147,7 +147,7 @@ function get_taxonomy_query($view_settings) {
 
 				$filtered_terms = array();
 
-				if ( function_exists('icl_object_id') && isset( $view_settings['taxonomy_type'][0] ) && !empty( $view_settings['taxonomy_terms'] ) ) {
+				if ( isset($sitepress) && function_exists('icl_object_id') && isset( $view_settings['taxonomy_type'][0] ) && !empty( $view_settings['taxonomy_terms'] ) ) {
 					// Adjust for WPML support
 					$trans_term_ids = array();
 					foreach ( $view_settings['taxonomy_terms'] as $untrans_term_id ) {
@@ -169,31 +169,37 @@ function get_taxonomy_query($view_settings) {
 			}
 		} else {
 			// get the terms from the current page.
-
-			global $post;
-			$terms = get_the_terms($post->ID, $view_settings['taxonomy_type'][0]);
 			
-			if ( !is_array( $terms ) ) {
-				$terms = array();
-			}
+			if ( isset( $taxonomies[$view_settings['taxonomy_type'][0]] ) ) {
 
-			$filtered_terms = array();
-			$terms_info = array();
+				global $post;
+				$terms = get_the_terms($post->ID, $view_settings['taxonomy_type'][0]);
+				
+				if ( !is_array( $terms ) ) {
+					$terms = array();
+				}
 
-			foreach($items as $item) {
-				foreach($terms as $term) {
-					if ($item->term_id == $term->term_id) {
-					// only add the terms in the 'taxonomy_terms' array.
-					$filtered_terms[] = $item;
-					$terms_info[] = $term->name . ' (id=' . $term->term_id . ')';
+				$filtered_terms = array();
+				$terms_info = array();
+
+				foreach($items as $item) {
+					foreach($terms as $term) {
+						if ($item->term_id == $term->term_id) {
+						// only add the terms in the 'taxonomy_terms' array.
+						$filtered_terms[] = $item;
+						$terms_info[] = $term->name . ' (id=' . $term->term_id . ')';
+						}
 					}
 				}
+
+				$items = $filtered_terms;
+
+				$WPVDebug->add_log( 'filters' , "Filter by terms from the current page " . implode( ', ' , $terms_info ) . "\n" . print_r($items, true) , 'filters', 'Filter by terms from the current page' );
+
+			} else {
+				$items = array();
+				$WPVDebug->add_log( 'filters' , "Filter by terms from the current page but for a taxonomy that no longer exists \n" . print_r($items, true) , 'filters', 'Filter by terms from the current page' );
 			}
-
-			$items = $filtered_terms;
-
-			$WPVDebug->add_log( 'filters' , "Filter by terms from the current page " . implode( ', ' , $terms_info ) . "\n" . print_r($items, true) , 'filters', 'Filter by terms from the current page' );
-
 		}
 
     }

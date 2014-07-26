@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.select.php $
+ * $LastChangedDate: 2014-06-24 10:55:48 +0000 (Tue, 24 Jun 2014) $
+ * $LastChangedRevision: 24192 $
+ * $LastChangedBy: marcin $
+ *
+ */
 require_once 'class.field_factory.php';
 
 /**
@@ -34,9 +42,16 @@ class WPToolset_Field_Select extends FieldFactory
                 $options[] = $one_option_data;
             }
         }
+        $options = apply_filters( 'wpt_field_options', $options, $this->getTitle(), 'select' );
+        /**
+         * default_value
+         */
         if ( !empty( $value ) || $value == '0' ) {
             $data['default_value'] = $value;
         }
+        /**
+         * metaform
+         */
         $form[] = array(
             '#type' => 'select',
             '#title' => $this->getTitle(),
@@ -46,6 +61,7 @@ class WPToolset_Field_Select extends FieldFactory
             '#default_value' => isset( $data['default_value'] ) ? $data['default_value'] : null,
             '#validate' => $this->getValidationData(),
             '#class' => 'form-inline',
+            '#repetitive' => $this->isRepetitive(),
         );
         return $form;
     }

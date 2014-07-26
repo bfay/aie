@@ -14,7 +14,7 @@
 
 				<ul>
 					<li><a href="#js-grid-content-<?php echo $unique_id; ?>"><?php _e('Content', 'ddl-layouts'); ?></a></li>
-					<li><a href="#js-grid-settings-<?php echo $unique_id; ?>"><?php _e('Grid Display Settings', 'ddl-layouts'); ?></a></li>
+					<li class="ddl-tab-right"><a href="#js-grid-settings-<?php echo $unique_id; ?>"><?php _e('CSS styling', 'ddl-layouts'); ?></a></li>
 				</ul>
 
 				<div class="ddl-dialog-content-main ddl-popup-tab" id="js-grid-content-<?php echo $unique_id; ?>">

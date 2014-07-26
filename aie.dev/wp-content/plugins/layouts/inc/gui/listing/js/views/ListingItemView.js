@@ -90,6 +90,7 @@ DDLayout.listing.views.ListingItemView = Backbone.View.extend({
 				self.$el.fadeOut(200, function(){
 					self.eventDispatcher.trigger('changeLayoutStatus', data_object, data_object.value, function(){
 						self.model.collection.remove( self.model );
+                        self.eventDispatcher.trigger('changes_in_dialog_done');
 					});
 				});
 			}
@@ -124,6 +125,17 @@ DDLayout.listing.views.ListingItemView = Backbone.View.extend({
 					{
 						switch( self.model.get('group') )
 						{
+                            case 4:
+                                var len = self.model.get('loops').length;
+                                if( len === 1 )
+                                {
+                                    message = DDLayout_settings.DDL_JS.strings.to_an_archive;
+                                }
+                                else
+                                {
+                                    message = DDLayout_settings.DDL_JS.strings.to_archives.printf( len.toString() );
+                                }
+                                break;
 							case 3:
 								var len = self.model.get('types').length;
 								if( len === 1 )
@@ -179,7 +191,7 @@ DDLayout.listing.views.ListingItemView = Backbone.View.extend({
 
 			if( data_object.value === 'change' )
 			{
-				DDLayout.listing_manager.loadChangeUseDialog( data_object, select )
+				DDLayout.listing_manager.loadChangeUseDialog( data_object )
 			}
 			else if( data_object.value === 'trash' || data_object.value === 'publish' )
 			{
@@ -201,6 +213,7 @@ DDLayout.listing.views.ListingItemView = Backbone.View.extend({
 	},
 	duplicate:function( data_obj )
 	{
+        var self = this;
 		var params = {
 			action: 'duplicate_layout',
 			'layout-duplicate-layout-nonce':data_obj.duplicate_nonce,
@@ -212,6 +225,7 @@ DDLayout.listing.views.ListingItemView = Backbone.View.extend({
 			DDLayout.listing_manager.listing_table_view.current = response.added;
 			DDLayout.listing_manager.listing_table_view.$el.loaderOverlay('hide');
 			DDLayout.listing_manager.listing_table_view.manage_count_items( data_obj );
+            DDLayout.listing_manager.listing_table_view.eventDispatcher.trigger('changes_in_dialog_done');
 		});
 	},
 	highlight:function()

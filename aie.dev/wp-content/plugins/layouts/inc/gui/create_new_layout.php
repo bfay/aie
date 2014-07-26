@@ -126,7 +126,7 @@ asort($preset_layouts);
 									</p>
 
 									<div class="js-ddl-post-types-dropdown-list ddl-post-types-dropdown-list hidden">
-										<?php echo $wpddlayout->post_types_manager->print_post_types_checkboxes();?>
+										<?php echo $wpddlayout->post_types_manager->print_post_types_checkboxes(false, true, '', false );?>
 									</div>
 								</li>
 							</ul>

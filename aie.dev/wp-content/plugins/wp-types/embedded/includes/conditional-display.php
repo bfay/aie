@@ -52,7 +52,11 @@ function wpcf_cd_post_groups_filter( $groups, $post, $context ) {
                 $suffix = '';
 
                 $cond = array();
-                $cond_values = get_post_custom( $post->ID );
+                if (isset( $post->ID )) {
+                    $cond_values = get_post_custom( $post->ID );
+                } else {
+                    $cond_values = array();
+                }
                 $_cond_values = array();
                 foreach ( $cond_values as $k => $v ) {
                     $v = maybe_unserialize( $v[0] );

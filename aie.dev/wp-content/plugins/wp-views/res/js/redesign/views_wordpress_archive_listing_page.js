@@ -144,8 +144,8 @@ jQuery(document).ready(function($) {
 	$('#posts-filter').submit(function(e) {
 		e.preventDefault();
 		var url_params = decodeURIParams($(this).serialize());
-		if (typeof(url_params['search']) !== 'undefined' && url_params['search'] == '') {
-			url_params['search'] = null;
+		if (typeof(url_params['s']) !== 'undefined' && url_params['s'] == '') {
+			url_params['s'] = null;
 		}
 		navigateWithURIParams(url_params);
 		
@@ -207,6 +207,7 @@ jQuery(document).ready(function($) {
 			action: 'wpv_view_change_status',
 			id: data_view_id,
 			newstatus: 'trash',
+			cleararchives: 'yes',
 			wpnonce : view_listing_action_nonce
 		};
 		$.ajax({

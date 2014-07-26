@@ -5,7 +5,7 @@ function wpv_admin_menu_content_templates_listing_page() { ?>
 		<div class="wpv-views-listing-page">
 			<?php
 			wp_nonce_field( 'work_view_template', 'work_view_template' );
-			$search_term = isset( $_GET["search"] ) ? urldecode( sanitize_text_field($_GET["search"]) ) : '';
+			$search_term = isset( $_GET["s"] ) ? urldecode( sanitize_text_field($_GET["s"]) ) : '';
 			?>
 			<div id="icon-views" class="icon32"></div>
 			<h2><!-- classname wpv-page-title removed -->
@@ -64,7 +64,7 @@ function wpv_admin_content_template_listing_name() {
 	$mod_url = array( // array of URL modifiers
 		'orderby' => '',
 		'order' => '',
-		'search' => '',
+		's' => '',
 		'items_per_page' => '',
 		'paged' => '',
 		'status' => ''
@@ -83,8 +83,8 @@ function wpv_admin_content_template_listing_name() {
 		$mod_url['status'] = '&amp;status=' . sanitize_text_field( $_GET["status"] );
 	}
 
-	if ( isset( $_GET["search"] ) && '' != $_GET["search"] ) {
-		$s_param = urldecode(sanitize_text_field($_GET["search"]));
+	if ( isset( $_GET["s"] ) && '' != $_GET["s"] ) {
+		$s_param = urldecode(sanitize_text_field($_GET["s"]));
 		$new_args = $wpv_args;
 		$unique_ids = array();
 
@@ -116,12 +116,12 @@ function wpv_admin_content_template_listing_name() {
 		$unique = array_unique($unique_ids);
 
 		if ( count($unique) == 0 ){
-			$wpv_args['post__in'] = array('-1');
+			$wpv_args['post__in'] = array('0');
 		}else{
 			$wpv_args['post__in'] = $unique;
 		}
 
-		$mod_url['search'] = '&amp;search=' . sanitize_text_field($_GET["search"]);
+		$mod_url['s'] = '&amp;s=' . sanitize_text_field($_GET["s"]);
 	}
 
 	if ( isset( $_GET["items_per_page"] ) && '' != $_GET["items_per_page"] ) {
@@ -164,16 +164,16 @@ function wpv_admin_content_template_listing_name() {
 	</div>
 	
 	<ul class="subsubsub" style="clear:left"><!-- links to lists WPA in different statuses -->
-		<li><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;status=publish"<?php if ( $wpv_args['post_status'] == 'publish' && !isset( $_GET["search"] ) ) echo ' class="current"'; ?>><?php _e('Published', 'wpv-views'); ?></a> (<?php echo $wpv_views_status['publish']; ?>) | </li>
-		<li><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;status=trash"<?php if ( $wpv_args['post_status'] == 'trash' && !isset( $_GET["search"] ) ) echo ' class="current"'; ?>><?php _e('Trash', 'wpv-views'); ?></a> (<?php echo $wpv_views_status['trash']; ?>)</li>
+		<li><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;status=publish"<?php if ( $wpv_args['post_status'] == 'publish' && !isset( $_GET["s"] ) ) echo ' class="current"'; ?>><?php _e('Published', 'wpv-views'); ?></a> (<?php echo $wpv_views_status['publish']; ?>) | </li>
+		<li><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;status=trash"<?php if ( $wpv_args['post_status'] == 'trash' && !isset( $_GET["s"] ) ) echo ' class="current"'; ?>><?php _e('Trash', 'wpv-views'); ?></a> (<?php echo $wpv_views_status['trash']; ?>)</li>
 	</ul>
 	
 	<?php if ( $wpv_found_posts > 0 ) { ?>
 	<form id="posts-filter" action="" method="get">
 		<p class="search-box">
 			<label class="screen-reader-text" for="post-search-input"><?php _e('Search Views:', 'wpv-views') ?></label>
-			<?php $search_term = isset( $_GET["search"] ) ? urldecode( sanitize_text_field($_GET["search"]) ) : ''; ?>
-			<input type="search" id="ct-post-search-input" name="search" value="<?php echo $search_term; ?>">
+			<?php $search_term = isset( $_GET["s"] ) ? urldecode( sanitize_text_field($_GET["s"]) ) : ''; ?>
+			<input type="search" id="ct-post-search-input" name="s" value="<?php echo $search_term; ?>">
 			<input type="submit" name="" id="ct-search-submit" class="button" value="<?php echo htmlentities( __('Search Content Templates', 'wpv-views'), ENT_QUOTES ); ?>">
 			<input type="hidden" name="paged" value="1" />
 		</p>
@@ -195,7 +195,7 @@ function wpv_admin_content_template_listing_name() {
 	<?php endif; ?>
 
 	<?php if ( $wpv_count_posts == 0 && ( $wpv_views_status['publish'] > 0 || $wpv_views_status['trash'] > 0 ) ) { //When no posts found
-		if ( isset( $_GET["search"] ) && '' != $_GET["search"] ) { ?>
+		if ( isset( $_GET["s"] ) && '' != $_GET["s"] ) { ?>
 			<?php if ( isset( $_GET["status"] ) && $_GET["status"] == 'trash' ) { ?>
 				<div class="wpv-views-listing views-empty-list">
 					<p><?php echo __('No Content Templates in trash matched your criteria.','wpv-views'); ?> <a class="button-secondary" href="<?php echo admin_url('admin.php'); ?>?page=view-templates<?php echo $mod_url['orderby'] . $mod_url['order'] . $mod_url['items_per_page']; ?>&amp;paged=1&amp;status=trash"><?php _e('Return', 'wpv-views'); ?></a></p>
@@ -234,13 +234,17 @@ function wpv_admin_content_template_listing_name() {
 					$column_active = '';
 					$column_sort_to = 'ASC';
 					$column_sort_now = 'ASC';
+					$status = '';
 					if ( $wpv_args['orderby'] === 'title' ) {
 						$column_active = ' views-list-sort-active';
 						$column_sort_to = ( $wpv_args['order'] === 'ASC' ) ? 'DESC' : 'ASC';
 						$column_sort_now = $wpv_args['order'];
 					}
+					if ( isset($_GET['status']) && $_GET['status'] == 'trash' ){
+						$status = '&amp;status=trash';	
+					}
 					?>
-					<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+					<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates<?php echo $status?>&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 					<th class="wpv-admin-listing-col-usage js-wpv-col-two"><?php _e('Used on','wpv-views') ?></th>
 					<th class="wpv-admin-listing-col-action"><?php _e('Action','wpv-views') ?></th>
 					<?php
@@ -253,7 +257,7 @@ function wpv_admin_content_template_listing_name() {
 						$column_sort_now = $wpv_args['order'];
 					}
 					?>
-					<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+					<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates<?php echo $status?>&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 				</tr>
 			</thead>
 			<tfoot>
@@ -268,7 +272,7 @@ function wpv_admin_content_template_listing_name() {
 						$column_sort_now = $wpv_args['order'];
 					}
 					?>
-					<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+					<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 					<th class="wpv-admin-listing-col-usage js-wpv-col-two"><?php _e('Used on','wpv-views') ?></th>
 					<th class="wpv-admin-listing-col-action"><?php _e('Action','wpv-views') ?></th>
 					<?php
@@ -281,7 +285,7 @@ function wpv_admin_content_template_listing_name() {
 						$column_sort_now = $wpv_args['order'];
 					}
 					?>
-					<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+					<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=view-templates&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 				</tr>
 			</tfoot>
 

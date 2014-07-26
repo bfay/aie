@@ -4,7 +4,7 @@ Donate link: http://wp-types.com/
 Tags: layouts, layout, drag&drop, themes, templates
 Requires at least: 3.7
 Tested up to: 3.9
-Stable tag: 0.9.1
+Stable tag: 0.9.2
 
 A theme independant drag and drop layout generator for bootstrap themes.
 

@@ -2,10 +2,10 @@
 /*
  * Import/export data.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/includes/import-export.php $
- * $LastChangedDate: 2014-05-20 12:45:57 +0000 (Tue, 20 May 2014) $
- * $LastChangedRevision: 22484 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/includes/import-export.php $
+ * $LastChangedDate: 2014-07-18 12:46:15 +0000 (Fri, 18 Jul 2014) $
+ * $LastChangedRevision: 25107 $
+ * $LastChangedBy: riccardo $
  *
  */
 require_once WPCF_EMBEDDED_INC_ABSPATH . '/import-export.php';
@@ -23,8 +23,10 @@ function wpcf_admin_import_export_form()
         '#name' => '_wpnonce',
         '#value' => wp_create_nonce( 'wpcf_import' ),
     );
-    if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'],
-                    'wpcf_import' ) ) {
+    $form_base = $form;
+    $show_first_screen = true;
+    if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'wpcf_import' ) ) {
+        $show_first_screen = false;
         if ( isset( $_POST['import-final'] ) ) {
             if ( $_POST['mode'] == 'file' && !empty( $_POST['file'] )
                     && file_exists( urldecode( $_POST['file'] ) ) ) {
@@ -88,7 +90,7 @@ function wpcf_admin_import_export_form()
                         $new_file );
                 if ( !$move ) {
                     echo '<div class="message error"><p>'
-                    . __( 'Error moving upladed file', 'wpcf' )
+                    . __( 'Error moving uploaded file', 'wpcf' )
                     . '</p></div>';
                     return array();
                 }
@@ -147,34 +149,38 @@ function wpcf_admin_import_export_form()
                 echo '<div class="message error"><p>'
                 . __( 'Data not valid', 'wpcf' )
                 . '</p></div>';
-                return array();
+                $show_first_screen = true;
+            } else {
+                $data = wpcf_admin_import_export_settings( $data );
+                if ( empty( $data ) ) {
+                    echo '<div class="message error"><p>'
+                        . __( 'Data not valid', 'wpcf' )
+                        . '</p></div>';
+                    $show_first_screen = true;
+                } else {
+                    $form = array_merge( $form, $data );
+                    $form['mode'] = array(
+                        '#type' => 'hidden',
+                        '#name' => 'mode',
+                        '#value' => $mode,
+                    );
+                    $form['import-final'] = array(
+                        '#type' => 'hidden',
+                        '#name' => 'import-final',
+                        '#value' => 1,
+                    );
+                    $form['submit'] = array(
+                        '#type' => 'submit',
+                        '#name' => 'import',
+                        '#value' => __( 'Import', 'wpcf' ),
+                        '#attributes' => array('class' => 'button-primary'),
+                    );
+                }
             }
-            $data = wpcf_admin_import_export_settings( $data );
-            if ( empty( $data ) ) {
-                echo '<div class="message error"><p>'
-                . __( 'Data not valid', 'wpcf' )
-                . '</p></div>';
-                return array();
-            }
-            $form = array_merge( $form, $data );
-            $form['mode'] = array(
-                '#type' => 'hidden',
-                '#name' => 'mode',
-                '#value' => $mode,
-            );
-            $form['import-final'] = array(
-                '#type' => 'hidden',
-                '#name' => 'import-final',
-                '#value' => 1,
-            );
-            $form['submit'] = array(
-                '#type' => 'submit',
-                '#name' => 'import',
-                '#value' => __( 'Import', 'wpcf' ),
-                '#attributes' => array('class' => 'button-primary'),
-            );
         }
-    } else {
+    }
+    if ( $show_first_screen ) {
+        $form = $form_base;
         $form['embedded-settings'] = array(
             '#type' => 'radios',
             '#name' => 'embedded-settings',
@@ -186,8 +192,8 @@ function wpcf_admin_import_export_form()
             '#inline' => true,
             '#before' => '<h2>' . __( 'Export Types data', 'wpcf' ) . '</h2>'
             . __( 'Download all custom fields, custom post types and taxonomies created by Types plugin.',
-                    'wpcf' ) . '<br /><br />',
-        );
+                'wpcf' ) . '<br /><br />',
+            );
         $form['submit'] = array(
             '#type' => 'submit',
             '#name' => 'export',
@@ -195,6 +201,20 @@ function wpcf_admin_import_export_form()
             '#attributes' => array('class' => 'button-primary'),
             '#after' => '<br /><br />',
         );
+        /**
+         * check is temp folder available?
+         */
+        $temp = wpcf_get_temporary_directory();
+        if ( empty($temp) ) {
+            unset($form['submit']);
+            $form['embedded-settings']['#disable'] = true;
+            $form['embedded-settings']['#after'] = sprintf(
+                '<p class="error-message"><b>%s</b> %s</p>',
+                __( 'Temporary directory is not found or there is not enough disk space.', 'wpcf' ),
+                __('Please check server settings or contact your server administrator.', 'wpcf' )
+            );
+
+        }
         if ( extension_loaded( 'simplexml' ) ) {
             $attributes = !wpcf_admin_import_dir() ? array('disabled' => 'disabled') : array();
             $form['file'] = array(
@@ -350,7 +370,7 @@ function wpcf_admin_import_export_settings($data)
                 '#default_value' => true,
                 '#title' => '<strong>' . esc_html( $group['post_title'] ) . '</strong>',
                 '#inline' => true,
-                '#after' => '<br /><br />',
+                '#after' => '<br />',
             );
             $post = $wpdb->get_var( $wpdb->prepare(
                             "SELECT ID FROM $wpdb->posts

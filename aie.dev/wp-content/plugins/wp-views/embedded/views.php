@@ -1,6 +1,7 @@
 <?php
 
 // check for an import
+global $wpv_theme_import, $wpv_theme_import_xml;
 $wpv_theme_import = '';
 $wpv_theme_import_xml = '';
 if (file_exists(dirname(__FILE__) . '/settings.php')) {
@@ -18,7 +19,7 @@ if(defined('WPV_VERSION')) {
 
 // THEME VERSION
 
-define('WPV_VERSION', '1.6.1');
+define('WPV_VERSION', '1.6.2');
 define('WPV_PATH', dirname(__FILE__));
 define('WPV_PATH_EMBEDDED', dirname(__FILE__));
 
@@ -31,6 +32,9 @@ require WPV_PATH_EMBEDDED . '/inc/wpv-module-manager.php';
 
 if(strpos(str_replace('\\', '/', WPV_PATH_EMBEDDED), str_replace('\\', '/', WP_PLUGIN_DIR)) !== false){
 	$wpv_url = plugins_url('embedded-views' , dirname(__FILE__));
+	if ( defined( 'WPV_EMBEDDED_ALONE' ) ) {
+		$wpv_url = plugins_url() . '/' . WPV_FOLDER;
+	}
 	if ( ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN ) || is_ssl() ) {
 		$wpv_url = str_replace( 'http://', 'https://', $wpv_url );
 	}
@@ -39,6 +43,12 @@ if(strpos(str_replace('\\', '/', WPV_PATH_EMBEDDED), str_replace('\\', '/', WP_P
 } else {
 	define('WPV_URL', get_stylesheet_directory_uri() . '/' . WPV_FOLDER);
 	define('WPV_URL_EMBEDDED', WPV_URL);
+}
+
+if( defined('WPV_URL_EMBEDDED') ){
+    // load on the go resources
+    require_once WPV_PATH_EMBEDDED . '/onthego-resources/onthegosystems-branding-loader.php';
+    ont_set_on_the_go_systems_uri_and_start( WPV_URL_EMBEDDED . '/onthego-resources/' );
 }
 
 if (!defined('EDITOR_ADDON_RELPATH')) {
@@ -53,6 +63,7 @@ if ( !function_exists( 'wpv_debuger' ) ) {
 	require_once(WPV_PATH_EMBEDDED) . '/inc/wpv-query-debug.class.php';
 }
 
+require WPV_PATH_EMBEDDED . '/inc/wpv-admin-messages.php';
 require WPV_PATH_EMBEDDED . '/inc/functions-core-embedded.php';
 
 require_once WPV_PATH_EMBEDDED . '/common/wp-pointer.php';
@@ -106,15 +117,18 @@ require WPV_PATH . '/inc/views-templates/wpv-template.class.php';
 global $WPV_templates;
 $WPV_templates = new WPV_template();
 
+require WPV_PATH_EMBEDDED . '/inc/wpv-summary-embedded.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-readonly-embedded.php';
+
 function wpv_get_affiliate_url() {
     global $wpv_theme_import;
     
-    $affiliate_url = '';
+    $affiliate_url = '?utm_source=viewsplugin&utm_campaign=views&utm_medium=affiliate-link&utm_term=http://www.wp-types.com';
     if ($wpv_theme_import != '') {
 		include $wpv_theme_import;
         
         if (isset($affiliate_id) && isset($affiliate_key)) {
-            $affiliate_url = '?aid=' . $affiliate_id . '&affiliate_key=' . $affiliate_key;
+            $affiliate_url = '&aid=' . $affiliate_id . '&affiliate_key=' . $affiliate_key;
         }
         
     }

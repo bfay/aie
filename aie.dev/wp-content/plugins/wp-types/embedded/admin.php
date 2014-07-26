@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/admin.php $
- * $LastChangedDate: 2014-05-23 13:23:04 +0000 (Fri, 23 May 2014) $
- * $LastChangedRevision: 22678 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/admin.php $
+ * $LastChangedDate: 2014-07-01 03:13:24 +0000 (Tue, 01 Jul 2014) $
+ * $LastChangedRevision: 24517 $
+ * $LastChangedBy: bruce $
  *
  */
 require_once(WPCF_EMBEDDED_ABSPATH . '/common/visual-editor/editor-addon.class.php');
@@ -324,7 +324,7 @@ function wpcf_custom_fields_to_be_copied( $copied_fields, $original_post_id ) {
  */
 function wpcf_admin_validation_messages( $method = false, $sprintf = '' ) {
     $messages = array(
-        'required' => __( 'This Field is required', 'wpcf' ),
+        'required' => __( 'This field is required', 'wpcf' ),
         'email' => __( 'Please enter a valid email address', 'wpcf' ),
         'url' => __( 'Please enter a valid URL address', 'wpcf' ),
         'date' => __( 'Please enter a valid date', 'wpcf' ),

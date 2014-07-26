@@ -1,5 +1,10 @@
-/*
+/**
  * @see WPToolset_Forms_Conditional (classes/conditional.php)
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/js/conditional.js $
+ * $LastChangedDate: 2014-07-23 10:42:48 +0000 (Wed, 23 Jul 2014) $
+ * $LastChangedRevision: 25217 $
+ * $LastChangedBy: juan $
  *
  */
 var wptCondTriggers = {};
@@ -35,25 +40,47 @@ var wptCond = (function($) {
 
     function _getTrigger(trigger, formID)
     {
-        var $container = $('[data-wpt-name="'+ trigger + '"]', formID).closest('.cred-field');
+        var $trigger = $('[data-wpt-name="'+ trigger + '"]', formID);
+        /**
+         * wp-admin
+         */
+        if ( $('body').hasClass('wp-admin') ) {
+            trigger = trigger.replace( /wpcf\-/, 'wpcf[' ) + ']';
+            $trigger = $('[data-wpt-name="'+ trigger + '"]', formID);
+
+        }
+        /**
+         * handle skype field
+         */
+        if ( $trigger.length < 1 ) {
+            $trigger = $('[data-wpt-name="'+ trigger + '[skypename]"]', formID);
+        }
         /**
          * handle date field
          */
-        if ( $container.length < 1 ) {
-            $container = $('[data-wpt-name="'+ trigger + '[datepicker]"]', formID).closest('.cred-field');
+        if ( $trigger.length < 1 ) {
+            $trigger = $('[data-wpt-name="'+ trigger + '[datepicker]"]', formID);
+        }
+		/**
+         * handle checkboxes and multiselect
+         */
+        if ( $trigger.length < 1 ) {
+            $trigger = $('[data-wpt-name="'+ trigger + '[]"]', formID);
         }
         /**
-         * wp-admin area
+         * handle select
          */
-        if ( $('body').hasClass('wp-admin') ) {
-            $container = $('[data-wpt-id="' + trigger + '"]', formID).closest('.form-item');
+        if ( $trigger.length > 0 && 'option' == $trigger.data('wpt-type') ) {
+            $trigger = $trigger.parent();
         }
-        if ( $container.length < 1 ) {
-            $container = $('[name="'+trigger+'"]', formID ).closest('.cred-field');;
-        }
-        var $trigger = $('.js-wpt-cond-trigger', $container);
-        if ($trigger.length < 1) {
-            $trigger = $(':input', $container).first();
+        /**
+         * debug
+         */
+        if ( wptCondDebug ) {
+            console.info('_getTrigger');
+            console.log( 'trigger', trigger );
+            console.log( '$trigger', $trigger );
+            console.log( 'formID', formID );
         }
         return $trigger;
     }
@@ -62,16 +89,19 @@ var wptCond = (function($) {
     {
         if ( wptCondDebug ) {
             console.info('_getTriggerValue');
-            console.log( '$trigger', 1, $trigger );
-            console.log( 'formID', 1, formID );
+            console.log( '$trigger', $trigger );
+            console.log( '$trigger.type', $trigger.data('wpt-type') );
         }
         // Do not add specific filtering for fields here
         // Use add_filter() to apply filters from /js/$type.js
         var val = null;
+		// NOTE we might want to set val = ''; by default?
         switch( $trigger.data('wpt-type') ) {
             case 'radio':
             case 'radios':
                 radio = $('[name="' + $trigger.attr('name') + '"]:checked', formID);
+				// If no option was selected, the value should be empty
+				val = '';
                 if ( 'undefined' == typeof( radio.data('types-value' ) ) ) {
                     val = radio.val();
                 } else {
@@ -79,20 +109,47 @@ var wptCond = (function($) {
                 }
                 break;
             case 'select':
-                option = $('[name="' + $trigger.attr('name') + '"] option:selected', formID);
-                if ( 'undefined' == typeof( option.data('types-value' ) ) ) {
-                    val = option.val();
-                } else {
-                    val = option.data('types-value');
+				option = $('[name="' + $trigger.attr('name') + '"] option:selected', formID);
+				// If no option was selected, the value should be empty
+				val = '';
+                if ( wptCondDebug ) {
+                    console.log( 'option', option );
                 }
+				if ( option.length == 1 ) {
+					if ( 'undefined' == typeof( option.data('types-value' ) ) ) {
+						val = option.val();
+					} else {
+						val = option.data('types-value');
+					}
+				} else if ( option.length > 1 ) {
+					val = [];
+					option.each(function() {
+						if ( 'undefined' == typeof( $(this).data('types-value' ) ) ) {
+							val.push($(this).val());
+						} else {
+							val.push($(this).data('types-value'));
+						}
+					});
+				}
                 break;
             case 'checkbox':
-                if ( $trigger.is(':checked') ) {
-                    val = $trigger.val();
-                }
+                var $trigger_checked = $trigger.filter(':checked');
+				// If no checkbox was checked, the value should be empty
+				val = '';
+				if ( $trigger_checked.length == 1 ) {
+                    val = $trigger_checked.val();
+                } else if ( $trigger_checked.length > 1 ) {
+					val = [];
+					$trigger_checked.each(function() {
+						val.push($(this).val());
+					});
+				}
                 break;
             default:
                 val = $trigger.val();
+        }
+        if ( wptCondDebug ) {
+            console.log( 'val', val );
         }
         return val;
     }
@@ -104,52 +161,90 @@ var wptCond = (function($) {
         }
         var $el = $('[data-wpt-id="' + affected + '"]', formID);
         if ( $('body').hasClass('wp-admin') ) {
-            $el = $el.closest('.form-item');
+            $el = $el.closest('.wpt-field');
             if ($el.length < 1) {
                 $el = $('#' + affected, formID).closest('.form-item');
             }
-        } else if ( $el.length < 1 ) {
-            $el = $('[data-wpt-id="' + affected + '_file"]', formID).closest('.cred-field');
+        } else {
+			if ( $el.length < 1 ) {
+				/**
+				 * get pure field name, without form prefix
+				 */
+				re = new RegExp(formID+'_');
+				name = '#'+affected;
+				name = name.replace( re, '' );
+				/**
+				 * try get element
+				 */
+				$obj = $('[data-wpt-id="' + affected + '_file"]', formID);
+				/**
+				 * handle by wpt field name
+				 */
+				if ( $obj.length < 1 ) {
+					$obj = $('[data-wpt-name="'+ name + '"]', formID);
+				}
+				/**
+				 * handle date field
+				 */
+				if ( $obj.length < 1 ) {
+					$obj = $('[data-wpt-name="'+ name + '[datepicker]"]', formID);
+				}
+				/**
+				 * handle skype field
+				 */
+				if ( $obj.length < 1 ) {
+					$obj = $('[data-wpt-name="'+ name + '[skypename]"]', formID);
+				}
+				/**
+				 * handle checkboxes field
+				 */
+				if ( $obj.length < 1 ) {
+					$obj = $('[data-wpt-name="'+ name + '[]"]', formID);
+				}
+				/**
+				 * catch by id
+				 */
+				if ($obj.length < 1) {
+					$obj = $('#' + affected, formID);
+				}
+			
+			} else {
+				$obj = $el;
+			}
             /**
-             * handle by wpt field name
+             * finally catch parent: we should have catched the $obj
              */
-            if ( $el.length < 1 ) {
-                re = new RegExp(formID+'_');
-                name = '#'+affected;
-                name = name.replace( re, '' );
-                $el = $('[data-wpt-name="'+ name + '"]', formID).closest('.cred-field');
+            if ($obj.length > 0) {
+                $el = $obj.closest('.js-wpt-conditional-field');
+				if ( $el.length < 1 ) {
+					$el = $obj.closest('.cred-field');// This for backwards compatibility
+					if ( $el.length < 1 ) {
+						$el = $obj.closest('.js-wpt-field-items');
+					}
+				}
             }
             /**
-             * handle date field
+             * debug
              */
-            if ( $el.length < 1 ) {
-                re = new RegExp(formID+'_');
-                name = '#'+affected;
-                name = name.replace( re, '' );
-                $el = $('[data-wpt-name="'+ name + '[datepicker]"]', formID).closest('.cred-field');
-            }
-            /**
-             * handle skype field
-             */
-            if ( $el.length < 1 ) {
-                re = new RegExp(formID+'_');
-                name = '#'+affected;
-                name = name.replace( re, '' );
-                $el = $('[data-wpt-name="'+ name + '[skypename]"]', formID).closest('.cred-field');
-            }
-            /**
-             * catch by id
-             */
-            if ($el.length < 1) {
-                $el = $('#' + affected, formID).closest('.cred-field');
+            if ( wptCondDebug ) {
+                console.log('$obj', $obj);
             }
         }
         if ($el.length < 1) {
             $el = $('#' + affected, formID);
         }
+        /**
+         * generic conditional field
+         */
+        if ($el.length < 1) {
+            $el = $('.cred-group.' + affected, formID);
+        }
+        /**
+         * debug
+         */
         if ( wptCondDebug ) {
-            console.log(affected);
-            console.log($el);
+            console.log('affected', affected);
+            console.log('$el', $el);
         }
         return $el;
     }
@@ -172,7 +267,11 @@ var wptCond = (function($) {
                 console.log('val', 1, val);
             }
 
-            val = apply_filters('conditional_value_' + $trigger.data('wpt-type'), val, $trigger);
+			var field_type = $trigger.data('wpt-type');
+			if ( data.type == 'date' ) {
+				field_type = 'date';
+			}
+            val = apply_filters('conditional_value_' + field_type, val, $trigger);
             if ( wptCondDebug ) {
                 console.log('val', 2, val);
             }
@@ -181,14 +280,18 @@ var wptCond = (function($) {
             /**
              * handle types
              */
+			 // Not needed anymore
+			 // NEVER Date.parse timestamps coming from adodb_xxx functions
+			 /*
             switch(data.type) {
-                case 'date':
-                    if ( _val ) {
-                        _val = Date.parse(_val);
-                    }
-                    val = Date.parse(val);
+                case 'date'://alert(_val);alert(val);
+                    if ( _val ) {//alert('this is _val ' + _val);
+                    //    _val = Date.parse(_val);//alert('this is _val after parse ' + _val);
+                    }//alert('val is ' + val);
+                    //val = Date.parse(val);//alert('parsed val is ' + val);
                     break;
             }
+			*/
             if ('__ignore' == val ) {
                 __ignore = true;
                 return;
@@ -206,36 +309,64 @@ var wptCond = (function($) {
             if ( 0 && '__ignore_negative' == val ) {
                 operator = '__ignore';
             }
-            switch (operator) {
-                case '===':
-                case '==':
-                case '=':
-                    passed = val == _val;
-                    break;
-                case '!==':
-                case '!=':
-                    passed = val != _val;
-                    break;
-                case '>':
-                    passed = parseInt(val) > parseInt(_val);
-                    break;
-                case '<':
-                    passed = parseInt(val) < parseInt(_val);
-                    break;
-                case '>=':
-                    passed = parseInt(val) >= parseInt(_val);
-                    break;
-                case '<=':
-                    passed = parseInt(val) <= parseInt(_val);
-                    break;
-                case 'between':
-                    passed = parseInt(val) > parseInt(_val) && parseInt(val) < parseInt(data.args[1]);
-                    break;
-                default:
-                    passed = false;
-                    break;
-            }
-            if (!passed) {
+			
+			if ( $.isArray( val ) ) {
+				// If the selected value is an array, we just can check == and != operators, which means in_array and not_in_array
+				// We return false in any other scenario
+				switch (operator) {
+					case '===':
+					case '==':
+					case '=':
+						passed_single = jQuery.inArray( _val, val ) !== -1;
+						break;
+					case '!==':
+					case '!=':
+					case '<>':
+						passed_single = jQuery.inArray( _val, val ) == -1;
+						break;
+					default:
+						passed_single = false;
+						break;
+				}
+			} else {
+				// Note: we can use parseInt here although we are dealing with extended timestamps coming from adodb_xxx functions
+				// Because javascript parseInt can deal with integers up to ±1e+21
+				switch (operator) {
+					case '===':
+					case '==':
+					case '=':
+						if ( $.isArray( val ) ) {
+							
+						} else {
+							passed_single = val == _val;
+						}
+						break;
+					case '!==':
+					case '!=':
+					case '<>':
+						passed_single = val != _val;
+						break;
+					case '>':
+						passed_single = parseInt(val) > parseInt(_val);
+						break;
+					case '<':
+						passed_single = parseInt(val) < parseInt(_val);
+						break;
+					case '>=':
+						passed_single = parseInt(val) >= parseInt(_val);
+						break;
+					case '<=':
+						passed_single = parseInt(val) <= parseInt(_val);
+						break;
+					case 'between':
+						passed_single = parseInt(val) > parseInt(_val) && parseInt(val) < parseInt(data.args[1]);
+						break;
+					default:
+						passed_single = false;
+						break;
+				}
+			}
+            if (!passed_single) {
                 passedAll = false;
             } else {
                 passedOne = true;
@@ -258,11 +389,12 @@ var wptCond = (function($) {
         if (!__ignore) {
             _showHide(passed, _getAffected(field, formID));
         }
-        if ( $trigger.length && next && $trigger.hasClass('js-wpt-date' ) ) {
-            setTimeout(function() {
-                _checkOneField( formID, field, false );
-            }, 200);
-        }
+		// No need to set a timeout anymore
+        //if ( $trigger.length && next && $trigger.hasClass('js-wpt-date' ) ) {
+        //    setTimeout(function() {
+        //        _checkOneField( formID, field, false );
+        //    }, 200);
+        //}
     }
 
     function _check(formID, fields)
@@ -290,8 +422,8 @@ var wptCond = (function($) {
          */
         if ( wptCondDebug ) {
             console.info('_bindChange');
-            console.log($trigger);
-            console.log($trigger.data('wpt-type'));
+            console.log('$trigger', $trigger);
+            console.log('wpt-type', $trigger.data('wpt-type'));
         }
         switch( $trigger.data('wpt-type') ) {
             case 'checkbox':
@@ -304,7 +436,13 @@ var wptCond = (function($) {
             case 'select':
                 $trigger.on('change', func);
                 break;
+			case 'date':
+                $trigger.on('change', func);
+                break;
             default:
+                if ( $trigger.hasClass('js-wpt-colorpicker') ) {
+                    $trigger.data('_bindChange', func)
+                }
                 $($trigger).on('blur', func);
         }
     }

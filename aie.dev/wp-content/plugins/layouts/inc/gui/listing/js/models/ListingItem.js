@@ -25,6 +25,6 @@ DDLayout.listing.models.ListingItem = Backbone.Model.extend({
 	},
 	is_assigned:function()
 	{
-		return ( this.get('types') && this.get('types').length ) || ( this.get('posts') && this.get('posts').length );
+		return ( this.get('types') && this.get('types').length ) || ( this.get('posts') && this.get('posts').length ) || ( this.get('loops') && this.get('loops').length );
 	}
 });

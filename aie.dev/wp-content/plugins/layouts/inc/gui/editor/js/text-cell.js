@@ -10,9 +10,28 @@ jQuery(document).on('DLLayout.admin.ready', function($){
 		self.init = function() {
 			jQuery(document).on('cell-text.dialog-open', self._dialog_open);
 			jQuery(document).on('cell-text.dialog-close', self._dialog_close);
+			jQuery(document).on('cell-text.get-content-from-dialog', self._get_content_from_dialog);
 		};
+
+		self._get_content_from_dialog = function (event, content, dialog) {
+			content['visual_mode'] = jQuery('#ddl-default-edit .wp-editor-wrap').hasClass('tmce-active');
+		}
 		
 		self._dialog_open = function (event, content, dialog) {
+			
+			// disable full screen save.
+			jQuery('#wp-fullscreen-save').hide();
+			
+			var visual_mode = content.visual_mode;
+			if (typeof visual_mode  == 'undefined'){
+				visual_mode = true;
+			}
+			if (visual_mode) {
+				jQuery("#celltexteditor-tmce").trigger("click");
+			} else {
+				jQuery("#celltexteditor-html").trigger("click");
+			}
+			
 			// We need special handling to install View forms as this uses colorbox.
 			self._views_insert_form_function = window.wpv_insert_view_form_popup;
 			window.wpv_insert_view_form_popup = self._wpv_insert_form_shortcode;
@@ -24,6 +43,7 @@ jQuery(document).on('DLLayout.admin.ready', function($){
 			if (dialog.is_new_cell()) {
 				jQuery('[name="ddl-layout-responsive_images"]').prop('checked', true);
 			}
+			
 		}
 
 		self._wpv_insert_form_shortcode = function (id) {
@@ -130,6 +150,9 @@ jQuery(document).on('DLLayout.admin.ready', function($){
 		}
 
 		self._dialog_close = function (event) {
+			// enable full screen save.
+			jQuery('#wp-fullscreen-save').show();
+
 			window.wpv_insert_view_form_popup = self._views_insert_form_function;
 			window.wpcfFieldsEditorCallback = self._wpcfFieldsEditorCallback_function;
 		}

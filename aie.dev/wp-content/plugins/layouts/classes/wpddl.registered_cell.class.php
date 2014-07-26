@@ -85,10 +85,10 @@ class WPDD_registed_cell_types{
 			ob_start();
 			?>
 				<div class="cell-content">
-					<p class="cell-name"><%- name %></p>
+					<p class="cell-name">{{ name }}</p>
 					<?php if ($data_to_display): $data_to_display = WPDD_registed_cell_types::clean_js_variables( $data_to_display ); ?>
 						<div class="cell-content">
-							<%
+							<#
 							/*
 							 * fails silently with a console message if
 							 * content is undefined or null
@@ -104,7 +104,7 @@ class WPDD_registed_cell_types{
 								catch(e) {
 									 console.log( e.message );
 								}
-							%>
+							#>
 						</div>
 					<?php endif; ?>
 				</div>

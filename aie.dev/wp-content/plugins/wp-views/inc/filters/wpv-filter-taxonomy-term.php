@@ -49,8 +49,12 @@ if(is_admin()){
 
 	function wpv_get_list_item_ui_taxonomy_term( $selected, $view_settings = null ) {
 
+		global $sitepress;
         if ( isset( $view_settings['taxonomy_type'] ) && is_array( $view_settings['taxonomy_type'] ) ) {
             $view_settings['taxonomy_type'] = $view_settings['taxonomy_type'][0];
+			if ( ! taxonomy_exists( $view_settings['taxonomy_type'] ) ) {
+				return '<p class="toolset-alert">' . __( 'This View has a filter for a taxonomy that no longer exists. Please select one taxonomy and update the Content selection section.', 'wpv-views' ) . '</p>';
+			}
         }
         if ( !isset( $view_settings['taxonomy_terms_mode'] ) ) {
 			$view_settings['taxonomy_terms_mode'] = 'THESE';
@@ -59,7 +63,7 @@ if(is_admin()){
 			$view_settings['taxonomy_terms'] = array();
         }
         
-        if ( function_exists('icl_object_id') && !empty( $view_settings['taxonomy_terms'] ) ) {
+        if ( isset($sitepress) && function_exists('icl_object_id') && !empty( $view_settings['taxonomy_terms'] ) ) {
 		// Adjust for WPML support
 			$trans_term_ids = array();
 			foreach ( $view_settings['taxonomy_terms'] as $untrans_term_id ) {
@@ -91,31 +95,7 @@ if(is_admin()){
 		<?php
 		$res = ob_get_clean();
 		return $res;
-        /*
-        ob_start();
-        wpv_render_taxonomy_term_options(array('mode' => 'edit',
-                             'view_settings' => $view_settings));
-        $data = ob_get_clean();
-
-        $td = "<p class='wpv-filter-taxonomy-term-summary js-wpv-filter-summary js-wpv-filter-taxonomy-term-summary'>\n";
-	$td .= wpv_get_filter_taxonomy_term_summary_txt($view_settings);
-	$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-taxonomy-term-edit-open' title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Remove this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_taxonomy_term_delete_nonce' ) . "'></i>\n</p>";
-	$td .= "<div id=\"wpv-filter-taxonomy-term-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
-	$td .= '<fieldset>';
-	$td .= '<legend><strong>' . __('Taxonomy term', 'wpv-views') . ':</strong></legend>';
-	$td .= '<div id="wpv-filter-taxonomy-term" class="js-filter-taxonomy-term-list">' . $data . '</div>';
-	$td .= '</fieldset>';
-	ob_start();
-	?>
-	<p>
-		<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-taxonomy-term-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_term_nonce' ); ?>" />
-	</p>
-	<?php
-	$td .= ob_get_clean();
-	$td .= '</div>';
-
-	return $td;
-	*/
+        
     }
 
 	/**
@@ -250,6 +230,8 @@ function wpv_render_taxonomy_term_options($args) {
 			</select>
 		</p>
 
+			<?php if ( taxonomy_exists( $taxonomy ) ) {
+			?>
 			<ul class="categorychecklist js-taxonomy-term-checklist">
 					<?php
 					ob_start();
@@ -267,44 +249,7 @@ function wpv_render_taxonomy_term_options($args) {
 					echo $checklist;
 					?>
 			</ul>
+			<?php } ?>
 			
         <?php
-}
-
-/**
-* Render taxonomy term filter summary text
-*/
-
-function wpv_get_filter_taxonomy_term_summary_txt($view_settings) {
-	global $wpdb; // TODO is this wpdb really needed here?
-
-	ob_start();
-
-		if ($view_settings['taxonomy_terms_mode'] == 'THESE') {
-			echo __('Taxonomy is <strong>One</strong> of these', 'wpv-views');
-			echo '<strong> (';
-			$cat_text = '';
-			$category_selected = $view_settings['taxonomy_terms'];
-			$taxonomy = $view_settings['taxonomy_type'];
-
-			foreach($category_selected as $cat) {
-				$term_check = term_exists((int)$cat, $taxonomy);
-				if ($term_check !== 0 && $term_check !== null) {
-					$term = get_term($cat, $taxonomy);
-					if ($cat_text != '') {
-						$cat_text .= ', ';
-					}
-					$cat_text .= $term->name;
-				}
-			}
-			echo $cat_text;
-			echo ')</strong>';
-		} else if ($view_settings['taxonomy_terms_mode'] == 'CURRENT_PAGE') {
-			echo __('Taxonomy is set by the current page', 'wpv-views');
-		}
-
-	$data = ob_get_clean();
-
-	return $data;
-
 }

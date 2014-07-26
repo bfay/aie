@@ -52,11 +52,11 @@ if(is_admin()){
 		} elseif ( !is_array( $selected ) ) {
 			$selected = array();
 		}
-		
+		$passing = array( 'post_status' => $selected );
 		ob_start();
 		?>
 		<p class='wpv-filter-status-summary js-wpv-filter-summary js-wpv-filter-status-summary'>
-			<?php echo wpv_get_filter_status_summary_txt( $selected ); ?>
+			<?php echo wpv_get_filter_status_summary_txt( $passing ); ?>
 		</p>
 		<p class='edit-filter js-wpv-filter-edit-controls'>
 			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-status-edit-open' title='<?php echo esc_attr( __('Edit','wpv-views') ); ?>'></i>
@@ -80,30 +80,7 @@ if(is_admin()){
 		<?php
 		$res = ob_get_clean();
 		return $res;
-		/*
-		$checkboxes = wpv_render_status_checkboxes(array('publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit', 'trash', 'any'),
-												$selected,
-												'post_status');
-
-		$td = "<p class='wpv-filter-status-summary js-wpv-filter-summary js-wpv-filter-status-summary'>\n";
-		$td .= wpv_get_filter_status_summary_txt($selected);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-status-edit-open'title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_status_delete_nonce' ) . "'></i>\n</p>";
-		$td .= "<div id=\"wpv-filter-status-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
-		$td .= '<fieldset>';
-		$td .= '<p><strong>' . __('Post Status', 'wpv-views') . ':</strong></p>';
-		$td .= '<div id="wpv-filter-status" class="js-filter-status-list">' . $checkboxes . '</div>';
-		$td .= '</fieldset>';
-		ob_start();
-		?>
-		<p>
-			<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-status-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_status_nonce' ); ?>" />
-		</p>
-		<?php
-		$td .= ob_get_clean();
-		$td .= '</div>';
-
-		return $td;
-		*/
+		
 	}
 	
 	/**
@@ -128,9 +105,10 @@ if(is_admin()){
 				$result = update_post_meta($_POST["id"], '_wpv_settings', $view_array);
 			}
 		}
-		$selected = array();
-		if (isset($filter_status['post_status'])) $selected = $filter_status['post_status'];
-		echo wpv_get_filter_status_summary_txt($selected);
+		if ( !isset($filter_status['post_status']) ) {
+			$filter_status['post_status'] = array();
+		}
+		echo wpv_get_filter_status_summary_txt($filter_status);
 		die();
 	}
 	
@@ -145,9 +123,10 @@ if(is_admin()){
 		$nonce = $_POST["wpnonce"];
 		if (! wp_verify_nonce($nonce, 'wpv_view_filter_status_nonce') ) die("Security check");
 		parse_str($_POST['filter_status'], $filter_status);
-		$selected = array();
-		if (isset($filter_status['post_status'])) $selected = $filter_status['post_status'];
-		echo wpv_get_filter_status_summary_txt($selected);
+		if ( !isset($filter_status['post_status']) ) {
+			$filter_status['post_status'] = array();
+		}
+		echo wpv_get_filter_status_summary_txt($filter_status);
 		die();
 
 	}
@@ -178,10 +157,8 @@ if(is_admin()){
 	add_filter('wpv-view-get-summary', 'wpv_status_summary_filter', 5, 3);
 
 	function wpv_status_summary_filter($summary, $post_id, $view_settings) {
-		if(isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'posts' && isset($view_settings['post_status'])) {
-			$selected = $view_settings['post_status'];
-			
-			$result = wpv_get_filter_status_summary_txt($selected, true);
+		if(isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'posts' && isset($view_settings['post_status'])) {			
+			$result = wpv_get_filter_status_summary_txt($view_settings, true);
 			if ($result != '' && $summary != '') {
 				$summary .= '<br />';
 			}
@@ -212,40 +189,4 @@ function wpv_render_status_checkboxes($values, $selected, $name) {
 	$checkboxes .= '</ul>';
 
 	return $checkboxes;
-}
-
-/**
-* Render status filter summary text
-*/
-
-function wpv_get_filter_status_summary_txt($selected, $short=false) {
-	ob_start();
-
-	if (sizeof($selected)) {
-		if ($short) {
-			_e('status of ', 'wpv-views');
-		} else {
-			_e('Select posts with status of ', 'wpv-views');
-		}
-	$first = true;
-	foreach($selected as $value) {
-		if ($first) {
-		echo '<strong>' . $value . '</strong>';
-		$first = false;
-		} else {
-		_e(' or ', 'wpv-views');
-		echo '<strong>' . $value . '</strong>';
-		}
-	}
-	} else { // !TODO review this wording: this filter is not applied and indeed disapears from the edit screen on save
-		if ($short) {
-			_e('any status.', 'wpv-views');
-		} else {
-			_e('Do not apply any filter based on status.', 'wpv-views');
-		}
-	}
-	$data = ob_get_clean();
-
-	return $data;
-
 }

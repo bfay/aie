@@ -12,7 +12,7 @@ function wpv_pager_defaults($view_settings, $view_id=null) {
             'cache_pages' => 1,
             'preload_pages' => 1,
             'spinner' => 'default',
-            'spinner_image' => WPV_URL . '/res/img/ajax-loader.gif',
+            'spinner_image' => WPV_URL_EMBEDDED . '/res/img/ajax-loader.gif',
             'spinner_image_uploaded' => '',
             'callback_next' => '',
             'page_selector_control_type' => 'drop_down',
@@ -318,6 +318,7 @@ function wpv_pager_current_page_shortcode($atts) {
     );
 
     global $WP_Views;
+	$view_id = $WP_Views->get_current_view();
     
     if ($WP_Views->get_max_pages() <= 1.0) {
         // only 1 page so we return nothing.
@@ -361,7 +362,7 @@ function wpv_pager_current_page_shortcode($atts) {
                 $max_page = intval($WP_Views->get_max_pages());
                 for ($i = 1; $i < $max_page + 1; $i++) {
                     $is_selected = $i == $page ? ' selected="selected"' : '';
-                    $page_number = apply_filters( 'wpv_pagination_page_number', $i ) ;
+                    $page_number = apply_filters( 'wpv_pagination_page_number', $i, $atts['style'], $view_id ) ;
                     $out .= '<option value="' . $i . '" ' . $is_selected . '>' . $page_number . "</option>\n";
                 }
                 $out .= "</select>\n";
@@ -371,21 +372,26 @@ function wpv_pager_current_page_shortcode($atts) {
             case 'link':
                 $page_count = intval($WP_Views->get_max_pages());
                 // output a series of dots linking to each page.
-                
+                $classname = '';
                 $out = '<div class="wpv_pagination_links">';
-                $out .= '<ul class="wpv_pagination_dots">';
+				$classname = 'wpv_pagination_dots';
+				$classname = apply_filters( 'wpv_pagination_container_classname', $classname, $atts['style'], $view_id );
+				$out .= '<ul class="' . $classname . '">';
                 
-                for ($i = 1; $i < $page_count + 1; $i++) {
-                    $page_title = sprintf(__('Page %s', 'wpv-views'), $i);
-                    $page_title = esc_attr( apply_filters( 'wpv_pagination_page_title', $page_title, $i ) );
-                    $page_number = apply_filters( 'wpv_pagination_page_number', $i );
+                for ( $i = 1; $i < $page_count + 1; $i++ ) {
+                    $page_title = sprintf( __( 'Page %s', 'wpv-views' ), $i );
+                    $page_title = esc_attr( apply_filters( 'wpv_pagination_page_title', $page_title, $i, $atts['style'], $view_id ) );
+                    $page_number = apply_filters( 'wpv_pagination_page_number', $i, $atts['style'], $view_id );
                     $link = '<a title="' . $page_title . '" href="#" class="wpv-filter-pagination-link js-wpv-pagination-link" data-viewnumber="' . $WP_Views->get_view_count() . '" data-page="' . $i . '" data-ajax="' . $ajax . '" data-effect="' . $effect . '" data-maxpages="' . $page_count . '" data-cachepages="' . $cache_pages . '" data-preloadimages="' . $preload_pages . '" dapa-spinner="' . $spinner . '" data-spinnerimage="' . $spinner_image . '" data-callbacknext="' . $callback_next . '" data-stoprollover="true">' . $page_number . '</a>';
                     $link_id = 'wpv-page-link-' . $WP_Views->get_view_count() . '-' . $i;
-                    if ($i == $page) {
-                        $out .= '<li id="' . $link_id . '" class="wpv_pagination_dots_item wpv_page_current">' . $link . '</li>';
+                    $item = '';
+					if ( $i == $page ) {
+                        $item .= '<li id="' . $link_id . '" class="' . $classname . '_item wpv_page_current">' . $link . '</li>';
                     } else {
-                        $out .= '<li id="' . $link_id . '" class="wpv_pagination_dots_item">' . $link . '</li>';
+                        $item .= '<li id="' . $link_id . '" class="' . $classname . '_item">' . $link . '</li>';
                     }
+					$item = apply_filters( 'wpv_pagination_page_item', $item, $i, $page, $page_count, $atts['style'], $view_id );
+					$out .= $item;
                 }
                 $out .= '</ul>';
                 $out .= '</div>';
@@ -579,9 +585,11 @@ function wpv_ajax_get_page($post_data) {
 				} else {
 					if ( strpos( $dps_pr_item['name'], '[]' ) === strlen( $dps_pr_item['name'] ) - 2 ) {
 						$name = str_replace( '[]', '', $dps_pr_item['name'] );
-						if ( isset( $_GET[$name] ) && !in_array( $name, $corrected_item ) ) {
+						if ( !in_array( $name, $corrected_item ) ) {
 							$corrected_item[] = $name;
-							unset( $_GET[$name] );
+							if ( isset( $_GET[$name] ) ) {
+								unset( $_GET[$name] );
+							}
 						}
 						if ( !isset( $_GET[$name] ) ) {
 							$_GET[$name] = array( esc_attr( $dps_pr_item['value'] ) );

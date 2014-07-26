@@ -407,16 +407,15 @@
 }
  /* widgets overriding END */
 
-.icon-views {
-	position: relative;
-	top: 2px;
-	background-image: url('../images/icon-views-14.png');
-	display: inline-block;
-	margin: 0 5px 0 0;
-	width: 14px;
-	height: 14px;
-	background-position: center left;
-	background-repeat: no-repeat;
+#ddl-select-element-box .icon-views {
+	margin-top: 3px;
+	vertical-align: -3px;
+	position : relative;
+	left : -4px;
+}
+
+#ddl-select-element-box input::-ms-clear {
+	display: none;
 }
 
 /* Child layout remove dialog */
@@ -433,15 +432,83 @@ span.alert-child-layout{
 .child-layout-delete {
 	margin-bottom: 22px;
 }
-
-
-
 /* Child layout remove dialog end*/
+
+/* Change Layout Use Dialog (assignment dialog box)*/
+
+.change-layout-use-section-title{}
+.change-layout-use-section-title-outer{}
+.change-layout-use-section-title-inner{margin-top:10px;font-weight:bold;margin-bottom:4px;}
+
+i.change-layout-use-section-title-icon-collapse{padding-left:6px;cursor:pointer;}
+.change-layout-use-section-title{cursor:pointer;}
+ul.change-layout-use-section{margin-top:6px;}
+div.alert-no-loops, div.alert-no-post-content{background:transparent;border:none;color:inherit;padding-bottom: 0;padding-top:1px;}
+div.alert-no-loops p, div.alert-no-post-content p{}
+div.alert-no-loops i.remove-alert-message,  div.alert-no-post-content i.remove-alert-message{position:absolute;top:2px;right:4px;color:#999;cursor:pointer;}
+div.alert-no-loops i.remove-alert-message:hover, div.alert-no-post-content i.remove-alert-message:hover{color:#999;}
+div.alert-no-loops,  div.alert-no-post-content{line-height: 1.2;position:relative;}
+.toplevel_page_dd_layouts div.alert-no-loops, .toplevel_page_dd_layouts div.alert-no-post-content{}
+.save-archives-options-wrap{text-align: right;}
+ul.post-types-list-in-layout-editor-alerted, ul.post-loops-list-in-layout-editor-alerted{border:1px solid;border-color: #fbeed5;background-color: #fcf8e3;}
+ul.post-types-list-in-layout-editor{padding: 0px 0px 10px 10px;}
+.change-layout-use-section li input.buttons-change-update{padding-right:10px!important;padding-left:10px!important;}
+div.dialog-change-use-messages{display: inline-block; margin-right: 10px}
+div.dialog-change-use-messages p{margin:0 0 0 0px;text-align:right;padding:6px 20px 6px 10px;}
+div.dialog-change-use-messages p .toolset-alert-close{top:6px;}
+.close-change-use{float:right;}
+
+ /*overrides for ui tabs styles*/
+.ddl-dialog .ui-widget{font-size:1em;}
+.ddl-dialog .ui-widget-content{background:transparent;border:none;}
+.ddl-dialog .ui-widget-header{border:none;background:transparent;border-bottom:1px solid #ccc;border-bottom-left-radius: 0px;border-bottom-right-radius: 0px;}
+.ddl-dialog .ddl-dialog-content-main{border:none;background: transparent;padding-left:0;}
+.ddl-dialog .ui-tabs-nav li.ddl-tab-right {margin-right:0px;}
+.ddl-dialog .ddl-dialog-content-main .ddl-form{border-left:1px solid #ccc;padding:10px;margin-bottom:0;}
+p.desc a.fieldset-inputs{color:#0074a2;}
+
+.individual-pages-wrap .ui-widget-content{background:transparent;border:none;}
+.individual-pages-wrap .ui-widget-header{border:none;background:transparent;margin-bottom: 14px;padding-bottom: 0px;}
+.individual-pages-wrap .ddl-individual-tab{border:none;border:1px solid #ccc;position: relative;top: -3px; background: white;border-radius: 3px;border-top-left-radius: 0px;}
+.individual-pages-wrap .ui-tabs-nav li{padding-bottom:8px;}
+
+.ddl-dialog .ui-slider{border:1px solid #ccc;border-radius: 0px;}
+
+.ddl-dialog .ddl-dialog-content{font-family: "Open Sans";}
+.ddl-dialog .ui-widget, .ddl-dialog .ui-widget input, .ddl-dialog .ui-widget select, .ddl-dialog .ui-widget textarea, .ddl-dialog .ui-widget button{font-family: "Open Sans";}
+.ddl-dialog .ui-widget button.qt-fullscreen{font: 400 20px/1 dashicons;}
+.ddl-dialog .ui-widget-header, .ui-widget-header *{font-weight: normal;}
+.ddl-dialog .ui-widget-content a.fieldset-inputs{color:#0074a2;}
+
+/* Change Layout Use Dialog End*/
+
 
 /* Dialogs Forms END */
 
-/*
-	This file contains styles for specific dialogs only.
-	General dialogs styles should go into dd-dialogs-general.css
-	General forms styles should go into dd-dialogs-forms.css
- */
+.individual-pages-list li {
+	display: inline-block;
+	margin-right: 20px;
+}
+
+.individual-pages-list .icon-remove {
+	cursor: pointer;
+}
+
+.individual-pages-list .icon-remove:hover {
+	color: #d54e21;
+}
+
+.ddl-posts-check-list {
+	margin-top: 0px;
+}
+
+.ddl-individual-tab {
+	max-height: 180px;
+	overflow: auto;
+}
+
+.ddl-individual-quick-search {
+	margin-bottom: 5px;
+}
+
+/* RICH CONTENT CELL VISUAL EDITOR */

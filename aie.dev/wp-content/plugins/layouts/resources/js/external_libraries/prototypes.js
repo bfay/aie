@@ -1,3 +1,15 @@
+//Override Underscore templates settings to prevent errors when asp_tags=on
+
+if( typeof _ !== 'undefined' && _.templateSettings )
+{
+    _.templateSettings = {
+        escape: /\{\{([^\}]+?)\}\}(?!\})/g,
+        evaluate: /<#([\s\S]+?)#>/g,
+        interpolate: /\{\{\{([\s\S]+?)\}\}\}/g
+    };
+}
+
+
 //Backbone.Model Overrides
 if( Backbone && Backbone.Model )
 {

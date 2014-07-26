@@ -509,7 +509,7 @@ if ( file_exists( WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon-generi
     	
     	private function wpv_get_other_parametric_filters( $settings ) {
 			$ret = array();
-			$returned_post_types = $settings['post_type'];
+			$returned_post_types = isset( $settings['post_type'] ) ? $settings['post_type'] : array();
 			$existing_real_parents = array_keys( wpv_recursive_post_hierarchy( $returned_post_types, 4 ) );
 			if ( !empty( $existing_real_parents ) ) {
 				$ret['relationship'] = 'relationship';
@@ -1083,7 +1083,8 @@ if ( file_exists( WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon-generi
 						'auto_fill_sort' => $_POST['fields']['auto_fill_sort'], 
 						'hide_empty' => isset( $_POST['fields']['hide_empty'] ) ? $_POST['fields']['hide_empty'] : 'false', 
 						'taxonomy_order' => isset( $_POST['fields']['taxonomy_order'] ) ? $_POST['fields']['taxonomy_order'] : 'ASC', 
-						'taxonomy_orderby' => isset( $_POST['fields']['taxonomy_orderby'] ) ? $_POST['fields']['taxonomy_orderby'] : 'name'
+						'taxonomy_orderby' => isset( $_POST['fields']['taxonomy_orderby'] ) ? $_POST['fields']['taxonomy_orderby'] : 'name',
+						'format' => isset( $_POST['fields']['format'] ) ? $_POST['fields']['format'] : ''
 					) 
 				);
 				$settings['filter_controls_enable'][ isset( $settings['filter_controls_enable'] ) ? sizeof( $settings['filter_controls_enable'] ) : 0 ] = true;
@@ -1136,7 +1137,12 @@ if ( file_exists( WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon-generi
 		
 		public static function is_wpml_active()
 		{
-			return function_exists("icl_object_id");
+			global $sitepress;
+			if (isset($sitepress) && function_exists('icl_object_id')){
+				return true;
+			}else{
+				return false;	
+			}	
 		}
 
     	/**
@@ -1240,8 +1246,7 @@ if ( file_exists( WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon-generi
          * @param string $text_area
          * @param boolean $standard_v is this a standard V button
          */
-        public function add_form_button( $context, $text_area = 'textarea#content',
-                $standard_v = true, $add_views = false ) {
+        public function add_form_button( $context, $text_area = 'textarea#content', $standard_v = true, $add_views = false, $codemirror_button = false ) {
             global $wp_version, $wplogger;
 
             if( defined('WPV_LOGGING_STATUS') && WPV_LOGGING_STATUS == 'debug' )

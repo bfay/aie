@@ -246,7 +246,6 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 					.removeClass('icon-caret-up')
 					.addClass('icon-caret-down');
 
-
 			} else {
 				
 				$arrowIcon
@@ -273,6 +272,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 								cred_cred.posts();
 							}
 							window["wpv_ct_inline_editor_" + id] = icl_editor.codemirror('wpv-ct-inline-editor-'+id, true);
+							window["wpv_ct_inline_editor_" + id].refresh();
 							window["wpv_ct_inline_editor_val_" + id] = window["wpv_ct_inline_editor_" + id].getValue();
 							$('.js-wpv-ct-update-inline-'+ id).prop('disabled',true);
 							window["wpv_ct_inline_editor_" + id].on('change', function(){
@@ -292,15 +292,15 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 									$('.js-wpv-ct-update-inline-' + id).removeClass('button-primary').addClass('button-secondary');
 								}
 							});
-
+							
 
 						}
 						$spinnerContainer.remove();
 					});
 
+				} else {
+					window["wpv_ct_inline_editor_" + id].refresh();
 				}
-
-
 			}
 		});
 

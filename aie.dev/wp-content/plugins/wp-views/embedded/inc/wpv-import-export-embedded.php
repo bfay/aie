@@ -38,17 +38,21 @@
                     </li>
                 </ul>
 
-                <h4><?php _e('Select the Views XML file to upload from your computer','wpv-views'); ?></h4>
+				<?php if ( $file_name != '' ): ?>
+					
+                <h4><?php _e( 'Import the Views XML file placed in the Views Embedded folder','wpv-views' ); ?></h4>
                 <p>
-                    <label for="upload-views-file"><?php _e('Upload file','wpv-views'); ?>:</label>
-                    <?php if ( $file_name != '' ): ?>
-                        <input type="hidden" id="upload-views-file" name="import-file" value="<?php echo $file_name; ?>" />
-                    <?php else: ?>
-                        <input type="file" id="upload-views-file" name="import-file" />
-                    <?php endif; ?>
-                    <br>
+                    <input type="hidden" id="upload-views-file" name="import-file" value="<?php echo $file_name; ?>" />
                     <input type="hidden" name="page" value="views-import-export" />
                 </p>
+				<?php else: ?>
+                <h4><?php _e( 'Select the Views XML file to upload from your computer','wpv-views' ); ?></h4>
+                <p>
+                    <label for="upload-views-file"><?php _e('Upload file','wpv-views'); ?>:</label>
+                    <input type="file" id="upload-views-file" name="import-file" />
+                    <input type="hidden" name="page" value="views-import-export" />
+                </p>
+				<?php endif; ?>
 
                 <p class="update-button-wrap">
                     <input id="wpv-import" class="button-primary" type="submit" value="<?php _e('Import','wpv-views'); ?>" name="import" />
@@ -1007,6 +1011,13 @@ function wpv_admin_import_settings( $data ) {
 						$cis_option_value[] = $inner_shortcode;
 					}
 					$options[$option_name] = $cis_option_value;
+				} else if ( $option_name == 'wpv_custom_conditional_functions' && is_array( $option_value ) ) {
+					// Custom conditional functions are exported in an associative array, we need to make it indexed
+					$ccf_option_value = array();
+					foreach ( $option_value as $key => $cond_func ) {
+						$ccf_option_value[] = $cond_func;
+					}
+					$options[$option_name] = $ccf_option_value;
 				} else {
                     $options[$option_name] = $option_value;
                 }

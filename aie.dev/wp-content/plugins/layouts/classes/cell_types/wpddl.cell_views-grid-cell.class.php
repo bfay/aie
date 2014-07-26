@@ -18,7 +18,7 @@ function ddl_views_content_grid_preview(){
 	global $wpdb;
 
 	if ( isset($_POST['view_id']) ){
-		$view_name = $_POST['view_id'];
+		$view_id = $_POST['view_id'];
 	}else{
 		return __('View not set','ddl-layouts');
 	}
@@ -30,12 +30,42 @@ function ddl_views_content_grid_preview(){
 		'un_ordered_list' => __('Unordered list','ddl-layouts'),
 		'ordered_list' => __('Ordered list','ddl-layouts')
 	);
-	$view = $wpdb->get_results( $wpdb->prepare("SELECT ID, post_title FROM $wpdb->posts WHERE post_name = '%s' AND post_type='view'",$view_name) );
+	$view = $wpdb->get_results( $wpdb->prepare("SELECT ID, post_title FROM $wpdb->posts WHERE ID = %d AND post_type='view'",$view_id) );
 	if ( isset($view[0]) ){
 		$post_title = $view[0]->post_title;
 		$id = $view[0]->ID;
+		$view_settings = get_post_meta($id,'_wpv_settings',true);
 		$meta = get_post_meta($id,'_wpv_layout_settings',true);
-		$view_output = get_view_query_results($id);
+		
+		if ($view_settings['view-query-mode'] == 'normal') {
+			$view_output = get_view_query_results($id);
+		} else {
+			$view_output = array();
+			
+			if ($meta['style'] == 'bootstrap-grid' || $meta['style'] == 'table') {
+				if ($meta['style'] == 'bootstrap-grid') {
+					$col_number = $meta['bootstrap_grid_cols'];
+				} else {
+					$col_number = $meta['table_cols'];
+				}
+				
+				// add 2 rows of items.
+				for ($i = 1; $i <= 2 * $col_number; $i++) {
+					$item = new stdClass();
+					$item->post_title = sprintf(__('Post %d', 'ddl-layouts'), $i);
+					$view_output[] = $item;
+				}
+				
+			} else {
+				// just add 3 items
+				for ($i = 1; $i <= 3; $i++) {
+					$item = new stdClass();
+					$item->post_title = sprintf(__('Post %d', 'ddl-layouts'), $i);
+					$view_output[] = $item;
+				}
+			}
+			
+		}
 		ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output );
 	}
 
@@ -54,7 +84,13 @@ function ddl_create_new_view(){
 	if (!isset($_POST['wpnonce']) || !wp_verify_nonce($_POST['wpnonce'],
                         'ddl_layout_view_nonce')) {
             die('verification failed');
-        }
+    }
+	
+	$view_type = 'normal';
+	if (isset($_POST['layouts-loop'])) {
+		$view_type = 'layouts-loop';
+	}
+	
 	$name = $original_name = $_POST['cell_name'];
 	$i = 0;
 	$name_in_use = true;
@@ -69,21 +105,36 @@ function ddl_create_new_view(){
 		}
 	}
 	$args = array(
-		'title' => $name
+		'title' => $name,
+		'settings' => array('purpose' => 'bootstrap-grid',
+							'view-query-mode' => $view_type),
+		'cols' => $_POST['cols'],
+		''
 	);
 	$view_id = wpv_create_view( $args );
     if ( isset( $view_id['success']) ){
 
 		$id = $view_id['success'];
+		
+		// set it to filter posts by default.
+		$view_settings = get_post_meta($id, '_wpv_settings', true);
+		$view_settings['post_type'] = array('post');
 
-		$view_normal_layout_defaults = wpv_view_defaults( 'view_layout_settings', 'full' );
-		$view_normal_layout_defaults['bootstrap_grid_cols'] = $_POST['cols'];
-		$view_normal_layout_defaults['bootstrap_grid_container'] = 'false';
-		$view_normal_layout_defaults['bootstrap_grid_individual'] = '';
-		$view_normal_layout_defaults['style'] = 'bootstrap-grid';
-		$view_normal_layout_defaults['insert_at'] = 'insert_replace';
-		$view_normal_layout_defaults['real_fields'] = '[[wpv-post-link]]';
-		update_post_meta($id, '_wpv_layout_settings', $view_normal_layout_defaults);
+		if ($view_type == 'layouts-loop') {
+			// Add pagination shortcodes for the Views layout loop
+			$view = get_post($id);
+			$pagination = "\n";
+			$pagination .= '[ddl-pager-prev-page][wpml-string context="ddl-layouts"]Older posts[/wpml-string][/ddl-pager-prev-page]';
+			$pagination .= ' [ddl-pager-next-page][wpml-string context="ddl-layouts"]Newer posts[/wpml-string][/ddl-pager-next-page]';
+			$view->post_content .= $pagination;
+			wp_update_post($view);
+			
+			// show the content section for pagination.
+			unset($view_settings['sections-show-hide']['content']);
+		}
+
+		update_post_meta($id, '_wpv_settings', $view_settings);
+		
 		$res = $wpdb->get_results( "SELECT post_name FROM $wpdb->posts WHERE ID = '" . $id . "' AND post_type='view'" );
 		$post_name = $res[0]->post_name;
 		$output = json_encode(array( 'id'=>$id, 'post_name' => $post_name, 'post_title'=> $name));
@@ -94,6 +145,133 @@ function ddl_create_new_view(){
 	die();
 }
 
+add_shortcode('ddl-pager-prev-page', 'ddl_pagination_previous_shortcode');
+
+function ddl_pagination_previous_shortcode($atts, $value) {
+	
+	return get_next_posts_link(do_shortcode($value));
+}
+
+add_shortcode('ddl-pager-next-page', 'ddl_pagination_next_shortcode');
+
+function ddl_pagination_next_shortcode($atts, $value) {
+	
+	return get_previous_posts_link(do_shortcode($value));
+}
+
+/*
+ * Get settings about the View
+ * $id, $slug, $title
+ */
+add_action('wp_ajax_ddl_get_settings_for_view', 'ddl_get_settings_for_view');
+function ddl_get_settings_for_view(){
+	global $wpdb;
+
+	if (!isset($_POST['wpnonce']) || !wp_verify_nonce($_POST['wpnonce'],
+                        'ddl_layout_view_nonce')) {
+            die('verification failed');
+        }
+
+	$result = array();
+	
+	if ( isset($_POST['view_id']) ){
+		$view_id = $_POST['view_id'];
+		$view = $wpdb->get_results( $wpdb->prepare("SELECT ID, post_title FROM $wpdb->posts WHERE ID = %d AND post_type='view'",$view_id) );
+		if ( isset($view[0]) ){
+			$id = $view[0]->ID;
+			$meta = get_post_meta($id,'_wpv_layout_settings',true);
+			if (ddl_confirm_ok_to_change_grid_cols($meta)) {
+				$result['grid_settings'] = $meta['bootstrap_grid_cols'];
+			}
+			$result['title'] = $view[0]->post_title;
+			
+		}
+	}
+	
+	print json_encode($result);
+		
+	die();
+}
+
+/*
+ * Save the View settings for columns
+ */
+
+add_action('wp_ajax_ddl_save_view_columns', 'ddl_save_view_columns');
+function ddl_save_view_columns(){
+	global $wpdb;
+
+	if (!isset($_POST['wpnonce']) || !wp_verify_nonce($_POST['wpnonce'],
+                        'ddl_layout_view_nonce')) {
+            die('verification failed');
+        }
+
+	$result = array();
+		
+	if ( isset($_POST['view_id']) ) {
+		$view_id = $_POST['view_id'];
+		$view = $wpdb->get_results( $wpdb->prepare("SELECT ID, post_title FROM $wpdb->posts WHERE ID = %d AND post_type='view'",$view_id) );
+		if ( isset($view[0]) ){
+			$id = $view[0]->ID;
+			$meta = get_post_meta($id,'_wpv_layout_settings',true);
+			if (ddl_confirm_ok_to_change_grid_cols($meta)) {
+				if ($_POST['cols'] != $meta['bootstrap_grid_cols']) {
+					$meta_html_current = $meta['layout_meta_html'];
+					// find the content template used
+					$match = array();
+					
+			        if (preg_match('/\[wpv-post-body view_template="(.*?)\"\]/', $meta_html_current, $match)) {
+						$template = $match[1];
+						$meta['bootstrap_grid_cols'] = $_POST['cols'];
+						$new_meta_html = wpv_create_bootstrap_meta_html( $meta['bootstrap_grid_cols'],
+																$template,
+																$meta_html_current);
+						$meta['layout_meta_html'] = $new_meta_html;
+					}
+					
+					
+					update_post_meta($id, '_wpv_layout_settings', $meta);
+				}
+			}
+			
+		}
+	}
+
+	print json_encode($result);
+	
+	die();
+}
+	
+function ddl_confirm_ok_to_change_grid_cols ($meta) {
+	$ok_to_update = false;
+	
+	if (isset($meta['style']) && $meta['style'] == 'bootstrap-grid') {
+		if (function_exists('wpv_create_bootstrap_meta_html')) {
+			$meta_html_current = $meta['layout_meta_html'];
+			// find the content template used
+			$match = array();
+			
+			if (preg_match('/\[wpv-post-body view_template="(.*?)\"\]/', $meta_html_current, $match)) {
+				$template = $match[1];
+				$old_test = wpv_create_bootstrap_meta_html( $meta['bootstrap_grid_cols'],
+															$template,
+															$meta_html_current);
+				
+				if (preg_replace('/\s+/', '', $old_test) == preg_replace('/\s+/', '', $meta_html_current)) {
+					$ok_to_update = true;
+				}
+			}
+		} else {
+			// set it to true so that the column select or shown.
+			$ok_to_update = true;
+		}
+	}
+	
+	return $ok_to_update;
+	
+}
+
+
 if ( ! function_exists('register_views_content_grid_cell_init') ) {
 
 	function register_views_content_grid_cell_init() {
@@ -102,7 +280,7 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 				array(
 					'name'						=> __('Views Content Grid', 'ddl-layouts'),
 					'description'				=> __('Content driven list, displayed as a grid. This cell is powered by the Views plugin, where you can customize the content of cells, as well as the grid itself.', 'ddl-layouts'),
-					'category'					=> __('Standard WordPress elements', 'ddl-layouts'),
+					'category'					=> __('Grids', 'ddl-layouts'),
 					'button-text'				=> __('Assign Views Content Grid', 'ddl-layouts'),
 					'dialog-title-create'		=> __('Create a new Views Content Grid', 'ddl-layouts'),
 					'dialog-title-edit'			=> __('Edit Views Content Grid cell', 'ddl-layouts'),
@@ -110,7 +288,8 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 					'cell-content-callback'		=> 'views_content_grid_content_callback',
 					'cell-template-callback'	=> 'views_content_grid_template_callback',
 					'category-icon-css'		   => 'icon-table',
-					'icon-css'				   => 'icon-table',
+					'preview-image-url'			=>  WPDDL_RES_RELPATH . '/images/views_grid.png',
+                    'icon-css' => 'icon-views ont-color-orange ont-icon-22',
 					'register-scripts'		   => array(
 						array( 'ddl_views_content_grid_js', WPDDL_RELPATH . '/inc/gui/dialogs/js/views-grid-cell.js', array( 'jquery' ), WPDDL_VERSION, true ),
 					),
@@ -129,14 +308,15 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 			ob_start();
 			?>
 			<p>
-				<label class="radio" for="ddl-views-grid-exitsting-view">
-				<?php $checked = ( get_ddl_field('ddl_layout_view_slug') == '' )?' checked="checked" ':'';?>
-				<input type="radio" name="view-grid-view-action" class="js-ddl-views-grid-create" value="existing_layout" <?php echo $checked?> id="ddl-views-grid-exitsting-view"><?php _e('Use an existing View', 'ddl-layouts');?>
+				<label class="radio">
+					<?php $checked = ( get_ddl_field('ddl_layout_view_id') == '' )?' checked="checked" ':'';?>
+					<input type="radio" name="view-grid-view-action" class="js-ddl-views-grid-existing" value="existing_layout" <?php echo $checked?> >
+					<?php _e('Use an existing View', 'ddl-layouts');?>
 				</label>
 			</p>
 			<p class="js-ddl-select-existing-view">
-				<select name="<?php the_ddl_name_attr('ddl_layout_view_slug'); ?>" class="js-ddl-view-select">
-				<option value=""><?php _e('None','ddl-layouts');?></option>';
+				<select name="<?php the_ddl_name_attr('ddl_layout_view_id'); ?>" class="ddl-view-select js-ddl-view-select">
+				<option value="" data-mode="both"><?php _e('None','ddl-layouts');?></option>';
 				<?php
 				$wpv_args = array( // array of WP_Query parameters
 					'post_type' => 'view',
@@ -150,21 +330,22 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 				if ( $wpv_count_posts > 0 ) {
 					foreach ( $wpv_query as $post ) :
 						if (!$WP_Views->is_archive_view($post->ID)){
+							$view_settings = $WP_Views->get_view_settings($post->ID);
+
 							$i++;
 							?>
-							<option data-id="<?php echo $post->ID; ?>" value="<?php echo $post->post_name; ?>"><?php echo $post->post_title; ?></option>
+							<option data-id="<?php echo $post->ID; ?>" value="<?php echo $post->ID; ?>" data-mode="<?php echo $view_settings['view-query-mode']; ?>"><?php echo $post->post_title; ?></option>
 							<?php
 						}
 					endforeach;
 				}
 				?>
 				</select>
-				<?php if ( isset($WP_Views) && class_exists('WP_Views') && !$WP_Views->is_embedded()){?>
-				<br />
-				<div class="js-dll-edit-view-link-section">
-					<button class="button button-primary js-ddl-edit-view-link"><?php _e('Edit the View settings in a new window', 'ddl-layouts'); ?></button> &nbsp;<?php _e('or', 'ddl-layouts'); ?> &nbsp;<a href="#" class="js-ddl-edit-view-link"><?php _e('Go to the View', 'ddl-layouts'); ?></a>
-				</div>
-				<?php }?>
+				<?php if ( isset($WP_Views) && class_exists('WP_Views') && $WP_Views->is_embedded()):?>
+					<button class="button js-ddl-edit-view-link js-ddl-edit-view-link-first"><?php _e('Examine the View settings', 'ddl-layouts'); ?></button>
+				<?php else: ?>
+					<button class="button js-ddl-edit-view-link js-ddl-edit-view-link-first"><?php _e('Edit the View settings', 'ddl-layouts'); ?></button>
+				<?php endif; ?>
 			</p>
 			<?php
 
@@ -181,10 +362,11 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 		ob_start();
 
 		//If Views activated
-		if( defined('WPV_VERSION') && WPV_VERSION < 1.6 ){ ?>
+		if( defined('WPV_VERSION') && version_compare(WPV_VERSION, '1.6.1', '<=') ){ ?>
 			<input type="hidden" value="0" class="js-views-content-grid_is_views_installed" />
 			<p>
-				<?php echo sprintf(__('This cell requires version 1.6 or greater of the Views plugin, you are using version %s. Install and activate the latest version of Views and you will be able to create custom content-driven grids.', 'ddl-layouts'), WPV_VERSION); ?>
+				<i class="icon-views-logo ont-color-orange ont-icon-24"></i>
+<?php echo sprintf(__('This cell requires the Views plugin. Install and activate the Views plugin and you will be able to create custom content-driven grids.', 'ddl-layouts'), WPV_VERSION); ?>
 			</p>
 		<?php }
 		else{
@@ -203,14 +385,15 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 						<?php 
 						$disabled = '';
 						if ( isset($WP_Views) && class_exists('WP_Views') && $WP_Views->is_embedded()){
-								$disabled = ' style="display: none;"';
+							$disabled = ' style="display: none;"';
 						}
 						
 						?>
 						<p<?php echo $disabled?>>
-							<label class="radio" for="ddl-views-grid-new-view">
-							<?php $checked = ( get_ddl_field('ddl_layout_view_slug') == '' )?' checked="checked" ':'';?>
-							<input type="radio" name="view-grid-view-action" class="js-ddl-views-grid-create" checked="checked" <?php echo $checked?> value="new_layout" id="ddl-views-grid-new-view"><?php _e('Create new View', 'ddl-layouts');?>
+							<label class="radio">
+								<?php $checked = ( get_ddl_field('ddl_layout_view_id') == '' )?' checked="checked" ':'';?>
+								<input type="radio" name="view-grid-view-action" class="js-ddl-views-grid-create" checked="checked" <?php echo $checked?> value="new_layout" >
+								<?php _e('Create new View', 'ddl-layouts');?>
 							</label>
 						</p>
 						<?php echo $show_existing_views_dropdown?>
@@ -219,41 +402,35 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 				</fieldset>
 			</div>
 			<?php }?>
-			<?php if( isset($WP_Views) && class_exists('WP_Views') && $WP_Views->is_embedded() ){?>
-			<div class="toolset-alert">
-				<p>
-					<?php _e('This cell requires Views plugin. Install and activate Views and you will be able to create custom content-driven grids.', 'ddl-layouts'); ?>
-					<br>
-					<a class="fieldset-inputs" href="http://wp-types.com/home/views-create-elegant-displays-for-your-content/" target="_blank">
-						<?php _e('Get Views plugin', 'ddl-layouts');?> &raquo;
-					</a>
-				</p>
-			</div>
-			<?php }?>
 			<div class="ddl-form">
 				<div class="js-fluid-grid-designer">
 					<fieldset>
 						<legend><?php _e('Grid size:', 'ddl-layouts'); ?></legend>
 						<div class="fields-group">
-							<div id="js-fluid-views-grid-slider-horizontal" class="horizontal-slider"></div>
-							<div id="js-fluid-views-grid-slider-vertical" class="vertical-slider"></div>
+							<div class="js-fluid-views-grid-slider-horizontal horizontal-slider"></div>
+							<div class="js-fluid-views-grid-slider-vertical vertical-slider"></div>
 							<div class="grid-designer-wrap grid-designer-wrap-views">
 								<div class="grid-info-wrap">
-									<span id="js-fluid-views-grid-info-container" class="grid-info"></span>
+									<span class="js-fluid-views-grid-info-container grid-info"></span>
 								</div>
-								<div id="js-fluid-views-grid-designer" class="grid-designer"
+								<div class="js-fluid-views-grid-designer grid-designer"
 									data-rows="1"
 									data-cols="2"
 									data-max-cols="12"
 									data-max-rows="1"
-									data-slider-horizontal="#js-fluid-views-grid-slider-horizontal"
+									data-slider-horizontal="#ddl-default-edit .js-fluid-views-grid-slider-horizontal"
 									data-slider-vertical=""
-									data-info-container="#js-fluid-views-grid-info-container"
-									data-message-container="#js-views-fluid-grid-message-container"
+									data-info-container="#ddl-default-edit .js-fluid-views-grid-info-container"
+									data-message-container="#ddl-default-edit .js-views-fluid-grid-message-container"
 									data-fluid="true">
 								</div>
 							</div>
-							<button class="button button-primary js-create-and-edit-view"><?php _e('Create the View and edit it', 'ddl-layouts'); ?></button>
+							<button class="views-grid-button button js-create-and-edit-view"><?php _e('Create the View and edit it', 'ddl-layouts'); ?></button>
+							<?php if( isset($WP_Views) && class_exists('WP_Views') && $WP_Views->is_embedded() ): ?>
+								<button class="views-grid-button button js-ddl-edit-view-link"><?php _e('Examine the View settings', 'ddl-layouts'); ?></button>
+							<?php else: ?>
+								<button class="views-grid-button button js-ddl-edit-view-link"><?php _e('Edit the View settings', 'ddl-layouts'); ?></button>
+							<?php endif; ?>
 							<div id="js-fluid-views-grid-message-container"></div>
 						</div>
 					</fieldset>
@@ -263,6 +440,63 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 		<?php
 		 echo wp_nonce_field('ddl_layout_view_nonce', 'ddl_layout_view_nonce', true, false);
 		}
+
+		if( isset($WP_Views) && class_exists('WP_Views') && $WP_Views->is_embedded() ){
+			?>
+			<div class="toolset-alert toolset-alert-info">
+				<?php if ($count_existing_views != 0): ?>
+					<p>
+						<?php _e('You are using the embedded version of Views. Install and activate the full version of Views and you will be able to create custom content-driven grids.', 'ddl-layouts'); ?>
+						<br>
+						<br>
+						<a class="fieldset-inputs button button-primary-toolset" href="http://wp-types.com/home/views-create-elegant-displays-for-your-content?utm_source=layoutsplugin&utm_campaign=layouts&utm_medium=views-content-grid-cell&utm_term=get-views" target="_blank">
+							<?php _e('Get Views plugin', 'ddl-layouts');?> &raquo;
+						</a>
+					</p>
+				<?php endif; ?>
+				<?php if ($count_existing_views == 0): ?>
+					<p>
+						<?php _e('You are using the embedded version of the Views Plugin and there are no Views available.', 'ddl-layouts'); ?>
+						<br />
+						<?php _e('You can download pre-built modules using the Module Manager plugin.', 'ddl-layouts'); ?>
+						<br />
+						<br />
+						<?php if (defined( 'MODMAN_CAPABILITY' )): ?>
+							<a class="fieldset-inputs button button-primary-toolset" href="<?php echo admin_url('admin.php?page=ModuleManager_Modules&amp;tab=library&amp;module_cat=layouts'); ?>" target="_blank">
+								<i class="icon-download-alt"></i> <?php _e('Download Modules', 'ddl-layouts');?>
+							</a>
+						<?php else: ?>
+							<a class="fieldset-inputs button button-primary-toolset" href="http://wp-types.com/home/module-manager?utm_source=layoutsplugin&utm_campaign=layouts&utm_medium=views-content-grid-cell&utm_term=get-module-manager" target="_blank">
+								<?php _e('Get Module Manager plugin', 'ddl-layouts');?>
+							</a>
+						<?php endif; ?>
+					</p>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
+
+		if( !defined('WPV_VERSION') ) {
+			?>
+				<div class="toolset-alert toolset-alert-info">
+					<p>
+						<i class="icon-views-logo ont-color-orange ont-icon-24"></i>
+						<?php _e('This cell requires Views plugin. Install and activate Views and you will be able to create custom content-driven grids.', 'ddl-layouts'); ?>
+						<br>
+						<br>
+						<a class="fieldset-input button button-primary-toolset" href="http://wp-types.com/home/views-create-elegant-displays-for-your-content?utm_source=layoutsplugin&utm_campaign=layouts&utm_medium=views-content-grid-cell&utm_term=get-views" target="_blank">
+							<?php _e('Get Views plugin', 'ddl-layouts');?>
+						</a>
+					</p>
+				</div>
+			<?php
+		}
+		
+		?>
+			<div class="js-views-content-grid-help">
+				<?php ddl_add_help_link_to_dialog(WPDLL_VIEWS_CONTENT_GRID_CELL, __('Learn about the Views Content Grid cell', 'ddl-layouts')); ?>
+			</div>
+		<?php
 
 
 		return ob_get_clean();
@@ -276,12 +510,14 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 	        ob_start();
 
 	        ?> <div class="cell-content">
-	                <p class="cell-name"><%- name %> </p>
+	                <p class="cell-name">{{ name }} </p>
 	                <div class="cell-preview">
-	                    <%
-	                       var preview = ddl_views_content_grid_preview( content.ddl_layout_view_slug, '<?php _e('Updating', 'ddl-layouts'); ?>...', '<?php _e('Loading', 'ddl-layouts'); ?>...' );
-	                 	   print( preview );
-	                    %>
+	                    <#
+							if (content) {
+								var preview = ddl_views_content_grid_preview( content.ddl_layout_view_id, '<?php _e('Updating', 'ddl-layouts'); ?>...', '<?php _e('Loading', 'ddl-layouts'); ?>...' );
+								print( preview );
+							}
+	                    #>
 	                </div>
 	            </div>
 	       <?php
@@ -293,12 +529,20 @@ if ( ! function_exists('register_views_content_grid_cell_init') ) {
 
 	function views_content_grid_content_callback() {
 		//Render View
-	    return render_view( array( 'name' => get_ddl_field('ddl_layout_view_slug') ) ) ;
+        if( function_exists('render_view') )
+        {
+            return render_view( array( 'id' => get_ddl_field('ddl_layout_view_id') ) ) ;
+        }
+        else
+        {
+            return WPDDL_Messages::views_missing_message();
+        }
+
 	}
 
 }
 function ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output ){
-
+	$count_view_output = count($view_output);
 	//Generate preview for bootstrap grid and table based grid
 	if ( !isset($meta['style']) ){
 		$meta['style'] = 'unformatted';	
@@ -313,15 +557,16 @@ function ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output 
 		<div class="presets-list fields-group">
 		<?php
 		$total_rows = 0;
-		if ( count($view_output) > 0 ){
-			for ($j = 0, $limit=count($view_output); $j < $limit; $j++){
+
+		if ( $count_view_output > 0 ){
+			for ($j = 0, $limit=$count_view_output; $j < $limit; $j++){
 			$view_post = $view_output[$j];
 			$cell_content = ddl_view_content_grid_get_title( $view_post );
 			$i++;
 			if ($i == 1){
 				$total_rows++;
 				if ( $total_rows > 3){
-					$j = count($view_output)+1;
+					$j = $count_view_output+1;
 					$hidden_items_count = $limit-$k;
 					$hidden_rows = ceil($hidden_items_count/$col_number);
 					?>
@@ -378,16 +623,16 @@ function ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output 
 		<i class="icon-th ddl-view-layout-icon"></i><?php _e('Table-based grid', 'ddl-layouts'); ?>
 		<br />
 		<?php
-		if ( count($view_output) > 0 ){
+		if ( $count_view_output > 0 ){
 			$total_rows = 0;
-			for ($j = 0, $limit=count($view_output); $j < $limit; $j++){
+			for ($j = 0, $limit=$count_view_output; $j < $limit; $j++){
 				$view_post = $view_output[$j];
 				$cell_content = ddl_view_content_grid_get_title( $view_post );
 				$i++;
 				if ( $i == 1){
 					$total_rows++;
 					if ( $total_rows > 3){
-						$j = count($view_output)+1;
+						$j = $count_view_output+1;
 						$hidden_items_count = $limit-$k;
 						$hidden_rows = ceil($hidden_items_count/$col_number);
 						?>
@@ -485,18 +730,24 @@ function ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output 
 				</div>
 				<?php
 			}
-			$cell_message = __('No items where returned by the View', 'ddl-layouts');
-			$limit = count($view_output);
-			if ( $limit > 3 ){
-				$limit -= 3;
-				$cell_message = sprintf(__('Plus %s more items', 'ddl-layouts'), $limit);
+			if ($count_view_output) {
+				$cell_message = '';
+				$limit = $count_view_output;
+				if ( $limit > 3 ){
+					$limit -= 3;
+					$cell_message = sprintf(__('Plus %s more items', 'ddl-layouts'), $limit);
+				}
+			} else {
+				$cell_message = __('No items where returned by the View', 'ddl-layouts');
 			}
 		?>
-		<div class="row-fluid">
-			<div class="span-preset12 views-cell-preview views-cell-preview-more">
-				<?php echo $cell_message ?>
+		<?php if ($cell_message): ?>
+			<div class="row-fluid">
+				<div class="span-preset12 views-cell-preview views-cell-preview-more">
+					<?php echo $cell_message ?>
+				</div>
 			</div>
-		</div>
+		<?php endif; ?>
 		</div>
 		<?php
 	elseif ( $meta['style'] == 'table_of_fields' ):
@@ -546,7 +797,7 @@ function ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output 
 						<?php
 						}
 						$cell_message = __('No items where returned by the View', 'ddl-layouts');
-						$limit = count($view_output);
+						$limit = $count_view_output;
 						if ( $limit > 3 ){
 							$limit -= 3;
 							$cell_message = sprintf(__('Plus %s more items', 'ddl-layouts'), $limit);
@@ -566,7 +817,7 @@ function ddl_views_generate_cell_preview( $post_title, $id, $meta, $view_output 
 		</div>
 		<?php
 	else:
-		$view_count = count($view_output);
+		$view_count = $count_view_output;
 		?>
 		<?php _e('View name', 'ddl-layouts'); ?>: <?php echo $post_title; ?><br>
 		<?php _e('Layout Style', 'ddl-layouts'); ?>: <?php echo isset($layout_style[$meta['style']])?$layout_style[$meta['style']]:'Undefined'; ?><br>

@@ -10,6 +10,11 @@ class WPDDL_features
 	{
 
 		$this->_support_features = array('fixed-layout', 'fluid-layout');
+		
+		$this->_all_features = $this->_support_features;
+		$this->_all_features[] = 'post-content-cell';
+		$this->_all_features[] = 'post-loop-cell';
+		
 	}
 
 
@@ -21,6 +26,18 @@ class WPDDL_features
 		} else {
 			return false;
 		}
+	}
+
+	function add_ddl_support($feature)
+	{
+		if (($key = array_search($feature, $this->_all_features)) !== false) {
+			if (($key = array_search($feature, $this->_support_features)) === false) {
+				$this->_support_features[] = $feature;
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	function is_feature($feature)
@@ -38,4 +55,9 @@ function remove_ddl_support($feature)
 {
 	global $wpddl_features;
 	return $wpddl_features->remove_ddl_support($feature);
+}
+
+function add_ddl_support($feature) {
+	global $wpddl_features;
+	return $wpddl_features->add_ddl_support($feature);
 }

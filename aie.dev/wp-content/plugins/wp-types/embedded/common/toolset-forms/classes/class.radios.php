@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.radios.php $
- * $LastChangedDate: 2014-06-11 13:49:47 +0000 (Wed, 11 Jun 2014) $
- * $LastChangedRevision: 23494 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.radios.php $
+ * $LastChangedDate: 2014-07-04 04:22:37 +0000 (Fri, 04 Jul 2014) $
+ * $LastChangedRevision: 24624 $
+ * $LastChangedBy: bruce $
  *
  */
 require_once 'class.field_factory.php';
@@ -42,9 +42,16 @@ class WPToolset_Field_Radios extends FieldFactory
              */
             $options[] = $one_option_data;
         }
+        $options = apply_filters( 'wpt_field_options', $options, $this->getTitle(), 'select' );
+        /**
+         * default_value
+         */
         if ( !empty( $value ) || $value == '0' ) {
             $data['default_value'] = $value;
         }
+        /**
+         * metaform
+         */
         $form[] = array(
             '#type' => 'radios',
             '#title' => $this->getTitle(),
@@ -53,6 +60,7 @@ class WPToolset_Field_Radios extends FieldFactory
             '#options' => $options,
             '#default_value' => isset( $data['default_value'] ) ? $data['default_value'] : false,
             '#repetitive' => $this->isRepetitive(),
+            '#validate' => $this->getValidationData(),
         );
 
         return $form;

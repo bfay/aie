@@ -500,33 +500,6 @@ if(is_admin()){
     
 }
 
-function wpv_get_usermeta_field_summary($type, $view_settings = array()) {
-	$field_name = substr($type, strlen('usermeta-field-'));
-	$args = array('name' => $field_name);
-	$all_types_fields = get_option( 'wpcf-fields', array() );
-	$field_nicename = '';
-	if (stripos($field_name, 'wpcf-') === 0) {
-		if ( isset( $all_types_fields[substr( $field_name, 5 )] ) && isset( $all_types_fields[substr( $field_name, 5 )]['name'] ) ) {
-			$field_nicename = $all_types_fields[substr( $field_name, 5 )]['name'];
-		} else {
-			$field_nicename = $field_name;
-		}
-	} else {
-		$field_nicename = $field_name;
-	}
-	ob_start();
-	
-	?>
-	<span class="wpv-filter-multiple-summary-item">
-	<strong><?php echo $field_nicename . ' ' . $view_settings[$type . '_compare'] . ' ' . str_replace( ',', ', ', $view_settings[$type . '_value'] ); ?></strong>
-	</span>
-	<?php
-	
-	$buffer = ob_get_clean();
-	
-	return $buffer;
-}
-
 function _wpv_encode_date2($value) {
 	if (preg_match_all('/DATE\(([\\d,-]*)\)/', $value, $matches)) {
         foreach($matches[0] as $match) {
@@ -592,28 +565,7 @@ add_filter('wpv-view-get-summary', 'wpv_usermeta_field_summary_filter', 7, 3);
 
 function wpv_usermeta_field_summary_filter($summary, $post_id, $view_settings) {
 	$result = '';
-	if(isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'posts') {
-		$count = 0;
-		foreach (array_keys($view_settings) as $key) {
-			if (strpos($key, 'usermeta-field-') === 0 && strpos($key, '_compare') === strlen($key) - strlen('_compare')) {
-				$name = substr($key, 0, strlen($key) - strlen('_compare'));
-	
-				$count++;
-					
-				if ($result != '') {
-					if (isset($view_settings['usermeta_fields_relationship']) && $view_settings['usermeta_fields_relationship'] == 'OR') {
-						$result .= __(' OR', 'wpv-views');
-					} else {
-						$result .= __(' AND', 'wpv-views');
-					}
-				}
-					
-				$result .= wpv_get_usermeta_field_summary($name, $view_settings);
-						
-			}
-		}
-	}
-
+	$result = wpv_get_filter_usermeta_field_summary_txt( $view_settings );
 	if ($result != '' && $summary != '') {
 		$summary .= '<br />';
 	}

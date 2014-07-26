@@ -1,7 +1,15 @@
 <?php
 
-/*
+/**
+* wpv_show_hide_ordering
+*
 * We can enable this to hide the Ordering section
+*
+* @param $sections (array) sections on the editor screen
+*
+* @return $sections
+*
+* @since unknown
 */
 
 // add_filter('wpv_sections_query_show_hide', 'wpv_show_hide_ordering', 1,1)
@@ -12,6 +20,19 @@ function wpv_show_hide_ordering($sections) {
 		);
 	return $sections;
 }
+
+/**
+* add_view_ordering
+*
+* Creates the sorting section in the edit screen
+*
+* @param $view_settings
+* @param $view_id
+*
+* @uses $views_edit_help (global)
+*
+* @since unknown
+*/
 
 add_action('view-editor-section-query', 'add_view_ordering', 30, 2);
 
@@ -156,6 +177,8 @@ function add_view_ordering($view_settings, $view_id) {
 *
 * @returns (string) $summary
 *
+* @uses wpv_get_ordering_summary
+*
 * @since 1.6.0
 */
 
@@ -164,115 +187,4 @@ add_filter('wpv-view-get-content-summary', 'wpv_ordering_summary_filter', 5, 3);
 function wpv_ordering_summary_filter( $summary, $post_id, $view_settings ) {
 	$summary .= wpv_get_ordering_summary( $view_settings );
 	return $summary;
-}
-
-/**
-* wpv_get_ordering_summary
-*
-* Returns the sorting summary for a View
-*
-* @param $view_settings
-*
-* @returns (string) $summary
-*
-* @since 1.6.0
-*/
-
-function wpv_get_ordering_summary( $view_settings ) {
-	$view_settings = wpv_order_by_default_settings($view_settings);
-	$view_settings = wpv_taxonomy_order_by_default_settings($view_settings);
-	$view_settings = wpv_users_order_by_default_settings( $view_settings );
-	$return = '';
-	
-	if ( !isset( $view_settings['query_type'] ) || ( isset($view_settings['query_type'] ) && $view_settings['query_type'][0] == 'posts' ) ) {
-		switch( $view_settings['orderby'] ) {
-			case 'post_date':
-				$order_by = __('post date', 'wpv-views');
-				break;
-			case 'post_title':
-				$order_by = __('post title', 'wpv-views');
-				break;
-			case 'ID':
-				$order_by = __('post ID', 'wpv-views');
-				break;
-			case 'menu_order':
-				$order_by = __('menu order', 'wpv-views');
-				break;
-			case 'rand':
-				$order_by = __('random order', 'wpv-views');
-				break;
-			default:
-				$order_by = str_replace('field-', '', $view_settings['orderby']);
-				$order_by = sprintf(__('Field - %s', 'wpv-views'), $order_by);
-				break;
-		}
-		$order = __('descending', 'wpv-views');
-		if ( $view_settings['order'] == 'ASC' ) {
-			$order = __( 'ascending', 'wpv-views' );
-		}
-		$return .= sprintf( __( ' ordered by %s, %s', 'wpv-views' ), $order_by, $order );
-    }
-    if ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'taxonomy' ) {
-		$order_by = '';
-		switch( $view_settings['taxonomy_orderby'] ) {
-			case 'count':
-				$order_by = __('term count', 'wpv-views');
-				break;
-			case 'name':
-				$order_by = __('term name', 'wpv-views');
-				break;
-			case 'slug':
-				$order_by = __('term slug', 'wpv-views');
-				break;
-			case 'term_group':
-				$order_by = __('term group', 'wpv-views');
-				break;
-			case 'none':
-				$order_by = __('no specific criteria', 'wpv-views');
-				break;
-		}
-		$order = __('descending', 'wpv-views');
-		if ( $view_settings['taxonomy_order'] == 'ASC' ) {
-			$order = __( 'ascending', 'wpv-views' );
-		}
-		$return .= sprintf( __( ' ordered by %s, %s', 'wpv-views' ), $order_by, $order );
-    }
-    if ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'users' ) {
-		$order_by = '';
-		switch( $view_settings['users_orderby'] ) {
-			case 'user_login':
-				$order_by = __('user login', 'wpv-views');
-				break;
-			case 'ID':
-				$order_by = __('user ID', 'wpv-views');
-				break;
-			case 'user_name':
-				$order_by = __('user name', 'wpv-views');
-				break;
-			case 'display_name':
-				$order_by = __('display name', 'wpv-views');
-				break;
-			case 'user_nicename':
-				$order_by = __('user nicename', 'wpv-views');
-				break;
-			case 'user_email':
-				$order_by = __('user email', 'wpv-views');
-				break;
-			case 'user_url':
-				$order_by = __('user url', 'wpv-views');
-				break;
-			case 'user_registered':
-				$order_by = __('user registered date', 'wpv-views');
-				break;
-			case 'post_count':
-				$order_by = __('user post count', 'wpv-views');
-				break;
-		}
-		$order = __('descending', 'wpv-views');
-		if ( $view_settings['users_order'] == 'ASC' ) {
-			$order = __( 'ascending', 'wpv-views' );
-		}
-		$return .= sprintf( __( ' ordered by %s, %s', 'wpv-views' ), $order_by, $order );
-	}
-	return $return;
 }

@@ -37,6 +37,13 @@ codemirror_views_layout_js_val = codemirror_views_layout_js.getValue(),
 codemirror_views_content = icl_editor.codemirror('wpv_content', true),
 codemirror_views_content_val = codemirror_views_content.getValue();
 
+jQuery(document).ready(function(){
+	codemirror_views_layout.refresh();
+	codemirror_views_layout_css.refresh();
+	codemirror_views_layout_js.refresh();
+	codemirror_views_content.refresh();
+});
+
 // Description update
 
 jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title, .js-wpv-slug', function(){

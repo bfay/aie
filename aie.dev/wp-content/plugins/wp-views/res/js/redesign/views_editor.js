@@ -156,6 +156,12 @@ jQuery(document).ready(function($){
 	if( typeof cred_cred != 'undefined'){
 		cred_cred.posts();
 	}
+	
+	if ( $( '.js-wpv-display-in-iframe' ).length == 1 ) {
+		if ( $( '.js-wpv-display-in-iframe' ).val() == 'yes' ) {
+			$( '.toolset-help a, .wpv-setting a' ).attr("target","_blank");
+		}
+	}
 });
 
 function wpv_extra_textarea_toggle_flag(element) {
@@ -514,7 +520,7 @@ function wpv_set_sections_for_view_purpose(purpose) {
 	} else if ('slider' == purpose) {
 		hide_sections = Array('limit-offset');
 	} else if ('parametric' == purpose) {
-		hide_sections = Array('pagination');
+		hide_sections = Array('query-options', 'limit-offset', 'pagination');
 	} else if ('bootstrap-grid' == purpose) {
 		hide_sections = Array('layout-extra', 'content');
 	} else if ('full' == purpose) {

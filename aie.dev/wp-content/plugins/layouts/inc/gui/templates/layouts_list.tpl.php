@@ -1,4 +1,5 @@
 <?php
+    //TODO: this file is depracated and should be removed
 	global $wpddlayout;
 ?>
 

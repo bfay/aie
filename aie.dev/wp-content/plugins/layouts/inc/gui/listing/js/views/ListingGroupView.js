@@ -130,7 +130,9 @@ DDLayout.listing.views.ListingGroupView = Backbone.View.extend({
 	afterRender:function()
 	{
 		var self = this;
-		if( DDLayout_settings.DDL_JS.listing_open[self.model.get('id')] )self.setGroupInitialState( self.$el.find( 'i.js-collapse-group') );
+		if( DDLayout_settings.DDL_JS.listing_open[self.model.get('id')] ){
+			self.setGroupInitialState( self.$el.find( 'i.js-collapse-group') );
+		}
 	},
 	get_last_child_in_stranger_group:function( parent )
 	{
@@ -193,8 +195,9 @@ DDLayout.listing.views.ListingGroupView = Backbone.View.extend({
 		var self = this, caret = jQuery( '.js-collapse-group', self.$el );
 
 		self.$el.on('click', caret.selector, function(event){
-			console.log( self.open );
-				var $me = jQuery(this);
+
+			var $me = jQuery(this);
+
 			if( self.open )
 			{
 				$me.removeClass('icon-caret-up').addClass('icon-caret-down');

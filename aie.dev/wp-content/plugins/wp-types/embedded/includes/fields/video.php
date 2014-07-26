@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/fields/video.php $
+ * $LastChangedDate: 2014-07-15 14:18:54 +0000 (Tue, 15 Jul 2014) $
+ * $LastChangedRevision: 24974 $
+ * $LastChangedBy: marcin $
+ *
+ */
 
 /**
  * Register data (called automatically).
@@ -12,6 +20,7 @@ function wpcf_fields_video() {
         'description' => __( 'Video', 'wpcf' ),
         'wp_version' => '3.6',
         'inherited_field_type' => 'file',
+        'validate' => array('required'),
     );
 }
 

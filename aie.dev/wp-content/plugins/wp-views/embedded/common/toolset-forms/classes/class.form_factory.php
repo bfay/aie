@@ -10,10 +10,10 @@ define( "CLASS_NAME_PREFIX", "WPToolset_Field_" );
  * Creation Form Class
  * @author onTheGo System
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Views-1.6.1-Types-1.5.7/toolset-forms/classes/class.form_factory.php $
- * $LastChangedDate: 2014-05-09 11:24:35 +0000 (Fri, 09 May 2014) $
- * $LastChangedRevision: 22197 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.form_factory.php $
+ * $LastChangedDate: 2014-07-19 09:54:04 +0000 (Sat, 19 Jul 2014) $
+ * $LastChangedRevision: 25122 $
+ * $LastChangedBy: gen $
  *
  *
  */
@@ -42,33 +42,36 @@ class FormFactory extends FormAbstract
 
         if ( is_admin() ) {
             wp_register_style( 'wptoolset-forms-admin',
-                WPTOOLSET_FORMS_RELPATH . '/css/admin.css', array(),
+                WPTOOLSET_FORMS_RELPATH . '/css/wpt-toolset-backend.css', array(),
                 WPTOOLSET_FORMS_VERSION );
             wp_enqueue_style( 'wptoolset-forms-admin' );
         } else {
-            wp_register_style( 'wptoolset-forms-cred',
-                WPTOOLSET_FORMS_RELPATH . '/css/cred.css', array(),
-                WPTOOLSET_FORMS_VERSION );
-            wp_enqueue_style( 'wptoolset-forms-cred' );
-
+            /**
+             * get cred form settings
+             */
             $cred_cred_settings = get_option( 'cred_cred_settings' );
+            /**
+             * load or not cred.css
+             */
+            $load_cred_css = true;
+            if ( is_array($cred_cred_settings) && array_key_exists('dont_load_cred_css', $cred_cred_settings ) && $cred_cred_settings['dont_load_cred_css'] ) {
+                $load_cred_css = false;
+            }
+            /**
+             * register
+             */
+            if ( $load_cred_css ) {
+                wp_register_style(
+                    'wptoolset-forms-cred',
+                    WPTOOLSET_FORMS_RELPATH . '/css/wpt-toolset-frontend.css',
+                    array(),
+                    WPTOOLSET_FORMS_VERSION
+                );
+                wp_enqueue_style( 'wptoolset-forms-cred' );
+            }
+
             if ( array_key_exists( 'use_bootstrap', $cred_cred_settings ) && $cred_cred_settings['use_bootstrap'] ) {
                 $this->_use_bootstrap = true;
-            /*
-                wp_register_style(
-                    'bootstrap-css',
-                    '//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css',
-                    array(),
-                    '3.1.1'
-                );
-                wp_register_style(
-                    'bootstrap-theme-css',
-                    '//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css',
-                    array('bootstrap-css'),
-                    '3.1.1'
-                );
-                wp_enqueue_style('bootstrap-theme-css');
-             */
             }
         }
     }
@@ -243,12 +246,12 @@ class FormFactory extends FormAbstract
         if ( !isset( $loaded[$type] ) ) {
             $loaded[$type] = 1;
             // These should be performed only once
-            $field::registerScripts();
-            $field::registerStyles();
+            $field->registerScripts();
+            $field->registerStyles();
             $field->enqueueScripts();
             $field->enqueueStyles();
-            $field::addFilters();
-            $field::addActions();
+            $field->addFilters();
+            $field->addActions();
         }
         $this->_checkValidation( $config );
         $this->_checkConditional( $config );
@@ -306,10 +309,11 @@ class FormFactory extends FormAbstract
     }
 
     public function validateField( $field, $value ) {
+        
         if ( is_array( $field ) ) {
             $field = $this->loadField( $field, $field['name'], $value );
         }
-        if ( !is_wp_error( $field ) ) {
+        if ( !is_wp_error( $field ) ) {            
             if ( $field->getValidationData() ) {
                 return $this->_validation->validateField( $field );
             }

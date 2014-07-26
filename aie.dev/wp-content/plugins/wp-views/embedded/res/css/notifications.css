@@ -47,6 +47,11 @@ span.toolset-alert {
 		top: 9px;
 		right: 5px;
 		color: #999;
+        cursor:pointer;
+	}
+	
+	.toolset-alert .button {
+		text-shadow: none;
 	}
 
 .toolset-alert-success {

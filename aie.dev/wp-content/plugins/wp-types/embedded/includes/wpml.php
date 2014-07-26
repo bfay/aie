@@ -8,9 +8,9 @@
  * Values:
  * 0 nothing (ignore), 1 copy, 2 translate
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/wpml.php $
- * $LastChangedDate: 2014-04-14 14:57:37 +0000 (Mon, 14 Apr 2014) $
- * $LastChangedRevision: 21446 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/wpml.php $
+ * $LastChangedDate: 2014-07-08 13:55:08 +0000 (Tue, 08 Jul 2014) $
+ * $LastChangedRevision: 24732 $
  * $LastChangedBy: marcin $
  *
  */
@@ -157,10 +157,10 @@ function wpcf_wpml_init() {
  * @return type 
  */
 function wpcf_translate( $name, $string, $context = 'plugin Types' ) {
-    if ( !function_exists( 'icl_t' ) ) {
+    if ( !function_exists( 'icl_t' ) || !is_string($string) || empty($string) ) {
         return $string;
     }
-    return icl_t( $context, $name, stripslashes( $string ) );
+    return icl_t( $context, $name, esc_attr( $string ) );
 }
 
 /**
@@ -1259,7 +1259,7 @@ function wp_types_st_language_warning()
 			$st_language_code = $sitepress_settings[ 'st' ][ 'strings_language' ];
 			$st_language = $sitepress->get_display_language_name($st_language_code, $sitepress->get_admin_language());
 
-			$st_page_url = admin_url('admin.php?page=wpml-string-translation/menu/string-translation.php');
+			$st_page_url = admin_url('admin.php?page='.WPML_ST_FOLDER.'/menu/string-translation.php');
 
 			$message = 'The strings language in your site is set to %s instead of English. ';
 			$message .= 'This means that all English texts that are hard-coded in PHP will appear when displaying content in %s.';

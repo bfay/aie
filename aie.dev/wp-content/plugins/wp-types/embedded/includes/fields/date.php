@@ -321,10 +321,10 @@ function wpcf_fields_date_value_get_filter( $value, $field, $return = 'array',
         $value = wpcf_fields_date_value_check( $value );
     } else {
         $value = array(
-            'timestamp' => intval( $value ),
-            'hour' => date( 'H', intval( $value ) ),
-            'minute' => date( 'i', intval( $value ) ),
-            'datepicker' => date( $date_format, intval( $value ) ),
+            'timestamp' => $value,
+            'hour' => adodb_date( 'H', $value ),
+            'minute' => adodb_date( 'i', $value ),
+            'datepicker' => adodb_date( $date_format, $value ),
         );
         $value = wpcf_fields_date_value_check( $value );
     }
@@ -372,7 +372,7 @@ function wpcf_fields_date_view( $params ) {
     if ( is_null( $__timestamp ) ) {
         return '';
     } else {
-        $params['field_value'] = intval( $__timestamp );
+        $params['field_value'] = $__timestamp;
     }
 
     switch ( $params['style'] ) {
@@ -387,28 +387,28 @@ function wpcf_fields_date_view( $params ) {
             // Extract the Full month and Short month from the format.
             // We'll replace with the translated months if possible.
             $format = $params['format'];
-            $format = str_replace( 'F', '#111111#', $format );
-            $format = str_replace( 'M', '#222222#', $format );
+            //$format = str_replace( 'F', '#111111#', $format );
+            //$format = str_replace( 'M', '#222222#', $format );
 
             // Same for the Days
-            $format = str_replace( 'D', '#333333#', $format );
-            $format = str_replace( 'l', '#444444#', $format );
+            //$format = str_replace( 'D', '#333333#', $format );
+            //$format = str_replace( 'l', '#444444#', $format );
 
-            $date_out = date( $format, intval( $params['field_value'] ) );
+            $date_out = adodb_date( $format, $params['field_value'] );
 
-            $month = date( 'm', intval( $params['field_value'] ) );
-            $month_full = $wp_locale->get_month( $month );
-            $date_out = str_replace( '#111111#', $month_full, $date_out );
-            $month_short = $wp_locale->get_month_abbrev( $month_full );
-            $date_out = str_replace( '#222222#', $month_short, $date_out );
+            //$month = adodb_date( 'm', $params['field_value'] );
+            //$month_full = $wp_locale->get_month( $month );
+            //$date_out = str_replace( '#111111#', $month_full, $date_out );
+            //$month_short = $wp_locale->get_month_abbrev( $month_full );
+            //$date_out = str_replace( '#222222#', $month_short, $date_out );
 
-            $day = date( 'w', intval( $params['field_value'] ) );
-            $day_full = $wp_locale->get_weekday( $day );
-            $date_out = str_replace( '#444444#', $day_full, $date_out );
-            $day_short = $wp_locale->get_weekday_abbrev( $day_full );
-            $date_out = str_replace( '#333333#', $day_short, $date_out );
+            //$day = adodb_date( 'w', $params['field_value'] );
+            //$day_full = $wp_locale->get_weekday( $day );
+            //$date_out = str_replace( '#444444#', $day_full, $date_out );
+            //$day_short = $wp_locale->get_weekday_abbrev( $day_full );
+            //$date_out = str_replace( '#333333#', $day_short, $date_out );
 
-            $output = $date_out;
+            $output .= $date_out;
             break;
     }
 

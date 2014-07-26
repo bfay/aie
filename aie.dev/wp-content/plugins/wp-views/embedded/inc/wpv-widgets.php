@@ -173,7 +173,7 @@ class WPV_Widget_filter extends WP_Widget{
 	$trans_join = '';
 	$trans_where = '';
 	
-	if (function_exists('icl_object_id')) {
+	if (isset($sitepress) && function_exists('icl_object_id')) {
 		// Adjust for WPML support
 		if ( $target_id != '0' ) {
 			$target_post_type = $wpdb->get_var("SELECT post_type FROM {$wpdb->posts} WHERE ID='{$target_id}'");

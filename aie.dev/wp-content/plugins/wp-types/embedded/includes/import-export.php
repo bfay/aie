@@ -2,10 +2,10 @@
 /*
  * Import/export data.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/import-export.php $
- * $LastChangedDate: 2014-05-21 13:27:13 +0000 (Wed, 21 May 2014) $
- * $LastChangedRevision: 22561 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/import-export.php $
+ * $LastChangedDate: 2014-07-21 14:39:45 +0000 (Mon, 21 Jul 2014) $
+ * $LastChangedRevision: 25152 $
+ * $LastChangedBy: riccardo $
  *
  */
 
@@ -45,7 +45,7 @@ function wpcf_admin_import_data( $data = '', $redirect = true,
             $wpcf_settings[$key] =  $value;
         }
         wpcf_save_settings( $wpcf_settings );
-        wpcf_admin_message_store( __( 'Setting are updated.', 'wpcf' ) );
+        wpcf_admin_message_store( __( 'Settings are updated.', 'wpcf' ) );
     }
 
     // Process groups

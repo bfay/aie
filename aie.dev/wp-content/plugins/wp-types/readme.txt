@@ -151,23 +151,29 @@ Additionally, Types is the only plugin that lets you define parent/child relatio
 
 == Changelog ==
 
-= 1.6b1 - 1.6b3 =
+= 1.6b1 - 1.6b4 =
 * Common lib referring fix
 
 = 1.6 =
 
+* Added ability to add extra options by filter *wpt_field_options* to fields with "options".
 * Added ability to create custom post type with the same singular and plural name.
 * Added ability to select menu icon for custom post type.
 * Added delete attached repetitive files.
 * Added filter "wpcf_pr_belongs_post_status" that allows to change post_status for parent/child posts.
 * Added sanitization for uploaded file names, to remove non-latin1 characters.
 * Fixed export problem if system temporary directory is not allowed to write by open_basedir restriction.
+* Fixed export problem, when temporary directory is full or not available.
 * Fixed import of slug for custom fields.
+* Fixed problems with calling static method in PHP 5.2
 * Fixed problems with embeding scripts when WordPress works on non-standard port.
 * Fixed problems with getting not existing array keys when register new post type.
+* Fixed problems with manage more than one flat taxonomy on one CRED screen.
 * Improved import button, witch is disabled until user select a import file.
+* Improved custom display logic UI for conditional display in custom fields edit screen.
 * Prevent raising group chose overlay on "Custom Fields Control" screen if there is no group.
 * Removed Zebra library and created new Toolset fields library.
+* Tweak import/export screen when is something wrong with imported file
 
 = 1.5.7 =
 

@@ -184,40 +184,47 @@ function wpv_count_filter_controls( $view_settings ) {
 	if ( !is_array( $view_settings['filter_controls_mode'] ) ) {
 		return array( 'error' => __('Something on the filter_controls_mode is broken', 'wpv-views') );
 	}
-	
-	if ( count( $view_settings['filter_controls_mode'] ) == $filter_controls_by_tag ) {
-		// Great! All filters were create using the GUI
-		$filter_controls_by_type = array_count_values( $view_settings['filter_controls_mode'] );
-		if ( isset( $filter_controls_by_type['rel'] ) && $filter_controls_by_type['rel'] > 0 ) {
+	$return['missing'] = array();
+	foreach ( $view_settings as $v_key => $v_val ) {
+		if ( $v_key == 'post_relationship_mode' && is_array( $v_val ) && in_array( 'url_parameter', $v_val ) ) {
 			$return['pr'] = 1;
-		}
-		if ( isset( $filter_controls_by_type['cf'] ) && $filter_controls_by_type['cf'] > 0 ) {
-			$return['cf'] = $filter_controls_by_type['cf'];
-		}
-		if ( isset( $filter_controls_by_type['slug'] ) && $filter_controls_by_type['slug'] > 0 ) {
-			$return['tax'] = $filter_controls_by_type['slug'];
-		}
-		if ( $filter_controls_by_tag != $return['pr'] + $return['cf'] + $return['tax'] ) {
-			// Something went wrong! There are filters using another key...
-			return array( 'error' => __('Something on the filter_controls_mode has an invalid key', 'wpv-views') );
-		}
-	} else {
-		// Mmmmm... There are filters created outside the GUI or we have a BETWEEN here
-		foreach ( $view_settings as $v_key => $v_val ) {
-			if ( $v_key == 'post_relationship_mode' && is_array( $v_val ) && in_array( 'url_parameter', $v_val ) ) {
-				$return['pr'] = 1;
-			} else if ( strpos( $v_key, 'custom-field-' ) === 0 && strpos( $v_key, '_value' ) === strlen( $v_key ) - strlen( '_value' ) && strpos( $v_val, 'URL_PARAM' ) !== false ) {
-				$return['cf'] += substr_count( $v_val, 'URL_PARAM' );
-			} else if ( strpos( $v_key, 'tax_' ) === 0 && strpos( $v_key, '_relationship' ) === strlen( $v_key ) - strlen( '_relationship' ) && $v_val == 'FROM URL' ) {
-				$return['tax'] += 1;
+			if ( substr_count( $view_settings['filter_meta_html'], '[wpv-control-set ' ) !== 1 ) {
+				$return['missing'][] = array(
+					'type' => 'rel',
+					'name' => __( 'post relationship', 'wpv-views' )
+				);
+			}
+		} else if ( strpos( $v_key, 'custom-field-' ) === 0 && strpos( $v_key, '_value' ) === strlen( $v_key ) - strlen( '_value' ) && strpos( $v_val, 'URL_PARAM' ) !== false ) {
+			$return['cf'] += substr_count( $v_val, 'URL_PARAM' );
+			$v_array = explode( ',', $v_val );
+			foreach ( $v_array as $v_candidate) {
+				$v_candidate = trim( $v_candidate );
+				if ( substr_count( $v_candidate, 'URL_PARAM' ) > 0 ) {
+					$v_url = substr( $v_candidate, 10, -1 );
+					if ( substr_count( stripslashes( $view_settings['filter_meta_html'] ), 'url_param="' . $v_url . '"' ) !== 1 ) {
+						$return['missing'][] = array(
+							'type' => 'cf',
+							'name' => substr( $v_key, 13, -6 )
+						);
+					}
+				}
+			}
+		} else if ( strpos( $v_key, 'tax_' ) === 0 && strpos( $v_key, '_relationship' ) === strlen( $v_key ) - strlen( '_relationship' ) && $v_val == 'FROM URL' ) {
+			$return['tax'] += 1;
+			$tax_name = substr( $v_key, 4, -13 );
+			if ( substr_count( stripslashes( $view_settings['filter_meta_html'] ), 'taxonomy="' . $tax_name . '"' ) !== 1 ) {
+				$return['missing'][] = array(
+					'type' => 'tax',
+					'name' => $tax_name
+				);
 			}
 		}
-		if ( $filter_controls_by_tag < $return['pr'] + $return['cf'] + $return['tax'] ) {
-			// Something went wrong! There are filters using another key...
-			$return['warning'] = __('Your View contains more URL based filters than parametric search controls in the Filter HTML textarea', 'wpv-views');
-		} else if ( $filter_controls_by_tag > $return['pr'] + $return['cf'] + $return['tax'] ) {
-			$return['warning'] = __('Your View contains more parametric search controls in the Filter HTML textarea than URL based filters', 'wpv-views');
-		}
+	}
+	if ( $filter_controls_by_tag < $return['pr'] + $return['cf'] + $return['tax'] ) {
+		// Something went wrong! There are filters using another key...
+		$return['warning'] = __('Your View contains more URL based filters than parametric search controls in the Filter HTML textarea', 'wpv-views');
+	} else if ( $filter_controls_by_tag > $return['pr'] + $return['cf'] + $return['tax'] ) {
+		$return['warning'] = __('Your View contains more parametric search controls in the Filter HTML textarea than URL based filters', 'wpv-views');
 	}
 	return $return;
 }

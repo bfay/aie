@@ -1,4 +1,5 @@
 <?php
+
 class WPDD_LayoutsListing
 {
 
@@ -14,11 +15,22 @@ class WPDD_LayoutsListing
 	private $column_sort_date_to = 'DESC';
 	private $column_sort_date_now = 'DESC';
 
+    public static $OPTIONS_ALERT_TEXT;
+
 	public function __construct()
 	{
+        self::$OPTIONS_ALERT_TEXT = __('* There are unsaved changes', 'ddl-layouts');
+
 		add_action('wp_ajax_duplicate_layout', array(&$this, 'duplicate_layout_callback'));
 		add_action('wp_ajax_set_layout_status', array(&$this, 'set_layout_status_callback'));
 		add_action('wp_ajax_delete_layout_record', array(&$this, 'delete_layout_record_callback'));
+		add_action('wp_ajax_change_layout_usage_box', array(&$this, 'set_change_layout_usage_box') );
+
+		add_action('wp_ajax_change_layout_usage_for_post_types_js', array(&$this, 'set_layouts_post_types_on_usage_change_js') );
+        add_action('wp_ajax_change_layout_usage_for_archives_js', array(&$this, 'set_layouts_archives_on_usage_change_js') );
+        add_action('wp_ajax_change_layout_usage_for_others_js', array(&$this, 'set_layouts_others_on_usage_change_js') );
+
+
 
 		add_action('wp_ajax_get_ddl_listing_data', array(&$this, 'get_ddl_listing_data'));
 
@@ -29,18 +41,145 @@ class WPDD_LayoutsListing
 
 	public function init()
 	{
-		//$this->listing_scripts();
 		$this->include_creation_box();
 		$this->set_mod_url();
 		$this->set_args();
 		$this->set_count_what();
 		$this->set_count();
-		$this->change_query_vars();
-		$this->set_search_query();
-		$this->set_sort();
-		$this->set_layout_list();
+		//$this->change_query_vars();
+		//$this->set_search_query();
+		//$this->set_sort();
+		//$this->set_layout_list();
 		$this->display_list();
 	}
+
+	public function set_change_layout_usage_box( )
+	{
+
+		global $wpddlayout;
+
+		if( $_POST && wp_verify_nonce( $_POST['layout-select-set-change-nonce'], 'layout-select-set-change-nonce' ) )
+		{
+			$nonce = wp_create_nonce( 'layout-set-change-post-types-nonce' );
+
+			$html = $this->print_dialog_checkboxes( $_POST['layout_id'], false, 'change' );
+			$send = json_encode( array( 'message' => array( 'html_data' => $html, 'nonce' => $nonce, 'layout_id' => $_POST['layout_id'] ) ) );
+		}
+		else
+		{
+			$send = json_encode( array( 'error' =>  __( sprintf('Nonce problem: apparently we do not know from where the request comes from. %s', __METHOD__ ), 'ddl-layouts') ) );
+		}
+
+		die( $send );
+	}
+
+	public function print_dialog_checkboxes( $current = false, $do_not_show = false, $id = "", $show_ui = true )
+	{
+		global $wpddlayout;
+		$html = '';
+        $html .= $this->print_single_posts_assign_section();
+		$html .= $wpddlayout->post_types_manager->print_post_types_checkboxes( $current, $do_not_show, $id, $show_ui );
+		$html .= $wpddlayout->layout_post_loop_cell_manager->display_loops( $current, $id, $show_ui);
+        $html .= $wpddlayout->layout_post_loop_cell_manager->display_others( $current, $id, $show_ui );
+		return $html;
+	}
+
+    public function print_single_posts_assign_section()
+    {
+        ob_start();
+        include WPDDL_GUI_ABSPATH . 'editor/templates/individual-posts.box.tpl.php';
+        return ob_get_clean();
+    }
+
+	public function set_layouts_post_types_on_usage_change_js()
+	{
+		global $wpddlayout;
+
+		if( $_POST && wp_verify_nonce( $_POST['layout-set-change-post-types-nonce'], 'layout-set-change-post-types-nonce' ) )
+		{
+			$post_types = isset( $_POST['post_types'] ) && is_array( $_POST['post_types'] ) ? array_unique( $_POST['post_types'] ) : array();
+
+
+            $wpddlayout->post_types_manager->handle_post_type_data_save( array( "layout_".$_POST['layout_id'] => $post_types ) );
+
+
+			$status = isset($_GET['status']) && $_GET['status'] === 'trash' ? $_GET['status'] : 'publish';
+
+			$send = $this->set_up_send_data( $status );
+
+		}
+		else
+		{
+			$send = json_encode( array( 'error' =>  __( sprintf('Nonce problem: apparently we do not know from where the request comes from. %s', __METHOD__ ), 'ddl-layouts') ) );
+		}
+
+		die($send);
+	}
+
+    public function set_layouts_archives_on_usage_change_js( )
+    {
+        global $wpddlayout;
+
+        if( $_POST && wp_verify_nonce( $_POST['layout-set-change-post-types-nonce'], 'layout-set-change-post-types-nonce' ) )
+        {
+
+            $default_archives = isset( $_POST[WPDD_layout_post_loop_cell_manager::WORDPRESS_DEFAULT_LOOPS_NAME] ) ? $_POST[WPDD_layout_post_loop_cell_manager::WORDPRESS_DEFAULT_LOOPS_NAME] : array();
+           /* $types_archives = isset( $_POST[WPDD_layout_post_loop_cell_manager::POST_TYPES_LOOPS_NAME] ) ? $_POST[WPDD_layout_post_loop_cell_manager::POST_TYPES_LOOPS_NAME] : array();
+            $taxonomy_archives = isset( $_POST[WPDD_layout_post_loop_cell_manager::TAXONOMY_LOOPS_NAME] ) ? $_POST[WPDD_layout_post_loop_cell_manager::TAXONOMY_LOOPS_NAME] : array();*/
+
+            //$wpddlayout->layout_post_loop_cell_manager->handle_archives_data_save( array_merge( $default_archives, $types_archives, $taxonomy_archives ), $_POST['layout_id'] );
+
+            $wpddlayout->layout_post_loop_cell_manager->handle_archives_data_save( $default_archives, $_POST['layout_id'] );
+
+            $status = isset($_GET['status']) && $_GET['status'] === 'trash' ? $_GET['status'] : 'publish';
+
+            $send = $this->set_up_send_data( $status );
+
+        }
+        else
+        {
+            $send = json_encode( array( 'error' =>  __( sprintf('Nonce problem: apparently we do not know from where the request comes from. %s', __METHOD__ ), 'ddl-layouts') ) );
+        }
+
+        die($send);
+    }
+
+    public function set_layouts_others_on_usage_change_js()
+    {
+        global $wpddlayout;
+
+        if( $_POST && wp_verify_nonce( $_POST['layout-set-change-post-types-nonce'], 'layout-set-change-post-types-nonce' ) )
+        {
+
+            $others_section = isset( $_POST[WPDD_layout_post_loop_cell_manager::WORDPRESS_OTHERS_SECTION] ) ? $_POST[WPDD_layout_post_loop_cell_manager::WORDPRESS_OTHERS_SECTION] : array();
+
+            $wpddlayout->layout_post_loop_cell_manager->handle_others_data_save( $others_section, $_POST['layout_id'] );
+
+            $status = isset($_GET['status']) && $_GET['status'] === 'trash' ? $_GET['status'] : 'publish';
+
+            $send = $this->set_up_send_data( $status );
+
+        }
+        else
+        {
+            $send = json_encode( array( 'error' =>  __( sprintf('Nonce problem: apparently we do not know from where the request comes from. %s', __METHOD__ ), 'ddl-layouts') ) );
+        }
+
+        die($send);
+    }
+
+    public function set_up_send_data( $status )
+    {
+        $data = $this->get_grouped_layouts( $status );
+
+        if( defined('JSON_UNESCAPED_UNICODE') ) {
+            $send = json_encode(array('Data' => $data), JSON_UNESCAPED_UNICODE );
+        } else {
+            $send = json_encode(array('Data' => $data));
+        }
+
+        return $send;
+    }
 
 	public function get_ddl_listing_data()
 	{
@@ -66,6 +205,9 @@ class WPDD_LayoutsListing
 	{
 		global $wpddlayout;
 
+		// property name is too long let's store it in a var for easier typing
+		$loop_manager = $wpddlayout->layout_post_loop_cell_manager;
+
 		$defaults = array(
 			'numberposts' => -1,
 			'post_type' => 'dd_layouts',
@@ -77,18 +219,23 @@ class WPDD_LayoutsListing
 		);
 
 		$post_types = array();
+        $post_types_temp = array();
 		$to_single = array();
 		$not_assigned = array();
+		$to_loops = array();
 
 		$query = new WP_Query($defaults);
+        $this->layouts_query = $query;
 		$list = $query->get_posts();
-		$blacklist = array('post_parent', 'post_password', 'comment_count', 'comment_status', 'filter', 'guid', 'menu_order', 'pinged', 'ping_status', 'post_author', 'post_content', 'post_content_filtered', 'post_date_gmt', 'post_excerpt', 'post_mime_type', 'post_modified', 'post_modified_gmt', 'to_ping');
+        $this->layouts_list = $list;
+		$blacklist = array('post_parent', 'post_password', 'comment_count', 'comment_status', 'guid', 'menu_order', 'pinged', 'ping_status', 'post_author', 'post_content', 'post_content_filtered', 'post_date_gmt', 'post_excerpt', 'post_mime_type', 'post_modified', 'post_modified_gmt', 'to_ping');
 
 		foreach ($list as $item) {
 			$types = $wpddlayout->post_types_manager->get_layout_post_types_object( $item->ID );
 			$posts = $wpddlayout->get_where_used($item->ID, $item->post_name);
 			$layout = WPDD_Layouts::get_layout_settings($item->ID, true);
-			
+			$loops = $loop_manager->get_layout_loops_labels( $item->ID );
+
 			if ($layout) {
 
 				if( property_exists ( $layout , 'has_child' ) === false ) $layout->has_child = false;
@@ -104,8 +251,9 @@ class WPDD_LayoutsListing
 				$item->is_parent = $layout->has_child;
 				$item->date_formatted = get_the_time(get_option('date_format'), $item->ID);
 				$item->post_title = str_replace('\\\"', '\"', $item->post_title);
-	
-	
+				$item->has_loop = property_exists($layout, 'has_loop') ? $layout->has_loop : false;
+				$item->has_post_content_cell = property_exists($layout, 'has_post_content_cell') ? $layout->has_post_content_cell : false;
+
 				if( $item->is_parent )
 				{
 					$item->children = $this->get_children($layout, $list);
@@ -125,15 +273,22 @@ class WPDD_LayoutsListing
 	
 	
 				if ($types) {
-	
 					$item->types = $types;
 					//$item->group = 3;
 					$post_types[] = (array)$item;
+                    $post_types_temp[] = $item->ID;
 				}
-	
+
+				if( $loops )
+				{
+					$item->loops = $loops;
+					$to_loops[] = (array)$item;
+				}
+
 				if ( $posts && count($posts) > 0 ) {
-					if ( in_array( (array) $item, $post_types) ) {
-						$item->posts = array();
+                    $item->posts = array();
+					if ( in_array( $item->ID, $post_types_temp) ) {
+
 						foreach ($posts as $post) {
 								if( $this->check_post_is_in_post_types_array($post, $post_types ) === true && $this->get_post_type_was_batched( $item->ID, $post->post_type ) === true )
 								{
@@ -141,21 +296,24 @@ class WPDD_LayoutsListing
 								}
 								else
 								{
-									$item->posts[] = $this->_filter_post($post, $blacklist);
+                                     $item->posts[] = $this->_filter_post($post, $blacklist);
 								}
 						}
 						if( sizeof($item->posts) > 0 ) {
 							$to_single[] = (array) $item;
 						}
 					} else {
-						foreach ($posts as $post) {
-							$post = $this->_filter_post( $post, $blacklist );
+
+						foreach ($posts as $key=>$post) {
+
+							    $post = $this->_filter_post( $post, $blacklist );
+                                $item->posts[] = $post;
+
 						}
-						$item->posts = $posts;
-						//$item->group = 2;
-						$to_single[] = (array)$item;
+
+                            $to_single[] = (array)$item;
 					}
-				} elseif (!$posts && !$types) {
+				} elseif (!$posts && !$types && !$loops ) {
 					//$item->group = 1;
 					$not_assigned[] = (array)$item;
 				}
@@ -166,21 +324,27 @@ class WPDD_LayoutsListing
 			array(
 				array(
 					'id' => 1,
-					'name' => __('Not assigned', 'ddl_layouts'),
+					'name' => __("Layouts not being used anywhere", 'ddl_layouts'),
 					'kind' => 'Group',
 					'items' => $not_assigned
 				),
 				array(
 					'id' => 2,
-					'name' => __('Assigned to single posts or pages', 'ddl_layouts'),
+					'name' => __('Layouts being used to display single posts or pages', 'ddl_layouts'),
 					'kind' => 'Group',
 					'items' => $to_single
 				),
 				array(
 					'id' => 3,
-					'name' => __('Assigned to post type', 'ddl_layouts'),
+					'name' => __('Layouts being used as templates for post types', 'ddl_layouts'),
 					'kind' => 'Group',
 					'items' => $post_types
+				),
+				array(
+					'id' => 4,
+					'name' => __('Layouts being used to customize archives', 'ddl_layouts'),
+					'kind' => 'Group',
+					'items' => $to_loops
 				)
 			);
 	}
@@ -206,7 +370,15 @@ class WPDD_LayoutsListing
 		return $wpddlayout->post_types_manager->get_post_type_was_batched( $layout_id, $post_type );
 	}
 
-	private function _filter_post ( $post, $blacklist ) {
+	private function _filter_post ( $post, $black = false ) {
+        if( $black )
+        {
+            $blacklist = $black;
+        }
+        else
+        {
+            $blacklist = array('post_parent', 'post_password', 'comment_count', 'comment_status', 'guid', 'menu_order', 'pinged', 'ping_status', 'post_author', 'post_content', 'post_content_filtered', 'post_date_gmt', 'post_excerpt', 'post_mime_type', 'post_modified', 'post_modified_gmt', 'to_ping');
+        }
 		$post->post_name = urldecode($post->post_name);
 		foreach( $blacklist as $remove )
 		{
@@ -244,6 +416,7 @@ class WPDD_LayoutsListing
 		return $ret;
 	}
 
+    //TODO:this method is depracated and should be removed
 	private function set_sort()
 	{
 		if ($this->args['orderby'] === 'title') {
@@ -263,16 +436,22 @@ class WPDD_LayoutsListing
 	public function listing_scripts()
 	{
 		global $wpddlayout;
-		//$wpddlayout->enqueue_scripts( array('ddl-layouts-listing-page', 'ddl-post-types') );
-		$wpddlayout->enqueue_scripts( array('ddl-post-types', 'dd-listing-page-main') );
+
+		$wpddlayout->enqueue_scripts( array('dd-listing-page-main', 'ddl-post-types') );
 		$wpddlayout->localize_script('dd-listing-page-main', 'DDLayout_settings', array(
 			'DDL_JS' => array(
+                'res_path' => WPDDL_RES_RELPATH,
 				'listing_lib_path' => WPDDL_GUI_RELPATH . "/listing/js/",
 				'editor_lib_path' => WPDDL_GUI_RELPATH."editor/js/",
 				'ddl_listing_nonce' => wp_create_nonce('ddl_listing_nonce'),
 				'ddl_listing_status' => isset($_GET['status']) && $_GET['status'] === 'trash' ? $_GET['status'] : 'publish',
 				'lib_path' => WPDDL_RES_RELPATH . '/js/external_libraries/',
-				'strings' => $this->get_listing_js_strings()
+				'strings' => $this->get_listing_js_strings(),
+                'is_listing_page' => true
+                , 'ARCHIVES_OPTION' => WPDD_layout_post_loop_cell_manager::POST_TYPES_LOOPS_NAME
+                , 'POST_TYPES_OPTION' => WPDD_Layouts_PostTypesManager::POST_TYPES_OPTION_NAME
+                , 'OTHERS_OPTION' => WPDD_layout_post_loop_cell_manager::WORDPRESS_OTHERS_SECTION
+                , 'INDIVIDUAL_POSTS_OPTION' => WPDD_Layouts_IndividualAssignmentManager::INDIVIDUAL_POST_ASSIGN_CHECKBOXES_NAME
 			),
 			'items_per_page' => DDL_ITEMS_PER_PAGE
 		));
@@ -285,13 +464,15 @@ class WPDD_LayoutsListing
 			'is_a_parent_layout' => __("This layout has children. It can't be deleted.", 'ddl-layouts'),
 			'is_a_parent_layout_and_cannot_be_changed' => __("This layout has children. It can't be assigned directly to posts or posts types.<br>You should assign one of its children instead.", 'ddl-layouts'),
 			'to_a_post_type' => __("This layout is assigned to a post type. It can't be deleted.", 'ddl-layouts'),
+            'to_an_archive' => __("This layout is assigned to an archive. It can't be deleted.", 'ddl-layouts'),
+            'to_archives' => __("This layout is assigned to %s archives. It can't be deleted.", 'ddl-layouts'),
 			'to_post_types' => __('This layout is assigned to %s post types. It can\'t be deleted.', 'ddl-layouts'),
 			'to_a_post_item' => __('This layout is assigned to a post. It can\'t be deleted.', 'ddl-layouts'),
 			'to_posts_items' => __("This layout is assigned to %s posts. It can't be deleted.", 'ddl-layouts')
 		);
 	}
 
-
+    //TODO:this method is depracated and should be removed
 	private function set_search_query()
 	{
 		if (isset($_GET["search"]) && '' != $_GET["search"]) { // perform the search in Views titles and decriptions and return an array to be used in post__in
@@ -320,7 +501,7 @@ class WPDD_LayoutsListing
 	{
 		return $this->args;
 	}
-
+    //TODO:this method is depracated and should be removed
 	private function set_mod_url($args = array())
 	{
 		$mod_url = array( // array of URL modifiers
@@ -333,15 +514,15 @@ class WPDD_LayoutsListing
 		);
 		$this->mod_url = wp_parse_args($args, $mod_url);
 	}
-
+    //TODO:this method is depracated and should be removed
 	private function get_mod_url()
 	{
 		return $this->mod_url;
 	}
-
+    //TODO:this method is depracated and should be removed
 	private function set_layout_list()
 	{
-		$this->layouts_query = new WP_Query($this->get_args());
+		$this->layouts_query = new WP_Query( $this->get_args() );
 		$this->layouts_list = $this->layouts_query->posts;
 	}
 
@@ -393,6 +574,7 @@ class WPDD_LayoutsListing
 		$this->count_what = $this->get_arg('post_status') == 'publish' ? 'trash' : 'publish';
 	}
 
+    //TODO: this method is depracated and should be removed
 	private function change_query_vars()
 	{
 		if (isset($_GET["items_per_page"]) && '' != $_GET["items_per_page"]) {
@@ -420,14 +602,8 @@ class WPDD_LayoutsListing
 		}
 	}
 
-	/*
-	 * Display pagination in admin listing pages
-	 *
-	 * @param $context the admin page where it will be rendered: 'views', 'view-templates', 'view-archives'
-	 * @param $ddl_found_items (int)
-	 * @param $ddl_items_per_page (int)
-	 * @param $mod_url (array)
-	 */
+
+    //TODO: this method is depracated and should be removed
 	private function ddl_admin_listing_pagination($context = 'dd_layouts', $ddl_found_items, $ddl_items_per_page = DDL_ITEMS_PER_PAGE, $mod_url = array())
 	{
 		$page = (isset($_GET["paged"])) ? (int)$_GET["paged"] : 1;
@@ -472,7 +648,7 @@ class WPDD_LayoutsListing
 
 	private function load_js_templates()
 	{
-		WPDD_FileManager::include_files_from_dir(WPDDL_GUI_ABSPATH . "/listing/", "js/templates");
+		WPDD_FileManager::include_files_from_dir(WPDDL_GUI_ABSPATH . "/listing/", "js/templates", $this );
 	}
 
 	private function include_creation_box()
@@ -480,6 +656,7 @@ class WPDD_LayoutsListing
 		include WPDDL_GUI_ABSPATH . 'create_new_layout.php';
 	}
 
+    //TODO: this method is depracated and should be removed
 	public function print_layout_action_select($layout_id, $status)
 	{
 		$data = array(
@@ -507,7 +684,7 @@ class WPDD_LayoutsListing
 		</select>
 	<?php
 	}
-
+    //TODO: this method is depracated and should be removed
 	public function print_edit_and_trash_links($layout_id)
 	{
 		$data = array(
@@ -524,7 +701,7 @@ class WPDD_LayoutsListing
 		                         title="<?php _e('Trash', 'ddl-layouts'); ?>"><?php _e('Trash', 'ddl-layouts'); ?></a> | </span>
 	<?php
 	}
-
+    //TODO: this method is depracated and should be removed
 	public function print_delete_and_restore_links($layout_id)
 	{
 		$data = array(
@@ -560,7 +737,7 @@ class WPDD_LayoutsListing
 				$layout_array = json_decode($layout_json, true);
 
 
-				$layout_name_base = __('Copy of ', 'ddl_layouts') . $layout_array['name'];
+				$layout_name_base = __('Copy of ', 'ddl_layouts') . str_replace('\\', '\\\\', $layout_array['name']);
 				$layout_name = $layout_name_base;
 
 				$count = 1;

@@ -163,6 +163,7 @@
 				// Create different arrays for fluid and fixed grids
 				if ( prms.fluid ) {
 					values = [1,2,3,4,6,12];
+
 					Grid.setColWidth( (12 / prms.cols) ); // FIXME: There is something wrong in here, I'm not sure what. It works correct for all the values except when prms.cols === 6
 				}
 				else {
@@ -184,7 +185,11 @@
 							return prms.maxCols;
 						}(),
 						value : function() {
-							return prms.cols;
+                            //Force the value for the slider to be 5 when 6 is set
+                            // to prevent display errors of the component
+                            var val = +prms.cols;
+                            if( val === 6 ) val = 5;
+							return val;
 						}(),
 						slide: function(event, ui) {
 							Grid.updateCols( values[ui.value - 1] );

@@ -15,7 +15,7 @@
 
 				<ul>
 					<li><a href="#js-row-basic-settings-<?php echo $unique_id; ?>"><?php _e('Content', 'ddl-layouts'); ?></a></li>
-					<li><a href="#js-row-design-<?php echo $unique_id; ?>"><?php _e('Display Settings', 'ddl-layouts'); ?></a></li>
+					<li class="ddl-tab-right"><a href="#js-row-design-<?php echo $unique_id; ?>"><?php _e('CSS styling', 'ddl-layouts'); ?></a></li>
 				</ul>
 
 				<div class="ddl-dialog-content-main ddl-popup-tab" id="js-row-basic-settings-<?php echo $unique_id; ?>">
@@ -66,7 +66,7 @@
 								<li>
 									<figure class="row-type">
 										<img class="item-preview" data-name="row-full-width" src="<?php echo WPDDL_GUI_RELPATH; ?>dialogs/img/tn-full-fluid.png" alt="<?php _e('Full width', 'ddl-layouts'); ?>">
-										<span><?php _e('Cells extent to the full width', 'ddl-layouts'); ?></span>
+										<span><?php _e('Cells extend to the full width', 'ddl-layouts'); ?></span>
 									</figure>
 									<label class="radio" data-target="row-full-width" for="row_type_full_width" style="display:none">
 										<input type="radio" name="row_type" id="row_type_full_width" value="full-width">

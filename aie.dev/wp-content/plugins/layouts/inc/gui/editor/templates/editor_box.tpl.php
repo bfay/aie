@@ -31,7 +31,7 @@ function ddl_render_editor($inline) {
 
 	<div class="dd-layouts-wrap">
 
-		<p class="dd-layouts-breadcrumbs">
+		<p class="dd-layouts-breadcrumbs js-dd-layouts-breadcrumbs-wrap">
 			<span><?php _e('You are editing:','ddl-layouts'); ?></span>
 			<span class="js-dd-layouts-breadcrumbs"></span>
 			<span class="layout-title js-layout-title active">
@@ -399,7 +399,7 @@ function ddl_render_editor($inline) {
 <?php endif; ?>
 <?php // TEMP END ?>
 
-	<div class="dd-layouts-wrap main-dll-editor">
+	<div class="dd-layouts-wrap main-ddl-editor">
 
 		<div class="layout-container js-layout-container rows">
 
@@ -409,7 +409,7 @@ function ddl_render_editor($inline) {
 
 		</div>
 
-	</div> <!-- .main-dll-editor -->
+	</div> <!-- .main-ddl-editor -->
 
 	<div class="clear"></div>
 
@@ -459,3 +459,4 @@ function ddl_render_editor($inline) {
 
 	<?php
 }
+?>

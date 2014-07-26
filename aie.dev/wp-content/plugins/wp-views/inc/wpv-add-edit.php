@@ -23,8 +23,6 @@ require_once WPV_PATH . '/inc/redesign/wpv-section-layout-extra.php';
 require_once WPV_PATH . '/inc/redesign/wpv-section-layout-extra-js.php';
 // Extra section files
 require_once WPV_PATH . '/inc/redesign/wpv-section-content.php';
-// Edit view page sections descriptions
-require_once WPV_PATH . '/inc/redesign/wpv-section-descriptons.php';
 // editor addon
 require_once WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon.class.php';
 
@@ -207,6 +205,12 @@ function views_redesign_html() {
 	<input id="post_ID" class="js-post_ID" type="hidden" value="<?php echo $view_id; ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_edit_general_nonce' ); ?>" />
 	<div id="icon-edit" class="icon32 icon32-posts-post"><br></div>
 	<h2><?php echo __('Edit View','wpv-views'); ?></h2>
+	<?php if ( isset( $_GET['in-iframe-for-layout'] ) ) {
+		$in_iframe = 'yes';
+	} else {
+		$in_iframe = '';
+	} ?>
+	<input type="hidden" class="js-wpv-display-in-iframe" value="<?php echo $in_iframe; ?>" />
 		<div class="wpv-settings-save-all wpv-setting-container js-wpv-general-actions-bar">
 			<?php if ( isset( $_GET['layout_id'] ) && is_numeric( $_GET['layout_id'] ) ) {
 				$layout_id = (int) $_GET['layout_id'];
@@ -278,10 +282,10 @@ function views_redesign_html() {
 		</div> <!-- .wpv-title-section -->
 
 		<div class="wpv-query-section">
-			<h3 class="wpv-section-title"><?php _e('The query section determines what content the View loads from the database','wpv-views') ?></h3>
 			<?php
 			wpv_get_view_introduction_data();
 			?>
+			<h3 class="wpv-section-title"><?php _e('The query section determines what content the View loads from the database','wpv-views') ?></h3>
 			<?php do_action('view-editor-section-query', $view_settings, $view_id); ?>
 		</div>
 
@@ -330,7 +334,7 @@ function views_redesign_html() {
 		</div>
 
 		<div class="wpv-help-section">
-			<div class="js-show-toolset-message" data-tutorial-button-text="<?php echo htmlentities( __('Learn how to display Views','wpv-views'), ENT_QUOTES ) ?>" data-tutorial-button-url="http://wp-types.com/documentation/user-guides/views/#2.5">
+			<div class="js-show-toolset-message" data-tutorial-button-text="<?php echo htmlentities( __('Learn how to display Views','wpv-views'), ENT_QUOTES ) ?>" data-tutorial-button-url="http://wp-types.com/documentation/user-guides/views/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-view-footer-help-box&utm_term=Done setting up this View?#2.5">
 				<h2><?php _e('Done setting up this View?','wpv-views') ?></h2>
 			</div>
 		</div>

@@ -11,10 +11,15 @@ class WPDD_Layouts {
 	public $frameworks_options_manager;
 	private $css_framework;
 	public $listing_page;
+	public $layout_post_loop_cell_manager;
 
 	function __construct(){
 
+        $this->plugin_localization();
+	
 		$this->registed_cells = new WPDD_registed_cell_types();
+
+		$this->layout_post_loop_cell_manager = new WPDD_layout_post_loop_cell_manager;
 
 		$this->registered_theme_sections = new WPDD_register_layout_theme_section();
 
@@ -25,6 +30,8 @@ class WPDD_Layouts {
 		$this->upload_options = new WPDDL_Options_Manager( 'upload_options' );
 
 		$this->post_types_manager = new WPDD_Layouts_PostTypesManager();
+		
+		$this->individual_assignment_manager = new WPDD_Layouts_IndividualAssignmentManager();
 
 		global $wpdd_gui_editor;
 
@@ -42,6 +49,8 @@ class WPDD_Layouts {
 
 		if( is_admin()){
 
+			$this->fix_up_views_slugs();
+			
 			if ($this->layouts_editor_page) {
 				new WPDD_GUI_DIALOGS();
 			}
@@ -58,6 +67,10 @@ class WPDD_Layouts {
 				add_action('admin_head', array($this,'wpddl_edit_template_options'));
 				add_action('admin_enqueue_scripts', array($this, 'page_edit_scripts'));
 				add_action('admin_enqueue_scripts', array($this, 'page_edit_styles'));
+			}
+
+			if ($pagenow == 'plugins.php') {
+				add_action('admin_enqueue_scripts', array($this, 'plugin_page_styles'));
 			}
 
 			/*Saving layout settings at post/page edit page*/
@@ -79,7 +92,11 @@ class WPDD_Layouts {
 				add_action('admin_enqueue_scripts', array($this, 'help_page_scripts'));
 			}
 			
-			if( isset( $_GET['in-iframe-for-layout']) && $_GET['in-iframe-for-layout'] == 1 && isset( $_GET['page'] ) && 'views-editor' == $_GET['page']) {
+			if( isset( $_GET['in-iframe-for-layout']) && $_GET['in-iframe-for-layout'] == 1 &&
+			   (isset( $_GET['page'] ) && (('views-editor' == $_GET['page']) ||
+										   ('views-embedded' == $_GET['page']) ||
+										   ('view-archives-embedded' == $_GET['page']) ||
+										   ('view-archives-editor' == $_GET['page']) ))) {
 				add_action('admin_enqueue_scripts', array($this, 'views_in_iframe_scripts'));
 			}
 			
@@ -100,12 +117,20 @@ class WPDD_Layouts {
 			add_action('wpddl_before_header', array($this, 'before_header_hook'));
 			add_action('wp_enqueue_scripts', array($this, 'load_frontend_js'));
 			add_action('wp_enqueue_scripts', array($this, 'load_frontend_css'));
-
 		}
+
+
 	}
 	function __destruct(){
 
 	}
+	
+    // Localization
+    function plugin_localization(){
+        $locale = get_locale();
+        load_textdomain( 'ddl-layouts', WPDDL_ABSPATH . '/locale/layouts-' . $locale . '.mo');
+    }
+	
 
 	function set_css_framework( $framework )
 	{
@@ -147,6 +172,7 @@ class WPDD_Layouts {
 					'wp-layouts-pages',
 					'toolset-font-awesome',
 					'toolset-colorbox',
+					'toolset-common',
 					'toolset-notifications-css',
 					'views-dialogs-css'
 				)
@@ -164,6 +190,7 @@ class WPDD_Layouts {
 			'wp-layouts-pages',
 			'toolset-font-awesome',
 			'toolset-colorbox',
+			'toolset-common',
 			'wp-mediaelement'
 		));
 
@@ -230,26 +257,28 @@ class WPDD_Layouts {
 		$opts = $this->layout_get_templates_options_object( );
 
 		$this->localize_script('ddl_post_edit_page', 'DDLayout_settings_editor', array(
-			'strings' => array(),
+			'strings' => array(
+							   'content_template_diabled' => __('Since this page uses a Layout, styling with a Content Template is disabled.', 'ddl-layouts')
+							  ),
 			'layout_templates' => $opts->layout_templates,
 			'layout_template_defaults' => $opts->template_option,
 		) );
 
 
 	}
-
+	
 	function layout_get_templates_options_object( )
 	{
 		// Determine which templates support layouts.
 
 		$ret = new stdClass();
 
-		$template_option = $this->get_option('templates');
-		if ($template_option) {
-			foreach($template_option as $file => $layout) {
-				$layout_templates[] = $file;
-			}
-		}
+        $template_option = $this->get_option('templates');
+        if ($template_option) {
+            foreach($template_option as $file => $layout) {
+                $layout_templates[] = $file;
+            }
+        }
 
 		$templates = wp_get_theme()->get_page_templates();
 
@@ -307,6 +336,10 @@ class WPDD_Layouts {
 	function page_edit_styles() {
 		$this->enqueue_styles( array ('toolset-select2-css','ddl_post_edit_page_css') );
 
+	}
+
+	function plugin_page_styles() {
+		$this->enqueue_styles( array ('toolset-common') );
 	}
 
 	function enqueue_cell_scripts() {
@@ -397,8 +430,21 @@ class WPDD_Layouts {
 	}
 
 	function get_cell_types() {
+		
+		global $wpddl_features;
+		
 		$cell_types = array_keys($this->cell_factory);
 		$cell_types = array_merge($cell_types, $this->registed_cells->get_cell_types());
+		
+		foreach ($cell_types as $index => $cell_type) {
+			if ($cell_type == 'cell-post-content' && !$wpddl_features->is_feature('post-content-cell')) {
+				unset($cell_types[$index]);
+			}
+			if ($cell_type == 'post-loop-cell' && !$wpddl_features->is_feature('post-loop-cell')) {
+				unset($cell_types[$index]);
+			}
+
+		}
 		return $cell_types;
 	}
 
@@ -420,7 +466,7 @@ class WPDD_Layouts {
 			}
 
 			if (!isset($cell_info_cache[$cell_type]['category'])) {
-				$cell_info_cache[$cell_type]['category'] = __('Standard WordPress elements', 'ddl-layouts');
+				$cell_info_cache[$cell_type]['category'] = __('Text and Media', 'ddl-layouts');
 				$cell_info_cache[$cell_type]['category-icon-css'] = 'icon-cog';
 				$cell_info_cache[$cell_type]['category-icon-url'] = '';
 			}
@@ -428,7 +474,7 @@ class WPDD_Layouts {
 			if (!isset($cell_info_cache[$cell_type]['icon-url'])) {
 				$cell_info_cache[$cell_type]['icon-url'] = '';
 			}
-			
+
 			if (!$cell_info_cache[$cell_type]['icon-css'] && !$cell_info_cache[$cell_type]['icon-url']) {
 				$cell_info_cache[$cell_type]['icon-css'] = 'icon-circle-blank';
 			}
@@ -472,11 +518,17 @@ class WPDD_Layouts {
 
 	function wpddl_frontend_header_init(){
 		$this->header_added = TRUE;
+
+        $queried_object = $this->get_queried_object();
+        $post = $this->get_query_post_if_any( $queried_object);
+
+        if( null === $post ) return;
 		// if there is a css enqueue it here
-		$post_id = get_the_ID();
+		$post_id = $post->ID;
+
 		$layout_selected = get_post_meta($post_id, '_layouts_template', true);
 
-		if( $layout_selected>0 ){
+		if( $layout_selected > 0 ){
 			$header_content = get_post_meta($layout_selected, 'dd_layouts_header');
 			echo isset($header_content[0]) ? $header_content[0] : '';
 		}
@@ -484,10 +536,12 @@ class WPDD_Layouts {
 
 	function add_layouts_admin_menu() {
 
-		add_menu_page('Layouts', 'Layouts', 'administrator', 'dd_layouts', array($this, 'dd_layouts_list'), WPDDL_RES_RELPATH . '/images/ico-layouts-white-18.png' );
+		add_menu_page('Layouts', 'Layouts', 'administrator', 'dd_layouts', array($this, 'dd_layouts_list'), 'none' );
+
 		if ($this->layouts_editor_page) {
 			add_submenu_page('dd_layouts', __('Edit layout', 'ddl-layouts'), __('Edit layout', 'ddl-layouts'), 'manage_options', 'dd_layouts_edit', array($this, 'dd_layouts_edit'));
 		}
+
 		add_submenu_page('dd_layouts', __('Add new layout', 'ddl-layouts'), __('Add new layout', 'ddl-layouts'), 'manage_options', 'admin.php?page=dd_layouts&amp;new_layout=true');
 		add_submenu_page('dd_layouts', __('Help', 'ddl-layouts'), __('Tutorial Videos', 'ddl-layouts'), 'manage_options', 'dd_tutorial_videos', array($this, 'dd_layouts_help'));
 		add_submenu_page('dd_layouts', __('Settings', 'ddl-layouts'), __('Settings', 'ddl-layouts'), 'manage_options', 'dd_layouts_settings', array($this, 'dd_layouts_settings'));
@@ -551,7 +605,7 @@ class WPDD_Layouts {
 
 	function meta_box($post) {
 
-		global $wpdb, $WP_layouts;
+		global $wpdb, $WP_layouts, $sitepress;
 		global $wpddl_features;
 
 		$layout_tempates_available = $wpdb->get_results("SELECT ID, post_name, post_title FROM {$wpdb->posts} WHERE post_type='dd_layouts' AND post_status in ('publish')");
@@ -584,7 +638,7 @@ class WPDD_Layouts {
 			
 			<?php if($post->post_type == 'page'): ?>
 				<p>
-					<i class="icon-layouts"></i> <strong><?php _e('Template and Layout', 'ddl-layouts') ?></strong>
+					<i class="icon-layouts ont-icon-24 ont-color-orange"></i> <strong><?php _e('Template and Layout', 'ddl-layouts') ?></strong>
 				</p>
 			<?php endif; ?>
 			<p>
@@ -592,7 +646,7 @@ class WPDD_Layouts {
 
 					<?php
 
-					if (function_exists('icl_object_id')) {
+					if (isset($sitepress) && function_exists('icl_object_id')) {
 						$template_selected = icl_object_id($template_selected, 'layouts-template', true);
 					}
 
@@ -618,7 +672,8 @@ class WPDD_Layouts {
 
 					foreach ($layout_tempates_available as $template) {
 
-						$layout = $this->get_layout_settings($template->ID, true);
+						$layout = self::get_layout_settings($template->ID, true);
+                        $has_loop = is_object($layout) && property_exists($layout, 'has_loop') ? $layout->has_loop : false;
 
 						$supported = true;
 						$warning = '';
@@ -659,8 +714,14 @@ class WPDD_Layouts {
 							if ( $template->post_name == $theme_default_layout && $post->post_type == 'page' ) {
 								$title .= __(' - Template default', 'ddl-layouts');
 							}
+
+                            $data_object = array(
+                                'layout_has_loop' => $has_loop,
+                                'post_type' => $post->post_type
+                            );
+
 							?>
-							<option value="<?php echo $template->post_name; ?>"<?php echo $selected . $force_layout; ?> data-id="<?php echo $template->ID; ?>" data-ddl-warning="<?php echo $warning; ?>"><?php echo $title; ?></option>
+							<option data-object="<?php echo htmlspecialchars( json_encode( $data_object ) ); ?>" value="<?php echo $template->post_name; ?>"<?php echo $selected . $force_layout; ?> data-id="<?php echo $template->ID; ?>" data-ddl-warning="<?php echo $warning; ?>"><?php echo $title; ?></option>
 						<?php
 						}
 					}
@@ -739,7 +800,7 @@ class WPDD_Layouts {
 
 	function create_layout_callback() {
 		// Clear any errors that may have been rendered that we don't have control of.		
-		ob_clean();
+		if ( ob_get_length() > 0 ) ob_clean();
 
 		$nonce = $_POST["wpnonce"];
 		if (! wp_verify_nonce( $nonce, 'wp_nonce_create_layout' ) ) {
@@ -749,7 +810,9 @@ class WPDD_Layouts {
 
 			// Check for duplicate layout name.
 
-			$layout_name = stripslashes_deep($_POST['title']);
+			$layout_name = str_replace('\\\\', '##DDL-SLASH##', $_POST['title']);
+			$layout_name = stripslashes_deep($layout_name);
+			$layout_name = str_replace('##DDL-SLASH##', '\\\\', $layout_name);
 			if ($this->does_layout_with_this_name_exist($layout_name)) {
 				$result = array('error' => 'error',
 					'error_message' => __('A layout with this name already exists. Please use a different name.', 'ddl-layouts'));
@@ -785,13 +848,13 @@ class WPDD_Layouts {
 				);
 				$post_id = wp_insert_post($postarr);
 
-				if( isset($_POST['post_types']) && !empty($_POST['post_types']) )
+				if( isset($_POST['post_types']) && !empty($_POST['post_types']) && is_array( $_POST['post_types'] ) )
 				{
-					$this->post_types_manager->handle_post_type_data_save( array( "layout_".$post_id => $_POST['post_types'] ) );
+                    $post_types = count( $_POST['post_types'] ) === 0 ? array() : array_unique( $_POST['post_types'] );
+					$this->post_types_manager->handle_post_type_data_save( array( "layout_".$post_id => $post_types ) );
 				}
 
 				update_post_meta( $post_id, 'dd_layouts_settings',  $layout_json);
-
 				$result['id'] = $post_id;
 			}
 
@@ -804,9 +867,9 @@ class WPDD_Layouts {
 	 * @param: $array:array
 	 * @return: json_string:string
 	 */
-	function json_encode( $array )
+	static function json_encode( $array )
 	{
-		$array = $this->json_encode_string($array);
+		$array = self::json_encode_string($array);
 		
 		// php > 5.3 do not escape utf-8 characters using native constant argument
 		if( defined('JSON_UNESCAPED_UNICODE') )
@@ -816,17 +879,22 @@ class WPDD_Layouts {
 		// fallback for php < 5.3 to support unicode characters in json string
 		else
 		{
-			//return self::json_encode_unescaped_unicode( $array );
-            return json_encode( $array );
+			if (function_exists('mb_decode_numericentity')) {
+				return self::json_encode_unescaped_unicode( $array );
+			} else {
+				return json_encode( $array );
+			}
 		}
 	}
 	
-	function json_encode_string ($data) {
+	static function json_encode_string ($data) {
 		foreach ($data as $key => $data_value) {
 			if (is_string($data_value)) {
 				$data[$key] = str_replace('"', '\"', $data_value);
 			} else if (is_array($data_value)) {
-				$data[$key] = $this->json_encode_string($data_value);
+				$data[$key] = self::json_encode_string($data_value);
+			} else if (is_object($data_value)) {
+				$data[$key] = self::json_encode_string((array) $data_value);
 			}
 		}
 		
@@ -839,13 +907,13 @@ class WPDD_Layouts {
 	 * @return string
 	 * courtesy from: http://www.php.net/manual/ru/function.json-encode.php#105789
 	 */
-	/*public static function json_encode_unescaped_unicode($arr)
+	public static function json_encode_unescaped_unicode($arr)
 	{
 
 		array_walk_recursive($arr, 'ddl_json_unescaped_unicode_walk_callback' );
 
 		return mb_decode_numericentity(json_encode($arr), array (0x80, 0xffff, 0, 0xffff), 'UTF-8');
-	}*/
+	}
 
 	function create_layout($width, $type) {
 		$layout = new WPDD_layout($width);
@@ -908,6 +976,7 @@ class WPDD_Layouts {
 		{
 			$this->enqueue_styles('menu-cells-front-end');
 		}
+        $this->enqueue_styles('ddl-front-end');
 	}
 
 	function before_header_hook(){
@@ -943,7 +1012,7 @@ class WPDD_Layouts {
 		if ($as_array && !isset($layouts_decoded[$post_id])) {
 
 			if ($layouts_raw[$post_id]) {
-				$layouts_decoded[$post_id] = json_decode($layouts_raw[$post_id]);
+				$layouts_decoded[$post_id] = json_decode(  $layouts_raw[$post_id]  );
 			} else {
 				$layouts_decoded[$post_id] = null;
 			}
@@ -956,8 +1025,21 @@ class WPDD_Layouts {
 		}
 	}
 
+    // I added this 'cause in ajax calls after saving the static property of self::get_layout_settings
+    // is not updated so the settings you get are outdated
+    public static function get_layout_settings_raw_not_cached( $layout_id ) {
+        $settings = get_post_meta($layout_id, 'dd_layouts_settings', true);
+        return json_decode( $settings );
+    }
+
 	public static function save_layout_settings( $post_id, $settings )
 	{
+		if (is_string($settings)) {
+			$settings = self::json_encode( json_decode($settings, true) );
+		} else if (is_array($settings) || is_object($settings)) {
+			$settings = self::json_encode( (array)$settings );
+		}
+		
 		static $layouts_raw = array();
 
 		if (!isset($layouts_raw[$post_id])) {
@@ -1134,7 +1216,7 @@ class WPDD_Layouts {
 		return $this->css_manager->get_layouts_css();
 	}
 
-	function get_where_used( $layout_id, $slug = false )
+	function get_where_used( $layout_id, $slug = false, $group = false, $posts_per_page = -1 )
 	{
 		// Get the posts where this is used.
 		$layout = $this->get_layout_from_id( $layout_id );
@@ -1142,7 +1224,7 @@ class WPDD_Layouts {
 		if( is_object( $layout ) === false && method_exists($layout,'get_post_slug') === false ) return;
 
 		$args = array(
-			'numberposts' => -1,
+			'posts_per_page' => $posts_per_page,
 			'post_type' => 'any',
 			'meta_query' => array (
 				array (
@@ -1153,10 +1235,27 @@ class WPDD_Layouts {
 			) );
 
 		$new_query = new WP_Query( $args );
+
+        if( $group === true )
+        {
+            add_filter('posts_orderby', array(&$this, 'order_by_post_type'), 10, 2);
+            $new_query->group_posts_by_type = $group;
+        }
+
 		$posts = $new_query->get_posts();
 
 		return $posts;
 	}
+
+    function order_by_post_type($orderby, $query) {
+        global $wpdb;
+        if ( property_exists($query, 'group_posts_by_type') &&  $query->group_posts_by_type === true) {
+            unset( $query->group_posts_by_type );
+            $orderby = $wpdb->posts . '.post_type ASC';
+        }
+        // provide a default fallback return if the above condition is not true
+        return $orderby;
+    }
 
 	public static function get_layout_children($id)
 	{
@@ -1185,11 +1284,245 @@ class WPDD_Layouts {
 		return $children;
 	}
 
+    function get_layout_renderer( $layout, $args )
+    {
+        $manager = new WPDD_layout_render_manager($layout );
+        $renderer = $manager->get_renderer( );
+        // set properties  and callbacks dynamically to current renderer
+        if( is_array($args) && count($args) > 0 )
+        {
+            $renderer->set_layout_arguments( $args );
+        }
+        return $renderer;
+    }
+
+    function get_query_post_if_any( $queried_object)
+    {
+        return 'object' === gettype( $queried_object ) && get_class( $queried_object ) === 'WP_Post' ? $queried_object : null;
+    }
+
+    function get_queried_object()
+    {
+        global $wp_query;
+
+        $queried_object = $wp_query->get_queried_object();
+
+        return $queried_object;
+    }
+
+    function get_layout_id_for_render( $layout )
+    {
+        global $wpdb;
+
+        $id = 0;
+
+        if ($layout) {
+
+            $id = $wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type='dd_layouts' AND post_name=%s", $layout));
+
+            if (!$id) {
+                // try the id.
+                $id = $wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type='dd_layouts' AND ID=%d", (int)$layout));
+            }
+
+            if (!$id) {
+                // try the post title
+                $id = $wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type='dd_layouts' AND post_title=%s", $layout));
+            }
+        }
+
+        $queried_object = $this->get_queried_object();
+
+        $post = $this->get_query_post_if_any( $queried_object);
+
+        if( $post !== null )
+        {
+
+            $post_id = $post->ID;
+
+            $layout_selected = get_post_meta( $post_id, '_layouts_template', true );
+
+            if ($layout_selected) {
+
+                $id = $wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_type='dd_layouts' AND post_name=%s", $layout_selected));
+
+                $option = $this->post_types_manager->get_layout_to_type_object($post->post_type);
+
+                if( is_object( $option ) && property_exists( $option, 'layout_id') && (int) $option->layout_id === (int) $id )
+                {
+                    $id = $option->layout_id;
+                }
+            }
+        }
+        else if( $post === null && is_front_page() && is_home() && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_BLOG) )
+        {
+
+            $id = (int) $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_BLOG);
+        }
+        elseif ( $post === null && is_post_type_archive() ) {
+
+            $post_type_object = $queried_object;
+            if ( $post_type_object && property_exists( $post_type_object, 'public' ) && $post_type_object->public && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_TYPES_PREFIX.$post_type_object->name) ) {
+                $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_TYPES_PREFIX.$post_type_object->name);
+            }
+        }
+        elseif ( $post === null && is_archive() && ( is_tax() || is_category() || is_tag() ) ) {
+
+                $term = $queried_object;
+                if ( $term && property_exists( $term, 'taxonomy' ) && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_TAXONOMY_PREFIX.$term->taxonomy) ) {
+                    $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_TAXONOMY_PREFIX.$term->taxonomy);
+                }
+
+        }
+        // Check other archives
+        elseif ( $post === null && is_search()  && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_SEARCH) ) {
+
+            $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_SEARCH);
+        }
+        elseif ( $post === null && is_author() && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_AUTHOR ) ) {
+
+            $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_AUTHOR );
+        }
+        elseif ( $post === null && is_year() && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_YEAR) ) {
+
+            $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_YEAR);
+        }
+        elseif ( $post === null && is_month() && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_MONTH) ) {
+
+            $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_MONTH);
+        }
+        elseif ( $post === null && is_day() && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_DAY) ) {
+
+            $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_DAY);
+        }
+        elseif( $post === null && is_404() && $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_404 ) )
+        {
+
+            $id = $this->layout_post_loop_cell_manager->get_option( WPDD_layout_post_loop_cell_manager::OPTION_404 );
+        }
+
+        return apply_filters('get_layout_id_for_render', $id, $layout );
+    }
+
+    function get_layout_content_for_render( $layout, $args )
+    {
+        $id = $this->get_layout_id_for_render($layout);
+
+        $content = '';
+
+        if ($id) {
+
+            // Check for preview mode
+            $old_id = $id;
+            if (isset($_GET['layout_id'])) {
+                $id = $_GET['layout_id'];
+            }
+
+            $layout = $this->get_layout_from_id($id);
+            if (!$layout && isset($_GET['layout_id'])) {
+                if ($id != $old_id) {
+                    $layout = $this->get_layout_from_id($old_id);
+                }
+            }
+            if ($layout) {
+
+                $renderer = $this->get_layout_renderer( $layout, $args );
+                //$renderer = new WPDD_layout_render($layout);
+                $content = $renderer->render( );
+
+                $render_errors = $this->get_render_errors();
+                if (sizeof($render_errors)) {
+                    $content .= '<p class="alert alert-error"><strong>' . __('There were errors while rendering this layout.', 'ddl-layouts') . '</strong></p>';
+                    foreach($render_errors as $error) {
+                        $content .= '<p class="alert alert-error">' . $error . '</p>';
+                    }
+                }
+            }
+        } else {
+            if (!$layout) {
+                $content = '<p>' . __('You need to select a layout for this page. The layout selection is available in the page editor.', 'ddl-layouts') . '</p>';
+            }
+        }
+
+        return apply_filters('get_layout_content_for_render', $content, $this, $layout, $args );
+    }
+
+    public static function flattenArray( $array ){
+        $ret_array = array();
+
+        if( is_array($array) )
+        {
+            foreach(new RecursiveIteratorIterator(new RecursiveArrayIterator($array)) as $value)
+            {
+                $ret_array[] = $value;
+            }
+        }
+        else
+        {
+            $ret_array = array('error' => __( sprintf('Argument should be an array %s', __METHOD__), 'wpv-views') );
+        }
+
+        return $ret_array;
+    }
+	
+	private function fix_up_views_slugs () {
+		global $wpdb;
+		
+		$fixed = $this->get_option('views_and_template_slugs_fixed_0.9.2');
+		
+		if (!$fixed) {
+			
+			// From 0.9.2 we're using the View ID instead of the slug
+			// We need to check all layouts and update them as required.
+			$layout_tempates_available = $wpdb->get_results("SELECT ID, post_name, post_title FROM {$wpdb->posts} WHERE post_type='dd_layouts'");
+			foreach ($layout_tempates_available as $template) {
+
+				$layout = self::get_layout_settings($template->ID);
+				$found = false;
+				
+				if (preg_match_all('/"ddl_layout_view_slug":"(.*?)"/', $layout, $matches)) {
+					$found = true;
+					for ($i = 0; $i < sizeof($matches[0]); $i++) {
+						$slug = $matches[1][$i];
+						$id = $wpdb->get_var( $wpdb->prepare("SELECT ID FROM $wpdb->posts WHERE post_name = '%s' AND post_type='view'", $slug) );
+						if ($id > 0) {
+							$new = '"ddl_layout_view_id":"' . $id . '"';
+							$layout = str_replace($matches[0][$i], $new, $layout);
+						}
+					}
+					
+				}
+
+				if (preg_match_all('/"view_template":"(.*?)"/', $layout, $matches)) {
+					$found = true;
+					for ($i = 0; $i < sizeof($matches[0]); $i++) {
+						$slug = $matches[1][$i];
+						$id = $wpdb->get_var( $wpdb->prepare("SELECT ID FROM $wpdb->posts WHERE post_name = '%s' AND post_type='view-template'", $slug) );
+						if ($id > 0) {
+							$new = '"ddl_view_template_id":"' . $id . '"';
+							$layout = str_replace($matches[0][$i], $new, $layout);
+						}
+					}
+					
+				}
+				
+				if ($found) {
+					self::save_layout_settings($template->ID, $layout);
+				}
+				
+			}
+			
+			$this->save_option(array('views_and_template_slugs_fixed_0.9.2' => true));
+			
+		}
+		
+	}
+
 }
 
 /*
  * Helper function to json_encode with UTF-8 support for php < 5.3
  */
-/*function ddl_json_unescaped_unicode_walk_callback (&$item, $key){
+function ddl_json_unescaped_unicode_walk_callback (&$item, $key){
 	if (is_string($item)) $item = mb_encode_numericentity($item, array (0x80, 0xffff, 0, 0xffff), 'UTF-8');
-}*/
+}

@@ -19,6 +19,7 @@ DDLayout.PostTypes = function($){
 			self.openAssignToPostTypesDialogJS();
 			self.openAssignToPostTypesDialog();
 			self.batchPostsOfPostType();
+            self.handle_show_all_posts();
 		};
 
 	self.batchPostsOfPostType = function()
@@ -49,16 +50,19 @@ DDLayout.PostTypes = function($){
 				DDLayout.listing_manager.listing_table_view.model.trigger('make_ajax_call',  params, function( model, response, object, args ){
 					spinnerContainer.hide();
 					data = response.message;
+                    console.log( self.current_warn );
 					self.current_warn.remove();
 					self.current_warn = null;
+                    self.openConfirmMessage( data, params.in_listing_page, params.layout_id );
 				});
 
-				DDLayout.listing_manager.listing_table_view.listenTo( DDLayout.listing_manager.listing_table_view.eventDispatcher, 'table_view_after_render',
+                WPV_Toolset.Utils.eventDispatcher.listenTo( WPV_Toolset.Utils.eventDispatcher, 'confirm-batch-dialog-closed',
 					function()
 					{
 						if( data && data.label && _.isArray( data.results ) ){
-							self.openConfirmMessage( data );
-							DDLayout.listing_manager.listing_table_view.stopListening( DDLayout.listing_manager.listing_table_view.eventDispatcher, 'table_view_after_render' );
+                            DDLayout.listing_manager.listing_table_view.current = +params.layout_id;
+                            DDLayout.listing_manager.listing_table_view.eventDispatcher.trigger('changes_in_dialog_done');
+                            WPV_Toolset.Utils.eventDispatcher.stopListening( WPV_Toolset.Utils.eventDispatcher, 'confirm-batch-dialog-closed' );
 						}
 					}
 				);
@@ -72,11 +76,95 @@ DDLayout.PostTypes = function($){
 					self.current_warn.remove();
 					self.current_warn = null;
 					self.openConfirmMessage(data);
+
+                    if( response && response.hasOwnProperty('where_used_html') )
+                    {
+                        var where_used_ui = jQuery('.js-where-used-ui');
+                        where_used_ui.empty().html( response.where_used_html );
+                    }
 				}});
 			}
 
 		});
 	};
+
+
+    self.handle_show_all_posts = function () {
+        var $link = jQuery('.js-show-all');
+
+            jQuery(document).on('click', $link.selector, function (event) {
+                event.preventDefault();
+
+                WPV_Toolset.Utils.loader.loadShow( jQuery(this).parent()).css('float', 'left');
+
+                var layout_id = DDLayout_settings.DDL_JS.layout_id
+                    , nonce = DDLayout_settings.DDL_JS.ddl_show_all_posts_nonce
+                    , amount = jQuery(this).data('amount')
+                    , params = {
+                        ddl_show_all_posts_nonce: nonce,
+                        layout_id: layout_id,
+                        action: 'show_all_posts',
+                        amount:amount
+                    };
+
+
+                if( DDLayout.PostTypes.ajax_done )
+                {
+                    self.hanlde_show_all_post_no_ajax( jQuery(this), jQuery('.js-dd-layouts-where-used') );
+                }
+                else
+                {
+                    WPV_Toolset.Utils.do_ajax_post(params, {
+                        success: function (response) {
+
+                            WPV_Toolset.Utils.loader.loadHide()/*.css('float', 'right')*/;
+                            if( response && response.Data && response.Data.where_used_html )
+                            {
+                                jQuery('#js-print_where_used_links').empty().html( response.Data.where_used_html );
+                                jQuery('.js-dd-layouts-where-used').show();
+                                DDLayout.PostTypes.ajax_done = true;
+                            }
+                        }});
+                }
+
+            });
+    };
+
+    self.hanlde_show_all_post_no_ajax = function($button, $wrap)
+    {
+        var $ul = $wrap.find('ul'),
+            what = $button.data('amount'),
+            amount = DDLayout_settings.DDL_JS.AMOUNT_OF_POSTS_TO_SHOW;
+
+        $ul.each(function(index, value){
+            jQuery(value).find('li').each(function(i, v )
+            {
+                if( what === 'all' )
+                {
+                    if( i > amount ){
+                        jQuery( v ).show();
+                    }
+                }
+                else if( what === 'not_all' )
+                {
+
+                    if( i > amount ){
+                        jQuery( v ).hide();
+                    }
+                }
+            });
+        });
+
+        if( what === 'all'){
+            $button.data('amount', 'not_all');
+            $button.text( $button.data('textall') );
+        }else{
+            $button.data('amount', 'all');
+            $button.text( $button.data('textnotall') );
+        }
+        WPV_Toolset.Utils.loader.loadHide();
+    };
+
 
 	self.openAssignToPostTypesDialogJS = function()
 	{
@@ -133,7 +221,7 @@ DDLayout.PostTypes = function($){
 		});
 	};
 
-	self.openConfirmMessage = function( data )
+	self.openConfirmMessage = function( data, in_listing_page, layout_id )
 	{
 		var template = $("#ddl-layout-to-meta-confirm-box").html();
 
@@ -146,15 +234,46 @@ DDLayout.PostTypes = function($){
 			closeButton:false,
 			fixed: true,
 			top: false,
-
 			onComplete: function() {
 
 			},
 			onCleanup: function() {
 
-			}
+			},
+            onClosed:function(){
+
+                WPV_Toolset.Utils.eventDispatcher.trigger('confirm-batch-dialog-closed');
+
+            }
 		});
 	};
 
 	self.init();
+};
+
+DDLayout.PostTypes.ajax_done = false;
+
+DDLayout.PostTypes.handle_posts_where_reload = function(response)
+{
+    if( response && response.hasOwnProperty('where_used_html') )
+    {
+
+        jQuery('#js-print_where_used_links').empty().html( response.where_used_html );
+
+        jQuery('.js-dd-layouts-where-used').show();
+
+        if ( jQuery('.js-show-all').is('a') )
+        {
+            var $button = jQuery('.js-show-all'), what = $button.data('amount'), text = '' ;
+
+            if( what === 'all'){
+                text = $button.data('textall');
+            }else{
+
+                text = $button.text( $button.data('textnotall') );
+            }
+            $button.text( text );
+        }
+        DDLayout.PostTypes.ajax_done = false;
+    }
 };

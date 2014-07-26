@@ -7,7 +7,7 @@ function register_widget_cell_init() {
 		array (
 				'name' => __('Widget', 'ddl-layouts'),
 				'icon-css' => 'icon-cog',
-				'description' => __('A cell that displays a WordPress Widget.', 'ddl-layouts'),
+				'description' => __('A cell that displays a single WordPress Widget.', 'ddl-layouts'),
 				'button-text' => __('Assign Widget cell', 'ddl-layouts'),
 				'dialog-title-create' => __('Create a Widget cell', 'ddl-layouts'),
 				'dialog-title-edit' => __('Edit Widget cell', 'ddl-layouts'),
@@ -19,6 +19,8 @@ function register_widget_cell_init() {
 				'register-scripts' => array(
 					array('widget_cell_js', WPDDL_RELPATH . '/inc/gui/editor/js/widget-cell.js', array('jquery'), WPDDL_VERSION, true)
 				),
+				'category'					=> __('WordPress UI', 'ddl-layouts'),
+				
 			  )
 	);
 }
@@ -56,7 +58,9 @@ function widget_cell_dialog_template_callback() {
 				<label for="<?php the_ddl_name_attr('widget_type'); ?>"><?php _e('Widget type:', 'ddl-layouts' ); ?></label>
 				<select name="<?php the_ddl_name_attr('widget_type'); ?>" data-nonce="<?php echo wp_create_nonce( 'ddl-get-widget' ); ?>">
 					<?php foreach($wp_registered_widgets as $widget): ?>
-						<option value="<?php echo $widget['classname']; ?>"><?php echo $widget['name']; ?></option>
+					<?php if(  !is_array($widget['classname'] ) &&  !is_array( $widget['name'] ) ): ?>
+					<option value="<?php echo $widget['classname']; ?>"><?php echo $widget['name']; ?></option>
+					<?php endif; ?>
 					<?php endforeach; ?>
 				</select>
 			</li>
@@ -105,12 +109,12 @@ function widget_cell_template_callback() {
 	ob_start();
 	?>
 		<div class="cell-content">
-			<p class="cell-name"><%- name %></p>
+			<p class="cell-name">{{ name }}</p>
 			<div class="cell-content">
-				<%
+				<#
 					var element = DDLayout.widget_cell.get_widget_name( content.widget_type );
 					print( element );
-				%>
+				#>
 			</div>
 		</div>
 

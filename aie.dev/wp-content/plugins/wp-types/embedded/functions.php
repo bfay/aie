@@ -3,10 +3,10 @@
  * Basic and init functions.
  * Since Types 1.2 moved from /embedded/types.php
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/functions.php $
- * $LastChangedDate: 2014-05-23 14:23:39 +0000 (Fri, 23 May 2014) $
- * $LastChangedRevision: 22684 $
- * $LastChangedBy: marcin $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/functions.php $
+ * $LastChangedDate: 2014-07-09 08:50:04 +0000 (Wed, 09 Jul 2014) $
+ * $LastChangedRevision: 24780 $
+ * $LastChangedBy: bruce $
  *
  */
 
@@ -213,18 +213,31 @@ function wpcf_types_cf_under_control( $action = 'add', $args = array(),
                 if ( strpos( $field_id, md5( 'wpcf_not_controlled' ) ) !== false ) {
                     $field_id_name = str_replace( '_' . md5( 'wpcf_not_controlled' ), '', $field_id );
                     $field_id_add = preg_replace( '/^wpcf\-/', '', $field_id_name );
+                    $adding_field_with_wpcf_prefix = $field_id_add != $field_id_name;
+                    
                     // Activating field that previously existed in Types
                     if ( array_key_exists( $field_id_add, $fields ) ) {
                         $fields[$field_id_add]['data']['disabled'] = 0;
                     } else { // Adding from outside
                         $fields[$field_id_add]['id'] = $field_id_add;
                         $fields[$field_id_add]['type'] = $field_type;
-                        $fields[$field_id_add]['name'] = $field_id_name;
-                        $fields[$field_id_add]['slug'] = $field_id_name;
+                        if ($adding_field_with_wpcf_prefix) {
+                            $fields[$field_id_add]['name'] = $field_id_add;
+                            $fields[$field_id_add]['slug'] = $field_id_add;
+                        } else {
+                            $fields[$field_id_add]['name'] = $field_id_name;
+                            $fields[$field_id_add]['slug'] = $field_id_name;
+                        }
                         $fields[$field_id_add]['description'] = '';
                         $fields[$field_id_add]['data'] = array();
-                        // @TODO WATCH THIS! MUST NOT BE DROPPED IN ANY CASE
-                        $fields[$field_id_add]['data']['controlled'] = 1;
+                        if ($adding_field_with_wpcf_prefix) {
+                            // This was most probably a previous Types field
+                            // let's take full control
+                            $fields[$field_id_add]['data']['controlled'] = 0;
+                        } else {
+                            // @TODO WATCH THIS! MUST NOT BE DROPPED IN ANY CASE
+                            $fields[$field_id_add]['data']['controlled'] = 1;
+                        }
                     }
                     $unset_key = array_search( $field_id, $args['fields'] );
                     if ( $unset_key !== false ) {

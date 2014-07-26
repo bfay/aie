@@ -14,7 +14,7 @@ function wpv_admin_menu_views_listing_page() {
 		<div class="wpv-views-listing-page">
 			<?php 
 				$has_views = wpv_check_views_exists('normal'); // $has_views holds an array with all the Views IDs or false if there isn't any
-				$search_term = isset( $_GET["search"] ) ? urldecode( sanitize_text_field($_GET["search"]) ) : '';
+				$search_term = isset( $_GET["s"] ) ? urldecode( sanitize_text_field($_GET["s"]) ) : '';
 				wp_nonce_field( 'work_views_listing', 'work_views_listing' ); // general nonce TODO please do NOT use this general nonce
 			?>
 			<div id="icon-views" class="icon32"></div>
@@ -94,36 +94,36 @@ function wpv_admin_menu_views_listing_page() {
 						<p>
 							<input type="radio" name="view_purpose" class="js-view-purpose" id="view_purpose_all" value="all" />
 							<label for="view_purpose_all"><?php _e('Display all results','wpv-views'); ?></label>
+							<span class="helper-text"><?php _e('The View will output all the results returned from the query section.', 'wpv-views'); ?></span>
 						</p>
-						<p class="tip"><?php _e('The View will output all the results returned from the query section.', 'wpv-views'); ?></p>
 					</li>
 					<li>
 						<p>
 							<input type="radio" name="view_purpose" class="js-view-purpose" id="view_purpose_pagination" value="pagination" />
 							<label for="view_purpose_pagination"><?php _e('Display the results with pagination','wpv-views'); ?></label>
+							<span class="helper-text"><?php _e('The View will display the query results in pages.', 'wpv-views'); ?></span>
 						</p>
-						<p class="tip"><?php _e('The View will display the query results in pages.', 'wpv-views'); ?></p>
 					</li>
 					<li>
 						<p>
 							<input type="radio" name="view_purpose" class="js-view-purpose" id="view_purpose_slider" value="slider" />
 							<label for="view_purpose_slider"><?php _e('Display the results as a slider','wpv-views'); ?></label>
+							<span class="helper-text"><?php _e('The View will display the query results as slides.', 'wpv-views'); ?></span>
 						</p>
-						<p class="tip"><?php _e('The View will display the query results as slides.', 'wpv-views'); ?></p>
 					</li>
 					<li>
 						<p>
 							<input type="radio" name="view_purpose" class="js-view-purpose" id="view_purpose_parametric" value="parametric" />
 							<label for="view_purpose_parametric"><?php _e('Display the results as a parametric search','wpv-views'); ?></label>
+							<span class="helper-text"><?php _e('Visitors will be able to search through your content using different search criteria.', 'wpv-views'); ?></span>
 						</p>
-						<p class="tip"><?php _e('Visitors will be able to search through your content using different search criteria.', 'wpv-views'); ?></p>
 					</li>
 					<li>
 						<p>
 							<input type="radio" name="view_purpose" class="js-view-purpose" id="view_purpose_full" value="full" />
 							<label for="view_purpose_full"><?php _e('Full custom display mode','wpv-views'); ?></label>
+							<span class="helper-text"><?php _e('See all the View controls open and set up things manually..', 'wpv-views'); ?></span>
 						</p>
-						<p class="tip"><?php _e('See all the View controls open and set up things manually..', 'wpv-views'); ?></p>
 					</li>
 				</ul>
 
@@ -199,7 +199,7 @@ function wpv_admin_view_listing_table($views_ids) {
 	$mod_url = array( // array of URL modifiers
 		'orderby' => '',
 		'order' => '',
-		'search' => '',
+		's' => '',
 		'items_per_page' => '',
 		'paged' => '',
 		'status' => ''
@@ -219,8 +219,8 @@ function wpv_admin_view_listing_table($views_ids) {
 		$mod_url['status'] = '&amp;status=' . sanitize_text_field( $_GET["status"] );
 	}
 	
-	if ( isset( $_GET["search"] ) && '' != $_GET["search"] ) { // perform the search in Views titles and decriptions and return an array to be used in post__in
-		$s_param = urldecode(sanitize_text_field($_GET["search"]));
+	if ( isset( $_GET["s"] ) && '' != $_GET["s"] ) { // perform the search in Views titles and decriptions and return an array to be used in post__in
+		$s_param = urldecode(sanitize_text_field($_GET["s"]));
 		$new_args = $wpv_args;
 		$unique_ids = array();
 		
@@ -252,12 +252,12 @@ function wpv_admin_view_listing_table($views_ids) {
 		$unique = array_unique($unique_ids);
 		
 		if ( count($unique) == 0 ){
-			$wpv_args['post__in'] = array('-1');
+			$wpv_args['post__in'] = array('0');
 		}else{
 			$wpv_args['post__in'] = $unique;
 		}
 	
-		$mod_url['search'] = '&amp;search=' . sanitize_text_field($_GET["search"]);
+		$mod_url['s'] = '&amp;s=' . sanitize_text_field($_GET["s"]);
 	}
 	
 	if ( isset( $_GET["items_per_page"] ) && '' != $_GET["items_per_page"] ) { // apply posts_per_page coming from the URL parameters
@@ -288,14 +288,14 @@ function wpv_admin_view_listing_table($views_ids) {
 	$wpv_views_status['trash'] = ( sizeof( $views_ids ) - $wpv_views_status['publish'] );
 	?>
 	<ul class="subsubsub"><!-- links to lists Views in different statuses -->
-		<li><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;status=publish"<?php if ( $wpv_args['post_status'] == 'publish' && !isset( $_GET["search"] ) ) echo ' class="current"'; ?>><?php _e('Published', 'wpv-views');?></a> (<?php echo $wpv_views_status['publish']; ?>) | </li>
-		<li><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;status=trash"<?php if ( $wpv_args['post_status'] == 'trash' && !isset( $_GET["search"] ) ) echo ' class="current"'; ?>><?php _e('Trash', 'wpv-views');?></a> (<?php echo $wpv_views_status['trash']; ?>)</li>
+		<li><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;status=publish"<?php if ( $wpv_args['post_status'] == 'publish' && !isset( $_GET["s"] ) ) echo ' class="current"'; ?>><?php _e('Published', 'wpv-views');?></a> (<?php echo $wpv_views_status['publish']; ?>) | </li>
+		<li><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;status=trash"<?php if ( $wpv_args['post_status'] == 'trash' && !isset( $_GET["s"] ) ) echo ' class="current"'; ?>><?php _e('Trash', 'wpv-views');?></a> (<?php echo $wpv_views_status['trash']; ?>)</li>
 	</ul>
 	<?php if ( $wpv_found_posts > 0 ) { ?>
 	<form id="posts-filter" action="" method="get"><!-- form to search Views-->
 		<p class="search-box">
 			<label class="screen-reader-text" for="post-search-input"><?php _e('Search Views','wpv-views'); ?>:</label>
-			<input type="search" id="post-search-input" name="search" value="<?php echo isset( $s_param ) ? $s_param : ''; ?>" />
+			<input type="search" id="post-search-input" name="s" value="<?php echo isset( $s_param ) ? $s_param : ''; ?>" />
 			<input type="submit" name="" id="search-submit" class="button" value="<?php echo htmlentities( __('Search Views','wpv-views'), ENT_QUOTES ); ?>" />
 			<input type="hidden" name="paged" value="1" />
 		</p>
@@ -317,7 +317,7 @@ function wpv_admin_view_listing_table($views_ids) {
 				$column_sort_now = $wpv_args['order'];
 			}
 			?>
-			<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+			<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 			<th class="wpv-admin-listing-col-summary js-wpv-col-two"><?php _e('Content to load','wpv-views') // TODO review this classname ?></th>
 			<th class="wpv-admin-listing-col-action js-wpv-col-three"><?php _e('Action','wpv-views') // TODO review this classname ?></th>
 			<th class="wpv-admin-listing-col-scan"><?php _e('Used on','wpv-views') ?></th>
@@ -331,7 +331,7 @@ function wpv_admin_view_listing_table($views_ids) {
 				$column_sort_now = $wpv_args['order'];
 			}
 			?>
-			<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+			<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 		</tr>
 		</thead>
 		<tfoot>
@@ -346,10 +346,10 @@ function wpv_admin_view_listing_table($views_ids) {
 				$column_sort_now = $wpv_args['order'];
 			}
 			?>
-			<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+			<th class="wpv-admin-listing-col-title"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=title&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="title"><?php _e('Title','wpv-views') ?> <i class="icon-sort-by-alphabet<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 			<th class="wpv-admin-listing-col-summary js-wpv-col-two"><?php _e('Content to load','wpv-views') ?></th>
 			<th class="wpv-admin-listing-col-action js-wpv-col-three"><?php _e('Action','wpv-views') ?></th>
-			<th class="wpv-admin-listing-col-scan"><?php _e('Where this View is inserted?','wpv-views') ?></th>
+			<th class="wpv-admin-listing-col-scan"><?php _e('Used on','wpv-views') ?></th>
 			<?php 
 			$column_active = '';
 			$column_sort_to = 'DESC';
@@ -360,7 +360,7 @@ function wpv_admin_view_listing_table($views_ids) {
 				$column_sort_now = $wpv_args['order'];
 			}
 			?>
-			<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
+			<th class="wpv-admin-listing-col-date"><a href="<?php echo admin_url('admin.php'); ?>?page=views&amp;orderby=date&amp;order=<?php echo $column_sort_to . $mod_url['s'] . $mod_url['items_per_page'] . $mod_url['paged'] . $mod_url['status']; ?>" class="js-views-list-sort views-list-sort<?php echo $column_active; ?>" data-orderby="date"><?php _e('Date','wpv-views') ?> <i class="icon-sort-by-attributes<?php if ( $column_sort_now === 'DESC') echo '-alt'; ?>"></i></a></th>
 		</tr>
 		</tfoot>
 
@@ -433,11 +433,11 @@ function wpv_admin_view_listing_table($views_ids) {
 	
 	<?php } else { // No Views matches the criteria ?>
 		<div class="wpv-views-listing views-empty-list">
-		<?php if ( isset( $_GET["status"] ) && $_GET["status"] == 'trash' && isset( $_GET["search"] ) && $_GET["search"] != '' ) { ?>
+		<?php if ( isset( $_GET["status"] ) && $_GET["status"] == 'trash' && isset( $_GET["s"] ) && $_GET["s"] != '' ) { ?>
 			<p><?php echo __('No Views in trash matched your criteria.','wpv-views'); ?> <a class="button-secondary" href="<?php echo admin_url('admin.php'); ?>?page=views<?php echo $mod_url['orderby'] . $mod_url['order'] . $mod_url['items_per_page']; ?>&amp;paged=1&amp;status=trash"><?php _e('Return', 'wpv-views'); ?></a></p>
 		<?php } else if ( isset( $_GET["status"] ) && $_GET["status"] == 'trash' ) { ?>
 			<p><?php echo __('No Views in trash.','wpv-views'); ?> <a class="button-secondary" href="<?php echo admin_url('admin.php'); ?>?page=views<?php echo $mod_url['orderby'] . $mod_url['order'] . $mod_url['items_per_page']; ?>&amp;paged=1"><?php _e('Return', 'wpv-views'); ?></a></p>
-		<?php } else if ( isset( $_GET["search"] ) && $_GET["search"] != '' ) { ?>
+		<?php } else if ( isset( $_GET["s"] ) && $_GET["s"] != '' ) { ?>
 			<p><?php echo __('No Views matched your criteria.','wpv-views'); ?> <a class="button-secondary" href="<?php echo admin_url('admin.php'); ?>?page=views<?php echo $mod_url['orderby'] . $mod_url['order'] . $mod_url['items_per_page']; ?>&amp;paged=1"><?php _e('Return', 'wpv-views'); ?></a></p>
 		<?php } else { ?>
 			<div class="wpv-view-not-exist js-wpv-view-not-exist">

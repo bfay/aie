@@ -393,6 +393,78 @@ function wpv_update_filter_extra_callback() {
 	die();
 }
 
+add_action( 'wp_ajax_wpv_remove_filter_missing', 'wpv_remove_filter_missing_callback' );
+
+function wpv_remove_filter_missing_callback() {
+	$nonce = $_POST["nonce"];
+	if (! wp_verify_nonce($nonce, 'wpv_view_filter_missing_delete') ) die("Security check");
+	
+	$view_array = get_post_meta( $_POST["id"], '_wpv_settings', true );
+	if ( isset( $_POST['cf'] ) && is_array( $_POST['cf'] ) ) {
+		foreach ( $_POST['cf'] as $field ) {
+			$to_delete = array(
+				'custom-field-' . $field . '_compare',
+				'custom-field-' . $field . '_type',
+				'custom-field-' . $field . '_value',
+				'custom-field-' . $field . '_relationship'
+			);
+			foreach ($to_delete as $slug) {
+				if ( isset( $view_array[$slug] ) ) {
+					unset( $view_array[$slug] );
+				}
+			}
+		}
+	}
+	if ( isset( $_POST['tax'] ) && is_array( $_POST['tax'] ) ) {
+		foreach ( $_POST['tax'] as $tax_name ) {
+			$to_delete = array(
+					'tax_'.$tax_name.'_relationship' ,
+					'taxonomy-'.$tax_name.'-attribute-url',
+				//	'taxonomy-'.$tax_name.'-attribute-url-format',
+				);
+			foreach ($to_delete as $slug) {
+				if ( isset( $view_array[$slug] ) ) {
+					unset( $view_array[$slug] );
+				}
+			}
+		}
+	}
+	if ( isset( $_POST['rel'] ) && is_array( $_POST['rel'] ) && !empty( $_POST['rel'] ) ) {
+		$to_delete = array(
+			'post_relationship_mode',
+			'post_relationship_shortcode_attribute',
+			'post_relationship_url_parameter',
+			'post_relationship_id',
+			'post_relationship_url_tree',
+		);
+		
+		foreach ($to_delete as $slug) {
+			if ( isset( $view_array[$slug] ) ) {
+				unset( $view_array[$slug] );
+			}
+		}
+	}
+	update_post_meta( $_POST["id"], '_wpv_settings', $view_array );
+	$return_result = array();
+	// Filters list
+	$filters_list = '';
+	ob_start();
+	wpv_display_filters_list( $view_array['query_type'][0], $view_array );
+	$filters_list = ob_get_contents();
+	ob_end_clean();
+	$return_result['wpv_filter_update_filters_list'] = $filters_list;
+	// Now, the dependent parametric search structure
+	$dps_structure = '';
+	ob_start();
+	wpv_dps_settings_structure( $view_array, $_POST["id"] );
+	$dps_structure = ob_get_contents();
+	ob_end_clean();
+	$return_result['wpv_dps_settings_structure'] = $dps_structure;
+	$return_result['success'] = $_POST['id'];
+	echo json_encode( $return_result );
+	die();
+}
+
 // Layout Extra save callback function
 
 add_action('wp_ajax_wpv_update_layout_extra', 'wpv_update_layout_extra_callback');
@@ -411,6 +483,7 @@ function wpv_update_layout_extra_callback() {
 		$settings['bootstrap_grid_cols'] = $_POST['bootstrap_grid_cols'];
 		//$settings['bootstrap_grid_cols_width'] = $_POST['bootstrap_grid_cols_width'];
 		$settings['bootstrap_grid_container'] = $_POST['bootstrap_grid_container'];
+		$settings['bootstrap_grid_row_class'] = $_POST['bootstrap_grid_row_class'];
 		$settings['bootstrap_grid_individual'] = $_POST['bootstrap_grid_individual'];
         $settings['include_field_names'] = $_POST['include_field_names'];
     
@@ -580,7 +653,7 @@ function wpv_scan_view_callback() {
     $trans_where = '';
     $trans_meta_where = '';
     
-    if (function_exists('icl_object_id')) {
+    if (isset($sitepress) && function_exists('icl_object_id')) {
 	$current_lang_code = $sitepress->get_current_language();
 	$trans_join = " JOIN {$wpdb->prefix}icl_translations t ";
 	$trans_where = " AND ID = t.element_id AND t.language_code =  '{$current_lang_code}' ";
@@ -971,9 +1044,19 @@ function wpv_view_change_status_callback(){
 	);
 
 	$return = wp_update_post( $my_post );
-
-        echo $return;
-        die();
+	if ( isset( $_POST['cleararchives'] ) ) {
+		$options = get_option( 'wpv_options' );
+		if ( !empty( $options ) ) {
+			foreach ( $options as $option_name => $option_value ) {
+				if ( strpos( $option_name, 'view_' ) === 0  && $option_value == $_POST["id"] ) {
+					$options[$option_name] = 0;
+				}
+			}	
+			update_option( 'wpv_options', $options );
+		}
+	}
+	echo $return;
+	die();
 }
 
 /*
@@ -1414,7 +1497,7 @@ function wpv_assign_ct_to_view_callback(){
                              for ($i=0; $i<$num_templates; $i++){
                                  if ( is_numeric( $templates[$i] ) ) {
 									$template_post = get_post($templates[$i]);
-									if ( is_object($template_post) ){
+									if ( is_object($template_post) && $template_post->post_status  == 'publish' ){
 										$not_in_array[] =  $template_post->ID;
 										echo '<option value="'.$template_post->ID.'">'. $template_post->post_title .'</option>';
 									}
@@ -1955,7 +2038,7 @@ function wpv_ct_loader_inline_callback() {
 				</li>
 	       </ul>
       	</div>
-		<textarea name="name" rows="10" id="wpv-ct-inline-editor-<?php echo $ct_id; ?>"><?php echo $post->post_content;?></textarea></p>
+		<textarea name="name" rows="10" id="wpv-ct-inline-editor-<?php echo $ct_id; ?>"><?php echo $post->post_content;?></textarea>
 		<p class="update-button-wrap">
 		   <button class="button js-wpv-ct-update-inline js-wpv-ct-update-inline-<?php echo $ct_id; ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-id="<?php echo $ct_id; ?>"><?php _e('Update','wpv-views'); ?></button>
 		</p>
@@ -1983,6 +2066,142 @@ function close_ct_help_box_callback() {
         $close = $_POST['close_this'];
     }
     update_option('wpv_content_template_show_help',$close);
+    die();
+}
+
+// Move CT to trash or show message 
+add_action('wp_ajax_wpv_content_template_move_to_trash', 'wpv_content_template_move_to_trash_callback');
+
+function wpv_content_template_move_to_trash_callback() {
+    $nonce = $_POST["wpnonce"];
+	if ( ! (
+		wp_verify_nonce($nonce, 'wpv_view_listing_actions_nonce') 
+	) ) die("Security check");
+	
+	if ( isset($_POST['id']) ){
+		$ct_id = $_POST['id'];	
+	}else{
+		echo 'Error: no content template ID';
+		die();
+	}
+	global $wpdb;
+	
+	$posts_count = $wpdb->get_var( $wpdb->prepare( "select count(posts.ID) from {$wpdb->posts} as posts,{$wpdb->postmeta} as postmeta WHERE postmeta.meta_key='_views_template' AND postmeta.meta_value='%s' AND postmeta.post_id=posts.ID", $ct_id ) );
+	if ( $posts_count == 0 ){
+		if ( !isset( $_POST['newstatus'] ) ) $_POST['newstatus'] = 'publish';
+		$my_post = array(
+			'ID'           => $ct_id,
+			'post_status' => 'trash'
+		);	
+		$return = wp_update_post( $my_post );
+		$options = get_option( 'wpv_options' );
+		if ( !empty( $options ) ) {
+			foreach ( $options as $option_name => $option_value ) {
+				if ( strpos( $option_name, 'views_template_' ) === 0  && $option_value == $ct_id ) {
+					$options[$option_name] = 0;
+				}
+			}	
+			update_option( 'wpv_options', $options );
+		}
+		$out = array('move');	
+	}else{
+		$template_list = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_title FROM $wpdb->posts WHERE post_status = 'publish' ".
+		"AND post_type='view-template' AND ID!=%s", $ct_id )); 
+		ob_start();
+		?>
+		<div class="wpv-dialog js-wpv-dialog-add-new-content-template wpv-dialog-add-new-content-template">
+        <form method="" id="wpv-add-new-content-template-form">
+        <div class="wpv-dialog-header">
+            <h2><?php _e( 'Content template in use', 'wpv-views' )?></h2>
+            <i class="icon-remove js-dialog-close"></i>
+        </div>
+        <div class="wpv-dialog-content wpv-dialog-trash-ct">
+            <div>
+            	<p>
+            		<?php echo sprintf( _n('1 item', '%s items', $posts_count, 'wpv-views'), $posts_count ) . __( ' use this content template. What do you want to do?', 'wpv-views' ); ?>
+            	</p>
+                <ul>
+                <?php if ( count($template_list) > 0 ){?>	
+                <li><label>
+                    <input type="radio" name="wpv-content-template-replace-to" class="js-wpv-existing-posts-ct-replace-to js-wpv-existing-posts-ct-replace-to-selected-ct" value="0" id="wpv-content-template-replace-to" />
+                    <?php _e( 'Choose a different content template for them: ', 'wpv-views' )?>
+                    </label>
+                    <select name="wpv-ct-list-for-replace" class="js-wpv-ct-list-for-replace" id="wpv-ct-list-for-replace">
+                    	<option value=''><?php _e( 'Select Content Template', 'wpv-views' )?> </option>
+                    <?php
+						foreach( $template_list as $temp_post ) :
+							echo '<option value="'.$temp_post->ID.'">'. $temp_post->post_title .'</option>';
+                        endforeach;
+					?></select>
+                    
+                </li>
+                <?php }?>
+                <li><label>
+                    <input type="radio" name="wpv-content-template-replace-to" class="js-wpv-existing-posts-ct-replace-to" value="1" />
+                    <?php _e( 'Don\'t use any content template for these items', 'wpv-views' )?> 
+                    </label>
+                </li>
+                    </ul>
+           </div>
+
+        </div>
+        <div class="wpv-dialog-footer">
+            <button class="button js-dialog-close"><?php _e('Cancel','wpv-views') ?></button>
+            <button class="button button-primary js-ct-replace-usage" data-ct_id="<?php echo $ct_id;?>"><?php _e('Change','wpv-views') ?></button>
+        </div>
+        </div>
+        <?php
+        $popup_content = ob_get_contents();
+		ob_end_clean();
+		$out = array('show', $popup_content);		
+	}
+	
+	
+	
+	wp_reset_postdata();
+	echo json_encode( $out );
+    die();
+}
+
+// Change CT usage before move to trash
+add_action('wp_ajax_wpv_ct_move_with_replace', 'wpv_ct_move_with_replace_callback');
+
+function wpv_ct_move_with_replace_callback() {
+    global $wpdb;
+    $nonce = $_POST["wpnonce"];
+	if ( ! (
+		wp_verify_nonce($nonce, 'wpv_view_listing_actions_nonce') 
+	) ) die("Security check");
+	if ( isset($_POST['id']) ){
+		$ct_id = $_POST['id'];	
+	}else{
+		echo 'Error: no content template ID';
+		die();
+	}
+	if ( $_POST['replace_to'] == 0){
+		$replace = $replace_option = $_POST['replace_ct'];		
+	}else{
+		$replace = 0;
+		$replace_option = 0;
+	}
+	$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->postmeta} SET meta_value='%s' WHERE meta_key='_views_template' AND meta_value='$ct_id'", $replace ) );
+	
+	$options = get_option( 'wpv_options' );
+	if ( !empty( $options ) ) {
+	    foreach ( $options as $option_name => $option_value ) {
+	        if ( strpos( $option_name, 'views_template_' ) === 0  && $option_value == $ct_id ) {
+	            $options[$option_name] = $replace_option;
+			}
+		}	
+		update_option( 'wpv_options', $options );
+	}
+	
+	$my_post = array(
+		'ID'           => $ct_id,
+		'post_status' => 'trash'
+	);	
+	wp_update_post( $my_post );
+	print $ct_id;
     die();
 }
 

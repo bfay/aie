@@ -4,7 +4,7 @@
  *
  * Returns HTML formatted output for elements and handles form submission.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/classes/forms.php $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/classes/forms.php $
  * $LastChangedDate: 2014-05-26 13:17:56 +0000 (Mon, 26 May 2014) $
  * $LastChangedRevision: 22755 $
  * $LastChangedBy: marcin $

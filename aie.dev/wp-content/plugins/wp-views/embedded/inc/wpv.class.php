@@ -2,6 +2,14 @@
 
 require_once( WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon.class.php');
 require_once( WPV_PATH_EMBEDDED . '/common/views/promote.php');
+if ( !defined( 'WPT_LOCALIZATION' ) ) {
+	require_once( WPV_PATH_EMBEDDED . '/common/localization/wpt-localization.php' );
+}
+if ( !defined( 'ADODB_DATE_VERSION' ) ) {
+	if ( defined( 'WPTOOLSET_FORMS_ABSPATH' ) ) {
+		require_once WPTOOLSET_FORMS_ABSPATH . '/lib/adodb-time.inc.php';
+	}
+}
 
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-query.php';
 
@@ -16,34 +24,26 @@ class WP_Views{
         $this->view_ids = array();
         $this->current_view = null;
         $this->CCK_types = array();
-
-        $this->top_current_page = null;
-        $this->current_page = array();
-
-        $this->post_query = null;
-		$this->post_query_stack = array();
-
+		$this->widget_view_id = 0;
 		$this->view_depth = 0;
         $this->view_count = array();
         $this->set_view_counts = array();
+		$this->view_shortcode_attributes = array();
+		$this->view_used_ids = array();
+		$this->rendering_views_form_in_progress = false;
+
+        $this->post_query = null;
+		$this->post_query_stack = array();
+		$this->top_current_page = null;
+        $this->current_page = array();
 
 		$this->taxonomy_data = array();
-
 		$this->parent_taxonomy = 0;
 		
 		$this->users_data = array();
-		
 		$this->parent_user = 0;
 
-		$this->view_shortcode_attributes = array();
-
-        $this->widget_view_id = 0;
-
 		$this->variables = array();
-
-		$this->rendering_views_form_in_progress = false;
-
-		$this->view_used_ids = array();
 		
 		$this->force_disable_dependant_parametric_search = false;
 		$this->returned_ids_for_parametric_search = array();
@@ -60,8 +60,6 @@ class WP_Views{
     function init(){
 
         $this->wpv_register_type_view();
-
-        $this->plugin_localization();
         
         if(is_admin()){
 			add_action( 'admin_enqueue_scripts', array( $this,'wpv_admin_enqueue_scripts' ) );
@@ -89,6 +87,7 @@ class WP_Views{
 		add_action('wp_ajax_wpv_save_wpml_settings', array($this, 'wpv_save_wpml_settings'));
 		add_action('wp_ajax_wpv_get_show_hidden_custom_fields', array($this, 'wpv_get_show_hidden_custom_fields'));
 		add_action('wp_ajax_wpv_update_custom_inner_shortcodes', array($this, 'wpv_update_custom_inner_shortcodes'));
+		add_action('wp_ajax_wpv_update_custom_conditional_functions', array($this, 'wpv_update_custom_conditional_functions'));
 		add_action('wp_ajax_wpv_update_map_plugin_status', array($this, 'wpv_update_map_plugin_status'));
 		add_action('wp_ajax_wpv_update_bootstrap_version_status', array($this, 'wpv_update_bootstrap_version_status'));
 		add_action('wp_ajax_wpv_update_show_edit_view_link_status', array($this, 'wpv_update_show_edit_view_link_status'));
@@ -106,9 +105,9 @@ class WP_Views{
                 add_action('wp_loaded', 'wpv_admin_menu_import_export_hook');
             }
 
-            add_action('admin_menu', array($this, 'admin_menu'));
+            add_action('admin_menu', array($this, 'admin_menu'), 20);
             add_action('admin_head', array($this, 'settings_box_load'));
-            add_action('admin_footer', array($this, 'hide_view_body_controls'));
+        //    add_action('admin_footer', array($this, 'hide_view_body_controls'));// DEPRECATED
             add_action('save_post', array($this, 'save_view_settings'));
 
             global $pagenow;
@@ -117,8 +116,8 @@ class WP_Views{
 			   $pagenow == 'post-new.php' ||
 			   ($pagenow == 'admin.php' && isset($_GET['page']) && $_GET['page'] == 'dd_layouts_edit')){
                 add_action('admin_head', array($this,'post_edit_tinymce'));
-                add_action('admin_head', array($this,'add_css')); // TODO DEPRECATED this is not used anymore
-                add_action('admin_print_scripts', array($this,'add_js')); // TODO DEPRECATED this is not used anymore
+            //    add_action('admin_head', array($this,'add_css')); // TODO DEPRECATED this is not used anymore
+            //    add_action('admin_print_scripts', array($this,'add_js')); // TODO DEPRECATED this is not used anymore
 
 				add_action('icl_post_languages_options_after', array($this, 'language_options'));
                 add_action('admin_head', array($this, 'set_editor_height'));
@@ -141,7 +140,6 @@ class WP_Views{
             // Add scripts and styles to the frontend
 			add_action('wp_enqueue_scripts', array($this, 'wpv_frontend_enqueue_scripts'));
 
-            add_action('wp_head', 'wpv_add_front_end_js');
             add_action('wp_footer', array($this, 'wpv_meta_html_extra_css'), 5); // Set priority lower than 20, so we load the CSS before the footer scripts and avoid the bottleneck
 			add_action('wp_footer', array($this, 'wpv_meta_html_extra_js'), 25); // Set priority higher than 20, when all the footer scripts are loaded
 
@@ -196,7 +194,7 @@ class WP_Views{
                 }
             }
 
-        add_action('admin_menu', array($this, 'add_import_menu')); // TODO check where we put this
+			add_action('admin_menu', array($this, 'add_import_menu')); // TODO check where we put this
 		}
     }
 
@@ -267,9 +265,39 @@ class WP_Views{
     function can_include_type($type) {
         return !in_array($type, $this->CCK_types);
     }
+	
+	/**
+	* admin_menu
+	*
+	* Creates the admin menus and submenus items when using the embedded version
+	*
+	* @since unknown
+	*/
 
-    function admin_menu(){
-        // do nothing for theme version.
+    function admin_menu() {
+		// Make readonly versions available when pointing to the right URL
+		// Module Manager can offer that link for Module Libraries installed
+		$cap = 'manage_options';
+		if ( defined( 'MODMAN_CAPABILITY' ) && isset( $_GET['page'] ) && 'views-embedded' == $_GET['page'] ) {
+			add_submenu_page( 'ModuleManager_Modules', __( 'Embedded View', 'wpv-views' ), __( 'Embedded View', 'wpv-views'), MODMAN_CAPABILITY, 'views-embedded', 'views_embedded_html' );
+		} else if ( isset( $_GET['page'] ) && 'views-embedded' == $_GET['page'] ) {
+			// DEVCYCLE this should not be in the tools.php menu at all
+			add_submenu_page( 'admin.php', __( 'Embedded View', 'wpv-views' ), __( 'Embedded View', 'wpv-views' ), $cap, 'views-embedded', 'views_embedded_html');
+		}
+		
+		if ( defined( 'MODMAN_CAPABILITY' ) && isset( $_GET['page'] ) && 'view-templates-embedded' == $_GET['page'] ) {
+			add_submenu_page( 'ModuleManager_Modules', __( 'Embedded Content Template', 'wpv-views' ), __( 'Embedded Content Template', 'wpv-views'), MODMAN_CAPABILITY, 'view-templates-embedded', 'content_templates_embedded_html' );
+		} else if ( isset( $_GET['page'] ) && 'view-templates-embedded' == $_GET['page'] ) {
+			// DEVCYCLE this should not be in the tools.php menu at all
+			add_submenu_page( 'admin.php', __( 'Embedded Content Template', 'wpv-views' ), __( 'Embedded Content Template', 'wpv-views' ), $cap, 'view-templates-embedded', 'content_templates_embedded_html');
+		}
+		
+		if ( defined( 'MODMAN_CAPABILITY' ) && isset( $_GET['page'] ) && 'view-archives-embedded' == $_GET['page'] ) {
+			add_submenu_page( 'ModuleManager_Modules', __( 'Embedded WordPress Archive', 'wpv-views' ), __( 'Embedded WordPress Archive', 'wpv-views'), MODMAN_CAPABILITY, 'view-archives-embedded', 'view_archives_embedded_html' );
+		} else if ( isset( $_GET['page'] ) && 'view-archives-embedded' == $_GET['page'] ) {
+			// DEVCYCLE this should not be in the tools.php menu at all
+			add_submenu_page( 'admin.php', __( 'Embedded WordPress Archive', 'wpv-views' ), __( 'Embedded WordPress Archive', 'wpv-views' ), $cap, 'view-archives-embedded', 'view_archives_embedded_html');
+		}
     }
 
     function add_import_menu() {
@@ -325,30 +353,12 @@ class WP_Views{
         }
     }
 
-	function hide_view_body_controls() {
-		// do nothing for embedded version.
-	}
-
     function include_admin_css() {
         $link_tag = '<link rel="stylesheet" href="'. WPV_URL . '/res/css/wpv-views.css?v='.WPV_VERSION.'" type="text/css" media="all" />';
         echo $link_tag;
     }
 
-    /**
-     * Output the view query metabox on the view edit page.
-     *
-     */
-
-    function settings_box($post){
-        // do nothing in the theme version.
-    }
-
-    /**
-     * save the view settings.
-     * Called from a post_save action
-     *
-     */
-
+    
     function save_view_settings($post_id){
         // do nothing in the theme version.
     }
@@ -443,7 +453,7 @@ class WP_Views{
 
         $this->view_used_ids[] = $id;
 		
-		$this->returned_ids_for_parametric_search = array();
+		//$this->returned_ids_for_parametric_search = array();
 
 		$this->rendering_views_form_in_progress = true;
 
@@ -464,6 +474,8 @@ class WP_Views{
 			
 			$form_class = array();
 			// Dependant stuf
+			$dps_enabled = false;
+			$counters_enabled = false;
 			if ( !isset( $view_settings['dps'] ) || !is_array( $view_settings['dps'] ) ) {
 				$view_settings['dps'] = array();
 			}
@@ -491,14 +503,22 @@ class WP_Views{
 				} else {
 					$dps_enabled = false;
 				}
+			}
+			if ( !isset( $view_settings['filter_meta_html'] ) ) {
+				$view_settings['filter_meta_html'] = '';
+			}
+			if ( strpos( $view_settings['filter_meta_html'], '%%COUNT%%' ) !== false ) {
+				$counters_enabled = true;
+			}
+			if ( $dps_enabled || $counters_enabled ) {
 				if ( $dps_enabled ) {
 					$form_class[] = 'js-wpv-dps-enabled';
 					$form_class[] = 'js-wpv-dps-only-form';
-					wpv_filter_extend_query_for_parametric( array(), $view_settings, $id );
-				} else {
-					// Set the force value
-					$this->set_force_disable_dependant_parametric_search( true );
 				}
+				wpv_filter_extend_query_for_parametric_and_counters( array(), $view_settings, $id );
+			} else {
+				// Set the force value
+				$this->set_force_disable_dependant_parametric_search( true );
 			}
 			if ( !isset( $view_settings['dps']['spinner'] ) ) {
 				$view_settings['dps']['spinner'] = 'none';
@@ -541,6 +561,22 @@ class WP_Views{
         
 			$out .= '<input type="hidden" class="js-wpv-dps-filter-data js-wpv-filter-data-for-this-form" data-action="' . $url . '" data-page="' . $page . '" data-ajax="disable" data-effect="' . $effect . '" data-spinner="' . $spinner . '" data-spinnerimage="' . $spinner_image . '" data-ajaxbefore="' . $ajax_before . '" data-ajaxafter="' . $ajax_after . '" />';
 			
+			// Set a hidden input for the View attributes, so we can pass them if needed
+			$view_attrs = $atts;
+			if ( isset( $view_attrs['name'] ) ) {
+				unset( $view_attrs['name'] );
+			}
+			if ( isset( $view_attrs['target_id'] ) ) {
+				unset( $view_attrs['target_id;'] );
+			}
+			if ( !empty( $view_attrs ) && is_array( $view_attrs ) ) {
+				$att_data = '';
+				foreach ( $view_attrs as $att_key => $att_val ) {
+					$att_data .= ' data-' . $att_key . '="' . esc_attr( $att_val ) . '"';
+				}
+				$out .= '<input type="hidden" class="js-wpv-view-attributes"' . $att_data . ' />';
+			}
+			
 			// add hidden inputs for any url parameters.
 			// We need these for when the form is submitted.
 			$url_query = parse_url($url, PHP_URL_QUERY);
@@ -578,7 +614,7 @@ class WP_Views{
         
 		}
 
-		$this->returned_ids_for_parametric_search = array();
+		//$this->returned_ids_for_parametric_search = array();
 		$this->rendering_views_form_in_progress = false;
 
 
@@ -696,11 +732,11 @@ class WP_Views{
 
     function render_view_ex($id, $hash){
 
-        global $post, $WPVDebug;
+        global $post, $WPVDebug, $sitepress;
 
 		$this->view_depth++;
 		$WPVDebug->wpv_debug_start( $id, $this->view_shortcode_attributes );
-        $this->returned_ids_for_parametric_search = array();
+        //$this->returned_ids_for_parametric_search = array();
 		
 
         if ($this->top_current_page == null) {
@@ -711,7 +747,7 @@ class WP_Views{
 
         array_push($this->view_ids, $this->current_view);
 
-        if (function_exists('icl_object_id')) {
+        if (isset($sitepress) && function_exists('icl_object_id')) {
             $id = icl_object_id($id, 'view', true);
         }
         $this->current_view = $id;
@@ -757,7 +793,7 @@ class WP_Views{
 
 		$this->view_depth--;
 		$WPVDebug->wpv_debug_end();
-		$this->returned_ids_for_parametric_search = array();
+		//$this->returned_ids_for_parametric_search = array();
         return $out;
     }
 
@@ -924,13 +960,15 @@ class WP_Views{
 						}
 						if ($view_settings['query_type'][0] == 'taxonomy') {
 							$this->taxonomy_data['term'] = $items[$i];
+							do_action('wpv-before-display-taxonomy', $items[$i], $view_id);
 						}
                         if ($view_settings['query_type'][0] == 'users') {
                             
                             $user_id = $items[$i]->ID;
                             $user_meta = get_user_meta( $user_id );
                             $items[$i]->meta = $user_meta;
-                            $this->users_data['term'] = $items[$i];                            
+                            $this->users_data['term'] = $items[$i];
+							do_action('wpv-before-display-user', $items[$i], $view_id);                            
                         }
 						$WPVDebug->add_log( $view_settings['query_type'][0] , $items[$i]);
 						
@@ -959,7 +997,12 @@ class WP_Views{
 							do_action('wpv-after-display-post', $post, $view_id);
 							$this->variables = $temp_variables;
 						}
-
+						if ($view_settings['query_type'][0] == 'taxonomy') {
+							do_action('wpv-after-display-taxonomy', $items[$i], $view_id);
+						}
+                        if ($view_settings['query_type'][0] == 'users') {
+                            do_action('wpv-after-display-user', $items[$i], $view_id);                           
+                        }
 
                     }
 					
@@ -1105,7 +1148,7 @@ class WP_Views{
             $this->editor_addon = new Editor_addon('wpv-views',
                                                    __('Insert Views Shortcodes', 'wpv-views'),
                                                    WPV_URL . '/res/js/views_editor_plugin.js',
-                                                   WPV_URL . '/res/img/bw_icon16.png');
+                                                   '', true, 'icon-views ont-icon-25');
         }
 
         if ($post->post_type == 'view') { // TODO DEPRECATED this is not used anymore
@@ -1166,7 +1209,7 @@ class WP_Views{
      * Add css required when editing a view
      *
      */
-
+/*
     function add_css() { // TODO DEPRECATED this is not used anymore
         global $post;
 
@@ -1176,21 +1219,19 @@ class WP_Views{
             add_thickbox();
         }
     }
-
+*/
     /**
      * Add the javascript files when editing a "view" post type.
      *
      */
-
+/*
     function add_js() { // TODO DEPRECATED this is not used anymore
         global $post;
         if (is_object( $post ) && $post->post_type == 'view') {
-            wpv_filter_add_js();
-            add_views_layout_js();
 
         }
     }
-    
+  */  
     /**
      * Add the frontend styles and scripts
      *
@@ -1198,42 +1239,49 @@ class WP_Views{
 
     function wpv_frontend_enqueue_scripts() {
 		
-		// Table sorting style
-	//	wp_register_style( 'views-table-sorting-style', WPV_URL_EMBEDDED . '/res/css/wpv-views-sorting.css', array(), WPV_VERSION );
-	//	wp_enqueue_style( 'views-table-sorting-style' );
-		
-		// Frontend utils for parametric search
-	//	wp_register_script( 'wpv-front-end-utils', WPV_URL_EMBEDDED . '/res/js/views_front_end_utils.js', array('jquery'), WPV_VERSION, true );
-	//	wp_enqueue_script( 'wpv-front-end-utils' );
-		
-		// Datepicker script NOTE using the same handler than WordPress... we were loading the included one :-P
-	//	wp_register_script( 'jquery-ui-datepicker', WPV_URL_EMBEDDED . '/res/js/jquery.ui.datepicker.min.js', array('jquery-ui-core', 'jquery'), WPV_VERSION, true );
+		// Datepicker script bundled with WordPress
 		wp_enqueue_script( 'jquery-ui-datepicker' );
 		// Datepicker localization
 		$lang = get_locale();
 		$lang = str_replace('_', '-', $lang);
+		$real_lang = false;
 		// TODO integrate this with WPML lang
 		if ( file_exists( WPV_PATH_EMBEDDED . '/res/js/i18n/jquery.ui.datepicker-' . $lang . '.js' ) ) {
-			wp_register_script( 'jquery-ui-datepicker-local-' . $lang, WPV_URL_EMBEDDED . '/res/js/i18n/jquery.ui.datepicker-' . $lang . '.js', array('jquery-ui-core', 'jquery', 'jquery-ui-datepicker'), WPV_VERSION, true );
-			wp_enqueue_script( 'jquery-ui-datepicker-local-' . $lang );
+			if ( !wp_script_is( 'jquery-ui-datepicker-local-' . $lang, 'registered' ) ) {
+				wp_register_script( 'jquery-ui-datepicker-local-' . $lang, WPV_URL_EMBEDDED . '/res/js/i18n/jquery.ui.datepicker-' . $lang . '.js', array('jquery-ui-core', 'jquery', 'jquery-ui-datepicker'), WPV_VERSION, true );
+			}
+			if ( !wp_script_is( 'jquery-ui-datepicker-local-' . $lang ) ) {
+				wp_enqueue_script( 'jquery-ui-datepicker-local-' . $lang );
+			}
+			$real_lang = $lang;
 		} else {
 			$lang = substr($lang, 0, 2);
 			if ( file_exists( WPV_PATH_EMBEDDED . '/res/js/i18n/jquery.ui.datepicker-' . $lang . '.js' ) ) {
-				wp_register_script( 'jquery-ui-datepicker-local-' . $lang, WPV_URL_EMBEDDED . '/res/js/i18n/jquery.ui.datepicker-' . $lang . '.js', array('jquery-ui-core', 'jquery', 'jquery-ui-datepicker'), WPV_VERSION, true );
-				wp_enqueue_script( 'jquery-ui-datepicker-local-' . $lang );
+				if ( !wp_script_is( 'jquery-ui-datepicker-local-' . $lang, 'registered' ) ) {
+					wp_register_script( 'jquery-ui-datepicker-local-' . $lang, WPV_URL_EMBEDDED . '/res/js/i18n/jquery.ui.datepicker-' . $lang . '.js', array('jquery-ui-core', 'jquery', 'jquery-ui-datepicker'), WPV_VERSION, true );
+				}
+				if ( !wp_script_is( 'jquery-ui-datepicker-local-' . $lang ) ) {
+					wp_enqueue_script( 'jquery-ui-datepicker-local-' . $lang );
+				}
 			}
+			$real_lang = $lang;
 		}
 		
 		// Pagination script and style
 		wp_register_script( 'views-pagination-script', WPV_URL_EMBEDDED . '/res/js/wpv-pagination-embedded.js', array('jquery', 'jquery-ui-datepicker'), WPV_VERSION, true );
 		wp_enqueue_script( 'views-pagination-script' );
+		$calendar_image = WPV_URL_EMBEDDED . '/res/img/calendar.gif';
+		$calendar_image = apply_filters( 'wpv_filter_wpv_calendar_image', $calendar_image );
+		$calendar_image = apply_filters( 'wptoolset_filter_wptoolset_calendar_image', $calendar_image );
+		$wpv_pagination_localization = array(
+			'regional' => $real_lang,
+			'front_ajaxurl' => admin_url('admin-ajax.php', null),
+			'calendar_image' => $calendar_image,
+			'calendar_text' => esc_js(__('Select date', 'wpv-views'))
+		);
+        wp_localize_script( 'views-pagination-script', 'wpv_pagination_local', $wpv_pagination_localization );
 		wp_register_style( 'views-pagination-style', WPV_URL_EMBEDDED . '/res/css/wpv-pagination.css', array(), WPV_VERSION );
 		wp_enqueue_style( 'views-pagination-style' );
-		
-		//wp_enqueue_style( 'date-picker-style' , WPV_URL_EMBEDDED . '/res/css/datepicker.css', array(), WPV_VERSION);
-		// Datepicker functionality script
-	//	wp_register_script( 'wpv-date-front-end-script', WPV_URL_EMBEDDED . '/res/js/wpv-date-front-end-control.js', array('jquery'), WPV_VERSION, true );
-	//	wp_enqueue_script( 'wpv-date-front-end-script' );
 		
 		// Map script - only load it if the Setting is enabled
 		if ( ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN ) || is_ssl() ) {
@@ -1256,6 +1304,7 @@ class WP_Views{
      * This function will return the html elements for the type of
      * query that is being added
      *
+	 * DEPRECATED
      */
 
     function ajax_get_table_row_ui() {
@@ -1308,7 +1357,8 @@ class WP_Views{
                                         '_top_nav_excluded', '_cms_nav_minihome',
                                         'wpml_media_duplicate_of', 'wpml_media_lang', 'wpml_media_processed',
                                         '_wpv_settings', '_wpv_layout_settings', '_wpv_view_sync',
-										'_wpv_view_template_fields', '_wpv_view_template_mode' );
+										'_wpv_view_template_fields', '_wpv_view_template_mode',
+										'dd_layouts_settings');
 
             $cf_keys = array_diff($cf_keys, $cf_keys_exceptions);
 
@@ -1354,6 +1404,8 @@ class WP_Views{
 
     /**
      * Saves View editor height
+	 *
+	 * DEPRECATED
      */
     function save_editor_height() {
         if (isset($_POST['height'])) {
@@ -1364,6 +1416,8 @@ class WP_Views{
 
     /**
      * Sets View editor height
+	 *
+	 * DEPRECATED
      */
     function set_editor_height() {
         $post_type = get_post_type();
@@ -1372,7 +1426,7 @@ class WP_Views{
         }
     }
 
-    function editor_height_js() {
+    function editor_height_js() {// DEPRECATED
         echo '
 <script type="text/javascript">
 //<![CDATA[
@@ -1448,24 +1502,32 @@ jQuery(document).ready(function(){
     function convert_ids_to_names_in_settings($settings) {
         global $wpdb;
 
-        if (isset($settings['post_type'])) {
-            $settings['post_types'] = $settings['post_type'];
-            unset($settings['post_type']);
-            foreach($settings['post_types'] as $key => $value) {
-                $settings['post_types']['post_type-' . $key] = $value;
-                unset($settings['post_types'][$key]);
-            }
-            $settings['post_types']['__key'] = 'post_type';
+        if ( isset( $settings['post_type'] ) ) {
+            if ( is_array( $settings['post_type'] ) ) {
+				$settings['post_types'] = $settings['post_type'];
+				unset( $settings['post_type'] );
+				foreach( $settings['post_types'] as $key => $value ) {
+					$settings['post_types']['post_type-' . $key] = $value;
+					unset($settings['post_types'][$key]);
+				}
+				$settings['post_types']['__key'] = 'post_type';
+			} else {
+				unset( $settings['post_type'] );
+			}
         }
 
         if (isset($settings['post_status'])) {
-            $settings['post_statuses'] = $settings['post_status'];
-            unset($settings['post_status']);
-            foreach($settings['post_statuses'] as $key => $value) {
-                $settings['post_statuses']['post_status-' . $key] = $value;
-                unset($settings['post_statuses'][$key]);
-            }
-            $settings['post_statuses']['__key'] = 'post_status';
+            if ( is_array( $settings['post_status'] ) ) {
+				$settings['post_statuses'] = $settings['post_status'];
+				unset( $settings['post_status'] );
+				foreach($settings['post_statuses'] as $key => $value) {
+					$settings['post_statuses']['post_status-' . $key] = $value;
+					unset($settings['post_statuses'][$key]);
+				}
+				$settings['post_statuses']['__key'] = 'post_status';
+			} else {
+				unset( $settings['post_status'] );
+			}
         }
 
         if (isset($settings['parent_id']) && $settings['parent_id'] != '') {
@@ -1490,15 +1552,19 @@ jQuery(document).ready(function(){
 		foreach ($taxonomies as $category_slug => $category) {
 			$save_name = ( $category->name == 'category' ) ? 'post_category' : 'tax_input_' . $category->name;
 
-            if (isset($settings[$save_name])) {
-                foreach($settings[$save_name] as $key => $id) {
-                    $term = get_term_by('id', $id, $category->name);
-                    if ($term) {
-                        $settings[$save_name]['cat-' . $key] = $term->name;
-                    }
-                    unset($settings[$save_name][$key]);
-                }
-                $settings[$save_name]['__key'] = 'cat';
+            if ( isset( $settings[$save_name] ) ) {
+                if ( is_array( $settings[$save_name] ) ) {
+					foreach( $settings[$save_name] as $key => $id ) {
+						$term = get_term_by('id', $id, $category->name);
+						if ($term) {
+							$settings[$save_name]['cat-' . $key] = $term->name;
+						}
+						unset( $settings[$save_name][$key] );
+					}
+					$settings[$save_name]['__key'] = 'cat';
+				} else {
+					unset( $settings[$save_name] );
+				}
             }
             // Use this to check attribute-url-format
             $attribute_url_format = 'taxonomy-' . $category->name . '-attribute-url-format';
@@ -1522,35 +1588,47 @@ jQuery(document).ready(function(){
             unset($settings['query_type'][0]);
         }
 
-        if (isset($settings['taxonomy_type'])) {
-            $settings['taxonomy_types'] = $settings['taxonomy_type'];
-            unset($settings['taxonomy_type']);
-            foreach($settings['taxonomy_types'] as $key => $value) {
-                $settings['taxonomy_types']['taxonomy_type-' . $key] = $value;
-                unset($settings['taxonomy_types'][$key]);
-            }
-            $settings['taxonomy_types']['__key'] = 'taxonomy_type';
+        if ( isset( $settings['taxonomy_type'] ) ) {
+            if ( is_array( $settings['taxonomy_type'] ) ) {
+				$settings['taxonomy_types'] = $settings['taxonomy_type'];
+				unset( $settings['taxonomy_type'] );
+				foreach( $settings['taxonomy_types'] as $key => $value ) {
+					$settings['taxonomy_types']['taxonomy_type-' . $key] = $value;
+					unset($settings['taxonomy_types'][$key]);
+				}
+				$settings['taxonomy_types']['__key'] = 'taxonomy_type';
+			} else {
+				unset( $settings['taxonomy_type'] );
+			}
         }
         
-        if (isset($settings['roles_type'])) {
-            $settings['roles_types'] = $settings['roles_type'];
-            unset($settings['roles_type']);
-            foreach($settings['roles_types'] as $key => $value) {
-                $settings['roles_types']['roles_type-' . $key] = $value;
-                unset($settings['roles_types'][$key]);
-            }
-            $settings['roles_types']['__key'] = 'roles_type';
+        if ( isset( $settings['roles_type'] ) ) {
+            if ( is_array( $settings['roles_type'] ) ) {
+				$settings['roles_types'] = $settings['roles_type'];
+				unset( $settings['roles_type'] );
+				foreach( $settings['roles_types'] as $key => $value ) {
+					$settings['roles_types']['roles_type-' . $key] = $value;
+					unset( $settings['roles_types'][$key] );
+				}
+				$settings['roles_types']['__key'] = 'roles_type';
+			} else {
+				unset( $settings['roles_type'] );
+			}
         }
 
 
 
         // Fix the taxonomy_terms keys
-        if (isset($settings['taxonomy_terms'])) {
-            foreach($settings['taxonomy_terms'] as $key => $value) {
-                $settings['taxonomy_terms']['taxonomy_term-' . $key] = $value;
-                unset($settings['taxonomy_terms'][$key]);
-            }
-            $settings['taxonomy_terms']['__key'] = 'taxonomy_term';
+        if ( isset( $settings['taxonomy_terms'] ) ) {
+            if ( is_array( $settings['taxonomy_terms'] ) ) {
+				foreach( $settings['taxonomy_terms'] as $key => $value ) {
+					$settings['taxonomy_terms']['taxonomy_term-' . $key] = $value;
+					unset( $settings['taxonomy_terms'][$key] );
+				}
+				$settings['taxonomy_terms']['__key'] = 'taxonomy_term';
+			} else {
+				unset( $settings['taxonomy_terms'] );
+			}
         }
 
 		// fix filter control settings so arrays get output correctly.
@@ -1563,13 +1641,17 @@ jQuery(document).ready(function(){
 										 'filter_controls_values'
 										 );
 
-		foreach($filter_control_settings as $filter_control) {
-			if (isset($settings[$filter_control]) && is_array( $settings[$filter_control] ) ) {
-				foreach ( $settings[$filter_control] as $key => $value ) {
-					$settings[$filter_control][$filter_control . '-' . $key] = $value;
-					unset( $settings[$filter_control][$key] );
+		foreach( $filter_control_settings as $filter_control ) {
+			if ( isset( $settings[$filter_control] ) ) {
+				if ( is_array( $settings[$filter_control] ) ) {
+					foreach ( $settings[$filter_control] as $key => $value ) {
+						$settings[$filter_control][$filter_control . '-' . $key] = $value;
+						unset( $settings[$filter_control][$key] );
+					}
+					$settings[$filter_control]['__key'] = $filter_control;
+				} else {
+					unset( $settings[$filter_control] );
 				}
-				$settings[$filter_control]['__key'] = $filter_control;
 			}
 		}
 
@@ -1597,9 +1679,10 @@ jQuery(document).ready(function(){
 			unset($settings['fields']);
 		}
 
+		/*
 		if (isset($settings['fields'])) {
 			foreach($settings['fields'] as $key => $value) {
-				if (substr($key, 0, 5) == 'name_') {/* Not needed anymore as the data structure seems to have changed and we store now the template name anyway
+				if (substr($key, 0, 5) == 'name_') {// Not needed anymore as the data structure seems to have changed and we store now the template name anyway
 					if (substr($value, 0, 13) == 'wpv-post-body') {
 						// use the Content template name instead of the id
 						$parts = explode(' ', $value);
@@ -1610,11 +1693,11 @@ jQuery(document).ready(function(){
 								$settings['fields'][$key] = 'wpv-post-body ' . $view_template_name;
 							}
 						}
-					}*/
+					}
 				}
 			}
-
         }
+		*/
 		
 		if ( isset( $settings['real_fields'] ) ) {
 			// Fix an issue with imported Views not correctly setting the layout_settings[real_fields] array
@@ -1675,25 +1758,25 @@ jQuery(document).ready(function(){
     function convert_names_to_ids_in_settings($settings) {
         global $wpdb;
 
-        if (isset($settings['post_types'])) {
+        if ( isset( $settings['post_types'] ) ) {
             $settings['post_type'] = $settings['post_types'];
             unset($settings['post_types']);
-            if(is_array($settings['post_type']['post_type'])) {
+            if( is_array( $settings['post_type']['post_type'] ) ) {
                 $settings['post_type'] = $settings['post_type']['post_type'];
-            } else {
+            } else if ( isset( $settings['post_type']['post_type'] ) ) {
                 $settings['post_type'][0] = $settings['post_type']['post_type'];
-                unset($settings['post_type']['post_type']);
+                unset( $settings['post_type']['post_type'] );
             }
         }
 
-        if (isset($settings['post_statuses'])) {
+        if ( isset( $settings['post_statuses'] ) ) {
             $settings['post_status'] = $settings['post_statuses'];
             unset($settings['post_statuses']);
-            if(is_array($settings['post_status']['post_status'])) {
+            if( is_array( $settings['post_status']['post_status'] ) ) {
                 $settings['post_status'] = $settings['post_status']['post_status'];
-            } else {
+            } else if ( isset( $settings['post_status']['post_status'] ) ) {
                 $settings['post_status'][0] = $settings['post_status']['post_status'];
-                unset($settings['post_status']['post_status']);
+                unset( $settings['post_status']['post_status'] );
             }
         }
 
@@ -1716,19 +1799,21 @@ jQuery(document).ready(function(){
         }
 
 	    $taxonomies = get_taxonomies('', 'objects');
-		foreach ($taxonomies as $category_slug => $category) {
+		foreach ( $taxonomies as $category_slug => $category ) {
 			$save_name = ( $category->name == 'category' ) ? 'post_category' : 'tax_input_' . $category->name;
 
-            if (isset($settings[$save_name])) {
-                if(is_array($settings[$save_name]['cat'])) {
+            if ( isset( $settings[$save_name] ) ) {
+                if ( is_array( $settings[$save_name]['cat'] ) ) {
                     $settings[$save_name] = $settings[$save_name]['cat'];
+                } else if ( isset( $settings[$save_name]['cat'] ) ) {
+                    $settings[$save_name][0] = $settings[$save_name]['cat'];
+                    unset( $settings[$save_name]['cat'] );
                 } else {
-                    $settings[$save_name][0] = $settings[$save_name]['cat'];;
-                    unset($settings[$save_name]['cat']);
-                }
+					$settings[$save_name] = array();
+				}
 
-                foreach($settings[$save_name] as $key => $name) {
-                    $term = get_term_by('name', $name, $category->name);
+                foreach( $settings[$save_name] as $key => $name ) {
+                    $term = get_term_by( 'name', $name, $category->name );
                     if ($term) {
                         $settings[$save_name][$key] = $term->term_id;
                     }
@@ -1766,7 +1851,7 @@ jQuery(document).ready(function(){
             unset($settings['taxonomy_types']);
             if(is_array($settings['taxonomy_type']['taxonomy_type'])) {
                 $settings['taxonomy_type'] = $settings['taxonomy_type']['taxonomy_type'];
-            } else {
+            } else if ( isset( $settings['taxonomy_type']['taxonomy_type'] ) ) {
                 $settings['taxonomy_type'][0] = $settings['taxonomy_type']['taxonomy_type'];
                 unset($settings['taxonomy_type']['taxonomy_type']);
             }
@@ -1777,7 +1862,7 @@ jQuery(document).ready(function(){
             unset($settings['roles_types']);
             if(is_array($settings['roles_type']['roles_type'])) {
                 $settings['roles_type'] = $settings['roles_type']['roles_type'];
-            } else {
+            } else if ( isset( $settings['roles_type']['roles_type'] ) ) {
                 $settings['roles_type'][0] = $settings['roles_type']['roles_type'];
                 unset($settings['roles_type']['roles_type']);
             }
@@ -1786,7 +1871,7 @@ jQuery(document).ready(function(){
         if (isset($settings['taxonomy_terms'])) {
             if(is_array($settings['taxonomy_terms']['taxonomy_term'])) {
                 $settings['taxonomy_terms'] = $settings['taxonomy_terms']['taxonomy_term'];
-            } else {
+            } else if ( isset( $settings['taxonomy_terms']['taxonomy_term'] ) ) {
                 $settings['taxonomy_terms'][0] = $settings['taxonomy_terms']['taxonomy_term'];
                 unset($settings['taxonomy_terms']['taxonomy_term']);
             }
@@ -1932,12 +2017,6 @@ jQuery(document).ready(function(){
 		}
 			
         return $settings;
-    }
-
-    // Localization
-    function plugin_localization(){
-        $locale = get_locale();
-        load_textdomain( 'wpv-views', WPV_PATH_EMBEDDED . '/locale/views-' . $locale . '.mo');
     }
 
 	function get_current_taxonomy_term() {
@@ -2187,15 +2266,17 @@ jQuery(document).ready(function(){
 		if ($date_format == '') {
 			$date_format = get_option('date_format');
 		}
-
-		$date = $_POST['date'];
-		$date = mktime(0, 0, 0, substr($date, 2, 2), substr($date, 0, 2), substr($date, 4, 4));
 		$date_format = str_replace('\\\\', '\\', $date_format); // this is needed to escape characters in the date_i18n function
-
-		echo json_encode(array('display' => date_i18n($date_format, intval($date)),
-							   'timestamp' => $date));
+		$date = $_POST['date'];
+		// We can not be sure that the adodb_xxx functions are available, so we do different things whether they exist or not
+		if ( defined( 'ADODB_DATE_VERSION' ) ) {
+			$date = adodb_mktime(0, 0, 0, substr($date, 2, 2), substr($date, 0, 2), substr($date, 4, 4));
+			echo json_encode(array('display' => adodb_date($date_format, $date),'timestamp' => $date));
+		} else {
+			$date = mktime(0, 0, 0, substr($date, 2, 2), substr($date, 0, 2), substr($date, 4, 4));
+			echo json_encode(array('display' => date_i18n($date_format, intval($date)),'timestamp' => $date));
+		}
 		die();
-
 
 	}
 	
@@ -2284,6 +2365,16 @@ jQuery(document).ready(function(){
 		wp_register_script( 'views-select2-script' , WPV_URL_EMBEDDED . '/res/js/lib/select2/select2.min.js', array('jquery'), WPV_VERSION);
 		wp_register_script( 'views-utils-script' , WPV_URL_EMBEDDED . '/res/js/lib/utils.js', array('jquery','toolset-colorbox', 'views-select2-script'), WPV_VERSION);
 		
+		// CodeMirror
+
+		wp_register_script( 'views-codemirror-script' , WPV_URL_EMBEDDED . '/res/js/codemirror/lib/codemirror.js', array(), WPV_VERSION, false);
+		wp_register_script( 'views-codemirror-overlay-script' , WPV_URL_EMBEDDED . '/res/js/codemirror/addon/mode/overlay.js', array('views-codemirror-script'), WPV_VERSION, false);
+		wp_register_script( 'views-codemirror-xml-script' , WPV_URL_EMBEDDED . '/res/js/codemirror/mode/xml/xml.js', array('views-codemirror-overlay-script'), WPV_VERSION, false);
+		wp_register_script( 'views-codemirror-css-script' , WPV_URL_EMBEDDED . '/res/js/codemirror/mode/css/css.js', array('views-codemirror-overlay-script'), WPV_VERSION, false);
+		wp_register_script( 'views-codemirror-js-script' , WPV_URL_EMBEDDED . '/res/js/codemirror/mode/javascript/javascript.js', array('views-codemirror-overlay-script'), WPV_VERSION, false);
+		wp_register_script( 'views-codemirror-conf-script' , WPV_URL_EMBEDDED . '/res/js/views_codemirror_conf.js', array('jquery','views-codemirror-script'), WPV_VERSION, false);
+		wp_register_script( 'views-embedded-script',  WPV_URL_EMBEDDED . '/res/js/views_embedded.js', array('jquery','views-codemirror-overlay-script'), WPV_VERSION, true);
+		
 		// Register general CSS needed in the embedded version
 		
 		wp_deregister_style( 'toolset-font-awesome' );
@@ -2295,8 +2386,17 @@ jQuery(document).ready(function(){
 		wp_register_style( 'views-notifications-css', WPV_URL_EMBEDDED . '/res/css/notifications.css', array(), WPV_VERSION );
 		wp_register_style( 'views-dialogs-css', WPV_URL_EMBEDDED . '/res/css/dialogs.css', array(), WPV_VERSION );
 		wp_register_style( 'views-select2-css', WPV_URL_EMBEDDED . '/res/js/lib/select2/select2.css', array(), WPV_VERSION );
+		
+		// CodeMirror style
+
+		wp_register_style( 'views-codemirror-css' , WPV_URL_EMBEDDED . '/res/js/codemirror/lib/codemirror.css', array(), WPV_VERSION);
+		
+		// General Views redesign style
+
+		wp_register_style( 'views-admin-css', WPV_URL_EMBEDDED . '/res/css/views-admin.css',
+		  array('toolset-font-awesome','toolset-colorbox','views-notifications-css','views-dialogs-css','views-select2-css'), WPV_VERSION );
 	
-		// Enqueue scripts nd styles needed in the embedded version
+		// Enqueue scripts and styles needed in the embedded version
 		
 		if ( ( $hook == 'post.php' || $hook == 'post-new.php' ) ) { // This is to show the Views form popup
 			if ( !wp_script_is( 'views-utils-script' ) ) {
@@ -2322,6 +2422,31 @@ jQuery(document).ready(function(){
 			if ( !wp_style_is( 'views-dialogs-css' ) ) {
 				wp_enqueue_style('views-dialogs-css');
 			}
+			if ( !wp_script_is( 'jquery-ui-resizable' ) ) {
+				wp_enqueue_script('jquery-ui-resizable');
+			}
+		}
+		
+		if ( isset( $_GET['page'] ) && ( $_GET['page'] == 'views-embedded' || $_GET['page'] == 'view-templates-embedded' || $_GET['page'] == 'view-archives-embedded' || $_GET['page'] == 'ModuleManager_Modules' ) ) {
+			wp_enqueue_script('wp-pointer');
+			wp_enqueue_style('wp-pointer');
+			wp_enqueue_script('views-codemirror-script');
+			wp_enqueue_script('views-codemirror-overlay-script');
+			wp_enqueue_script('views-codemirror-xml-script');
+			wp_enqueue_script('views-codemirror-css-script');
+			wp_enqueue_script('views-codemirror-js-script');
+			wp_enqueue_script('views-codemirror-conf-script');
+			wp_enqueue_script('views-embedded-script');
+			if ( !wp_script_is( 'views-utils-script' ) ) {
+				wp_enqueue_script( 'views-utils-script');
+				$help_box_translations = array(
+				'wpv_dont_show_it_again' => __("Got it! Don't show this message again", 'wpv-views'),
+				'wpv_close' => __("Close", 'wpv-views')
+				);
+				wp_localize_script( 'views-utils-script', 'wpv_help_box_texts', $help_box_translations );
+			}
+			wp_enqueue_style( 'views-codemirror-css' );
+			wp_enqueue_style( 'views-admin-css' );
 		}
 		
 		
@@ -2556,6 +2681,8 @@ function wpv_views_plugin_action_links($links, $file) {
  * @param type $name
  * @param type $string
  * @return type
+ *
+ * @todo maybe move to the WPML file
  */
 function wpv_translate($name, $string, $register = false, $context = 'plugin Views') {
     if (!function_exists('icl_t')) {

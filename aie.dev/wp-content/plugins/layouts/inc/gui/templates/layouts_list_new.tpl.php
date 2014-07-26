@@ -7,15 +7,11 @@
     <h2>
         <?php _e('Layouts', 'ddl-layouts');?>
         <a href="#" class="add-new-h2 js-layout-add-new-top"><?php _e('Add a new Layout', 'ddl-layouts');?></a>
-	    <?php if ( $this->s_param !== null ) {
-		    $search_message = __('Search results for "%s"','ddl-layouts');
-		    if ( isset( $_GET["status"] ) && 'trash' == sanitize_text_field( $_GET["status"] ) ) {
-			    $search_message = __('Search results for "%s" in trashed Views', 'ddl-layouts');
-		    } ?>
+
 		    <span class="subtitle">
-						<?php echo sprintf( $search_message, $this->s_param ); ?>
+
 					</span>
-	    <?php } ?>
+
     </h2>
 
 	<ul class="subsubsub" style="clear:left"><!-- links to lists WPA in different statuses -->
@@ -112,20 +108,20 @@
 	</div>
 	<div class="ddl-dialog-content">
 		<p>
-				<%- ddl.message %>
+				{{ ddl.message }}
 			</p>
-			<% if( ddl.template_exists === false ){ %>
+			<# if( ddl.template_exists === false ){ #>
 				<p class=" toolset-alert toolset-alert-warning">
-					<?php echo sprintf(__("A template file that supports layouts is not available for the %s post type.", 'ddl-layouts'), '<strong><% ddl.singular %></strong>') ?><br>
+					<?php echo sprintf(__("A template file that supports layouts is not available for the %s post type.", 'ddl-layouts'), '<strong><# ddl.singular #></strong>') ?><br>
 					<?php printf(__('Please check %shere%s to see how to set one up.', 'ddl-layouts'), '<a href="' . WPDLL_LEARN_ABOUT_SETTING_UP_TEMPLATE . '" target="_blank">', '</a>'); ?>
 				</p>
-			<% } %>
+			<# } #>
 		</div>
 
 	<div class="ddl-dialog-footer">
 		<button class="button js-edit-dialog-close"><?php _e('Cancel', 'ddl-layouts') ?></button>
 		<button class="button button-primary js-ddl-update-posts-process" data-in-listing-page="yes">
-				<?php echo sprintf(__('Update %s now', 'ddl-layouts'), '<%= ddl.label %>') ?></button>
+				<?php echo sprintf(__('Update %s now', 'ddl-layouts'), '{{{ ddl.label }}}') ?></button>
 	</div>
 </script>
 
@@ -136,10 +132,10 @@
 		<i class="icon-remove js-edit-dialog-close"></i>
 	</div>
 	<div class="ddl-dialog-content">
-		<?php printf(__('All %s were updated.', 'ddl-layouts'), '<%= ddl.label %>'); ?>
+		<?php printf(__('All %s were updated.', 'ddl-layouts'), '{{{ ddl.label }}}'); ?>
 	</div>
 	<div class="ddl-dialog-footer">
-		<button class="button js-edit-dialog-close"><?php _e('Close', 'ddl-layouts'); ?></button>
+		<button class="button js-edit-dialog-close close-change-use"><?php _e('Close', 'ddl-layouts'); ?></button>
 	</div>
 
 </script>

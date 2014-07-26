@@ -41,7 +41,7 @@ DDLayout.Breadcrumbs = function(layout)
     
                 var data = {
                         layout_name : parent_layout,
-                        action : 'get_layout_parents',
+                        action : 'get_layout_parents'
                 };
     
                 jQuery.ajax({

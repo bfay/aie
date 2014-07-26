@@ -99,8 +99,12 @@
 	                        </select>
                         </p>
                         <p class="js-layout-wizard-bootstrap-grid-container">
-	                        <input type="checkbox" name="bootstrap_grid_container" value="1" />
-	                        <?php _e('Add container','wpv-views'); ?><br>
+	                        <input type="checkbox" name="bootstrap_grid_container" id="bootstrap_grid_container" value="1" />
+	                        <label for="bootstrap_grid_container"><?php _e('Add container','wpv-views'); ?><br></label>
+                        </p>
+                        <p class="js-layout-wizard-bootstrap-grid-row-class">
+	                        <input type="checkbox" name="bootstrap_grid_row_class" id="bootstrap_grid_row_class" value="1" />
+	                        <label for="bootstrap_grid_row_class"><?php _e('Add .row class','wpv-views'); ?><br></label>
                         </p>
                         <p class="js-layout-wizard-bootstrap-grid-individual">
 	                        <input type="radio" name="bootstrap_grid_individual" id="bootstrap_grid_individual_yes" value="" />
@@ -131,7 +135,7 @@
 					</div>
                 </div>
                 <p>
-					<?php echo '<a class="wpv-help-link" href="http://wp-types.com/documentation/user-guides/view-layouts-101/" target="_blank">' . __('Learn about different layouts', 'wpv-views') . ' &raquo;</a>';?>
+					<?php echo '<a class="wpv-help-link" href="http://wp-types.com/documentation/user-guides/view-layouts-101/?utm_source=viewsplugin&utm_campaign=views&utm_medium=edit-view-wizard&utm_term=Learn about different layouts" target="_blank">' . __('Learn about different layouts', 'wpv-views') . ' &raquo;</a>';?>
                 </p>
             </div>
 

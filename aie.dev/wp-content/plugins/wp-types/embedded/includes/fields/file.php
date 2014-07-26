@@ -1,9 +1,9 @@
 <?php
-/**
+/*
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/includes/fields/file.php $
- * $LastChangedDate: 2014-05-09 15:39:03 +0000 (Fri, 09 May 2014) $
- * $LastChangedRevision: 22205 $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/includes/fields/file.php $
+ * $LastChangedDate: 2014-07-15 14:18:54 +0000 (Tue, 15 Jul 2014) $
+ * $LastChangedRevision: 24974 $
  * $LastChangedBy: marcin $
  *
  */
@@ -22,6 +22,7 @@ function wpcf_fields_file() {
                 'inline' => 'wpcf_fields_file_meta_box_js_inline',
             )
         ),
+        'validate' => array('required'),
     );
 }
 

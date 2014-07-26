@@ -63,7 +63,7 @@ WPV_parametric_local.message.fadeOutShort = 400;
 		self.WIDTH = 300;
 		self.HEIGHT = 300;
 
-		self.short_tag_fields = ["field", "type", "url_param", "values", "display_values", "auto_fill_default", "auto_fill", "default_label", "title", "auto_fill_sort", "taxonomy_order", "taxonomy_orderby", "hide_empty", "ancestors", "force_zero"];
+		self.short_tag_fields = ["field", "type", "url_param", "values", "display_values", "auto_fill_default", "auto_fill", "default_label", "title", "auto_fill_sort", "taxonomy_order", "taxonomy_orderby", "hide_empty", "ancestors", "force_zero", "format"];
 
 		self.is_edit = false;
 
@@ -347,11 +347,7 @@ WPV_parametric_local.message.fadeOutShort = 400;
 									v = v.split('wpcf-')[1];
 								}
 							}
-							if( i == 'field' && !attrs['is_types'] )
-							{
-								i = false;
-							}
-
+							
 							if( i == 'url_param' ) v = param.value;
 							 
 							if ( attrs['type'] != 'checkbox' && i == 'title' )
@@ -368,11 +364,14 @@ WPV_parametric_local.message.fadeOutShort = 400;
 							{
 								//if( WPV_Parametric.debug ) console.log( "prop ", i, " val ", v )
 								if ( attrs['kind'] == 'relationship' ) {
-									if ( i == 'ancestors' || i =='url_param' ) {
+									if ( i == 'ancestors' || i == 'url_param' || i == 'format' ) {
 										string[index] += ' ' + i + '="' + v + '"';
-										ancestors_tree = i == 'ancestors' ? v : '';
+										
 									} else {
 										string_aux[index] += ' ' + i + '="' + v + '"';
+									}
+									if ( i == 'ancestors' ) {
+										ancestors_tree = v;
 									}
 								} else {
 									string[index] += ' ' + i + '="' + v + '"';
@@ -1037,7 +1036,7 @@ WPV_parametric_local.message.fadeOutShort = 400;
 			params.post_types = self.handleDataRequest().join(',');
 			params.wpv_parametric_create_nonce = WPV_Parametric.wpv_parametric_create_nonce;
 			//make the field 'wpcf-' if is a types field
-			if( params.edit_field && params.edit_field.field )
+			if( params.edit_field && params.edit_field.field && params.fields && params.fields.is_types )
 			{
 				params.edit_field.field = 'wpcf-'+params.edit_field.field
 			}
@@ -1277,7 +1276,8 @@ WPV_parametric_local.message.fadeOutShort = 400;
 						value.hide_empty,
 						value.ancestors,
 						value.can_force_zero,
-						value.force_zero
+						value.force_zero,
+						value.format
 					);
 					ars[group].push(field);
 					
@@ -1384,7 +1384,8 @@ WPV_parametric_local.message.fadeOutShort = 400;
 				values.hide_empty,
 				field.ancestors,
 				field.can_force_zero ? field.can_force_zero : 0,
-				values.force_zero ? values.force_zero : 0
+				values.force_zero ? values.force_zero : 0,
+				field.format
 			);
 			
 			check_group = _.filter(self.groups, function( v, i , l ){
@@ -1408,6 +1409,7 @@ WPV_parametric_local.message.fadeOutShort = 400;
 			if( values.taxonomy_order ) parametricViewModel.taxonomy_order( values.taxonomy_order );
 			if( values.taxonomy_orderby ) parametricViewModel.taxonomy_orderby( values.taxonomy_orderby );
 			if( values.hide_empty ) parametricViewModel.hide_empty( values.hide_empty );
+			if ( field.format) parametricViewModel.format( field.format );
 
 			if( field.default_label )
 			{
@@ -1484,6 +1486,7 @@ WPV_parametric_local.message.fadeOutShort = 400;
 				if( values.taxonomy_order ) parametricViewModel.taxonomy_order( values.taxonomy_order );
 				if( values.taxonomy_orderby ) parametricViewModel.taxonomy_orderby( values.taxonomy_orderby );
 				if( values.hide_empty ) parametricViewModel.hide_empty( values.hide_empty );
+				if( field.format ) parametricViewModel.format( field.format );
 			}
 		}
 		catch( e )
@@ -1576,7 +1579,7 @@ WPV_parametric_local.message.fadeOutShort = 400;
 
 /* //////// MODELS ///////*/
 ////THE FILTER MODEL /////////////////////////////////
-var WPV_ParametricField = function( control, group, kind, name, value, id, prefix, type, data_type, relation, custom, url_param, compare, is_types, default_label, index, values, auto_fill, auto_fill_default, taxonomy_order, taxonomy_orderby, title, auto_fill_sort, hide_empty, ancestors, can_force_zero, force_zero )
+var WPV_ParametricField = function( control, group, kind, name, value, id, prefix, type, data_type, relation, custom, url_param, compare, is_types, default_label, index, values, auto_fill, auto_fill_default, taxonomy_order, taxonomy_orderby, title, auto_fill_sort, hide_empty, ancestors, can_force_zero, force_zero, format )
 {	
 	var self = this;
 
@@ -1636,6 +1639,8 @@ var WPV_ParametricField = function( control, group, kind, name, value, id, prefi
 	self.taxonomy_orderby = ko.observable(taxonomy_orderby);
 	
 	self.hide_empty = ko.observable(hide_empty ? hide_empty : '');
+	
+	self.format = ko.observable(format);
 
 	self.compare = ko.observable( compare ? compare : '' );
 
@@ -1775,6 +1780,7 @@ var WPV_GroupOption = function(label, children) {
 		self.taxonomy_orderby = ko.observable();
 		self.hide_empty_array = ko.observableArray([ 'false','true' ]);
 		self.hide_empty = ko.observable();
+		self.format = ko.observable();
 		self.show_remove_user_values_box = ko.observable(true);
 		self.checkbox_title_visible = ko.observable(false);
 		self.checkbox_force_zero_visible = ko.observable(true);
@@ -2651,6 +2657,21 @@ var WPV_GroupOption = function(label, children) {
 					try
 					{
 						field.hide_empty(value)
+					}
+					catch( e )
+					{
+						//if(  WPV_Parametric.debug ) console.log( e.message );
+					}
+
+					return value;
+				});
+				
+				self.format.subscribe(function(value){
+					var field = typeof self.fieldRaw() != 'undefined' ? self.fieldRaw() : undefined;
+
+					try
+					{
+						field.format(value)
 					}
 					catch( e )
 					{

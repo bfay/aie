@@ -2,10 +2,10 @@
 /*
  * Field class.
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b3/embedded/classes/field.php $
- * $LastChangedDate: 2014-06-06 08:04:34 +0000 (Fri, 06 Jun 2014) $
- * $LastChangedRevision: 23256 $
- * $LastChangedBy: francesco $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.6b4/embedded/classes/field.php $
+ * $LastChangedDate: 2014-07-04 12:55:07 +0000 (Fri, 04 Jul 2014) $
+ * $LastChangedRevision: 24636 $
+ * $LastChangedBy: marcin $
  *
  */
 
@@ -370,9 +370,25 @@ class WPCF_Field
         /**
          * Save field if needed
          */
-        if ( !empty($value) || (isset($this->cf['data']['save_empty']) && 'yes' == $this->cf['data']['save_empty'])) {
+        if (
+            (
+                !( is_null( $value ) || $value === false || $value === '' )
+                || (
+                    isset($this->cf['data']['save_empty'])
+                    && 'yes' == $this->cf['data']['save_empty']
+                )
+            )
+            ||
+            /**
+             * handle "save zero as set value"
+             */
+            (
+                array_key_exists( 'set_value', $this->cf['data'] )
+                && preg_match( '/^0$/', $value )
+                && preg_match( '/^0$/', $this->cf['data']['set_value'] )
+            )
+        ) {
             $mid = add_post_meta( $this->post->ID, $this->slug, $_value );
-
             /*
              * Use these hooks to add future functionality.
              * Do not add any more code to core.
@@ -686,19 +702,20 @@ class WPCF_Field
      * @param type $output 
      */
     function html( $html, $params ) {
-        /*
-         * 
+        /**
+         *
          * Exception when RAW = TRUE.
          * Return unchanged value.
+         *
          */
         if ( isset( $params['raw'] ) && $params['raw'] == 'true' ) {
             return $html;
         } else {
-            $html = htmlspecialchars( $html );
+            $html = esc_attr( $html );
         }
         // Process shortcodes too
 //        $shortcode = do_shortcode( $html );
-        $html = do_shortcode( htmlspecialchars_decode( stripslashes( $html ) ) );
+        $html = do_shortcode( htmlspecialchars_decode( $html ) );
 
         return $html;
     }

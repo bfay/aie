@@ -14,11 +14,11 @@ DDLayout.models.cells.Layout = DDLayout.models.abstract.Element.extend({
 		, slug: ''
 		, children_to_delete : null
 		, child_delete_mode : null
+		, has_loop:false
+		, has_post_content_cell: false
 	}
 	, url:ajaxurl
 	, cssString:''
-	, postTypesOptions : null
-	, layout_post_types_option_cached:undefined
 	, layout_slug_cached:null
 	, setCssString:function( css_string )
 	{
@@ -27,41 +27,6 @@ DDLayout.models.cells.Layout = DDLayout.models.abstract.Element.extend({
 	, getCssString:function()
 	{
 		return this.cssString;
-	}
-	, getPostTypesOptions:function()
-	{
-		return this.postTypesOptions;
-	},
-	postTypesOptionsDidChange:function()
-	{
-		var self = this;
-		if( self.postTypesOptions === null ) return false;
-
-		var check = DDLayout_options && DDLayout_options.ddl_post_types_options && DDLayout_options.ddl_post_types_options.post_types ? DDLayout_options.ddl_post_types_options.post_types : undefined;
-		return !_.isEqual( check, self.postTypesOptions[ "layout_"+self.get("id") ] );
-	}
-	,setPostTypesOptions:function( option, add )
-	{
-		var self = this;
-
-		if( self.postTypesOptions === null )
-		{
-			self.postTypesOptions = {};
-			self.postTypesOptions[ "layout_"+self.get("id") ] = [];
-			self.postTypesOptions[ "layout_"+self.get("id") ].push(option);
-		}
-		else{
-
-			if( add === true && self.postTypesOptions[ "layout_"+self.get("id") ].indexOf( option ) === -1 )
-			{
-				self.postTypesOptions[ "layout_"+self.get("id") ].push(option);
-			}
-			else if( add === false)
-			{
-				self.postTypesOptions[ "layout_"+self.get("id") ] = _.without( self.postTypesOptions[ "layout_"+self.get("id") ], option )
-			}
-
-		}
 	}
     , is_layout:function()
     {
@@ -110,7 +75,14 @@ DDLayout.models.cells.Layout = DDLayout.models.abstract.Element.extend({
 			
             self.populate_self_on_first_load( data );
         }
+
+	//	self.listenTo(self, 'created_new_cell', self.cellCreatedCallback)
+
         return self;
+	},
+	cellCreatedCallback:function( cell_model )
+	{
+		//
 	},
     populate_self_on_first_load: function( data )
     {
@@ -267,6 +239,8 @@ DDLayout.models.cells.Layout = DDLayout.models.abstract.Element.extend({
 	
 	toJSON: function () {
 		this.set( 'has_child', this.has_cell_of_type('child-layout') );
+		this.set( 'has_loop', this.has_cell_of_type("post-loop-cell") || this.has_cell_of_type("post-loop-views-cell") );
+        this.set('has_post_content_cell', this.has_cell_of_type("cell-post-content") || this.has_cell_of_type("cell-content-template") );
 		return DDLayout.models.abstract.Element.prototype.toJSON.call(this);		
 	},
 	

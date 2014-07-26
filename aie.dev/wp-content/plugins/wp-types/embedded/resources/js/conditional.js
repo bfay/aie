@@ -1,14 +1,3 @@
-/* 
- * Conditional JS.
- */
-
-jQuery(document).ready(function(){
-    // Trigger main func
-    wpcfConditionalInit();
-    // Form edit screen
-    wpcfConditionalFormDateInit();
-});
-
 /**
  * Loop through each check trigger field
  * (marked with .wpcf-conditional-trigger
@@ -17,22 +6,22 @@ function wpcfConditionalInit(selector) {
     selector = typeof selector !== 'undefined' ? selector+' ' : '';
     var triggered = false;
     jQuery(selector+'.wpcf-conditional-check-trigger').each(function(){
-        
+
         // If triggered from relationship table send just row
         if (jQuery(this).parents('.wpcf-pr-table-wrapper').length > -1) {
             var inputs = jQuery(this).parents('tr').find(':input');
         } else {
             var inputs = jQuery(this).parents('.inside').find(':input');
         }
-            
+
         // Already binded!
         if (jQuery(this).hasClass('wpcf-cd-binded')) {
             return false;
         }
-            
+
         // Mark as binded
         jQuery(this).addClass('wpcf-cd-binded');
-            
+
         // Bind actions according to form element type
         if (jQuery(this).hasClass('radio')
             || jQuery(this).hasClass('checkbox')) {
@@ -61,30 +50,30 @@ function wpcfConditionalInit(selector) {
         }
     });
 }
-                                                                                                                                        
+
 function wpcfConditionalVerify(object, name, value) {
-    
+
     /*
-     * 
+     *
      * Skip post relationship entries
      * TODO Obsolete - all fields on screen processed
      */
     if (object.hasClass('wpcf-pr-binded')) {
         return false;
     }
-    
+
     /*
     * Define Form
-    * 
+    *
     * Fields can depend on fields from other meta-groups.
     * So we should submit whole #post form without #_wpnonce
     */
     //    var form = object.parents('.postbox').find(':input');
     var form = jQuery('#post').find(':input').not('#_wpnonce');
-    
+
     // Get group slug
     var group = object.parents('.postbox').attr('id').substr(11);
-    
+
     // If triggered from relationship table send just row
     if (object.parents('.wpcf-pr-table-wrapper').length > 0) {
         form = object.parents('tr').find(':input');
@@ -93,11 +82,11 @@ function wpcfConditionalVerify(object, name, value) {
 
     // Check if form is found
     if (form.length > 0) {
-        
+
         // Do AJAX call
         /*
-         * 
-         * 
+         *
+         *
          * AJAX should return JSON.execute JS script.
          * TODO Review safety
          */
@@ -112,7 +101,7 @@ function wpcfConditionalVerify(object, name, value) {
             },
             success: function(data) {
                 if (data != null) {
-                    
+
                     // See if data.execute exists and eval() it
                     // TODO Review safety
                     if (typeof data.execute != 'undefined'
@@ -214,6 +203,38 @@ function wpcfCdCreateSummary(id) {
     jQuery('#'+id).val(condition);
 }
 
+function wpcfConditionalLogic(el)
+{
+    parent = jQuery(el).closest('.wpcf-cd-fieldset');
+    if ( jQuery(el).prop('checked') ) {
+        jQuery('.simple-logic', parent).hide();
+        jQuery('.wpcf-cd-enable-custom-mode').each(function(){
+            if ( 'back' == jQuery(this).data('wpcf-custom-logic')) {
+                jQuery(this).show();
+            } else {
+                jQuery(this).hide();
+            }
+        });
+    } else {
+        jQuery('.area-toggle-cd',parent).hide();
+        jQuery('.simple-logic',parent).show();
+        if (jQuery('.wpcf-cd-entry', parent).length > 1) {
+            jQuery('.toggle-cd', parent).show();
+            jQuery('.wpcf-cd-relation', parent).show();
+        } else {
+            jQuery('.toggle-cd', parent).hide();
+            jQuery('.wpcf-cd-relation', parent).hide();
+        }
+        jQuery('.wpcf-cd-enable-custom-mode').each(function(){
+            if ( 'back' == jQuery(this).data('wpcf-custom-logic')) {
+                jQuery(this).hide();
+            } else {
+                jQuery(this).show();
+            }
+        });
+    }
+}
+
 /**
  * Add New Condition AJAX call
  */
@@ -236,6 +257,9 @@ function wpcfCdAddCondition(object, isGroup) {
             var count = wrapper.find('input[type=hidden]').val();
             wrapper.find('input[type=hidden]').val(parseInt(count)+1);
             wpcfConditionalFormDateToggle(condition.find('.wpcf-cd-field'));
+            jQuery('.area-toggle-cd input.wpcf-form-checkbox', condition.closest('.wpcf-cd-fieldset')).bind('change', function(){
+                wpcfConditionalLogic(this);
+            });
         }
     }, "json");
 }
@@ -265,6 +289,19 @@ function wpcfConditionalFormDateInit() {
         wpcfConditionalFormDateToggle(jQuery(this));
     }).find('.wpcf-cd-field').each(function(){
         wpcfConditionalFormDateToggle(jQuery(this));
+    });
+    jQuery('.conditional-display-custom-use').each(function(){
+        wpcfConditionalLogic(this);
+    });
+    jQuery('.area-toggle-cd input.wpcf-form-checkbox').bind('change', function(){
+        wpcfConditionalLogic(this);
+    });
+    jQuery('.wpcf-cd-enable-custom-mode').bind('click',function(){
+        parent = jQuery(this).closest('.wpcf-cd-fieldset');
+        if ( 'back' != jQuery(this).data('wpcf-custom-logic')) {
+            jQuery('.area-toggle-cd input.wpcf-form-checkbox', parent).attr('checked','checked')
+        }
+        wpcfConditionalLogic(jQuery('.conditional-display-custom-use', parent));
     });
 }
 
@@ -326,3 +363,13 @@ function wpcfConditionalFormDateCheck() {
 window.wpcfConditional = new Array();
 window.wpcfConditionalPassed = new Array();
 window.wpcfConditionalHiddenFailed = new Array();
+/*
+ * Conditional JS.
+ */
+jQuery(document).ready(function(){
+    // Trigger main func
+    wpcfConditionalInit();
+    // Form edit screen
+    wpcfConditionalFormDateInit();
+});
+

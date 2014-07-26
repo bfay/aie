@@ -156,11 +156,22 @@ function wpv_filter_post_custom_field($query, $view_settings) {
 					$query['meta_query'] = array('relation' => $view_settings['custom_fields_relationship']);
 				}
 				
+				// Flag: should we add this filer anyway?
+				// If $values is an array, the comparison is expected to be IN, but could also be NOT IN; for all the other comparison types, it is a string
+				// If $values is an array and the comparison is IN, it may contain an empty value
+				// Then we have a default "all items" value selected => no filter
+				
+				$filter_needed = true;
+				
 				// Sanitize $value so they can contain quotes
 				
 				if ( is_array($value) ) {
 					foreach ( $value as $key => $val ) {
-						$value[$key] = stripslashes( urldecode( sanitize_text_field( trim( $val ) ) ) );
+						if ( empty( $val ) && !is_numeric( $val ) && $compare_mode == 'IN' ) {
+							$filter_needed = false;
+						} else {				
+							$value[$key] = stripslashes( urldecode( sanitize_text_field( trim( $val ) ) ) );
+						}
 					}
 				} else {
 					$value = stripslashes( urldecode( sanitize_text_field( trim( $value ) ) ) );
@@ -169,7 +180,7 @@ function wpv_filter_post_custom_field($query, $view_settings) {
 				if( ( empty( $value ) && !is_numeric( $value ) ) && ( $compare_mode == '>=' || $compare_mode == '<=' || $compare_mode == '>' || $compare_mode == '<' ) ) {
 					// do nothing as we are comparing greater than / lower than to an empty value
 				}
-				else if ( !empty( $value ) || is_numeric( $value ) )
+				else if ( $filter_needed && ( !empty( $value ) || is_numeric( $value ) ) )
 				{
 					$query['meta_query'][] = array('key' => $meta_name,
 												  'value' => $value,

@@ -2358,7 +2358,7 @@ function wpv_filter_search_box($atts){
             $value = 'value="' . stripslashes( urldecode( sanitize_text_field( $_GET['wpv_post_search'] ) ) ) . '"';
         }
     
-        return '<input type="text" name="wpv_post_search" ' . $value . '/>';
+        return '<input type="text" name="wpv_post_search" ' . $value . ' class="js-wpv-filter-trigger-delayed" />';
     }        
 
     if ($view_settings['query_type'][0] == 'taxonomy') {

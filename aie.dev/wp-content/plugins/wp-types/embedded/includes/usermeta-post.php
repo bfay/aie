@@ -16,7 +16,10 @@ require_once WPCF_EMBEDDED_ABSPATH . '/includes/conditional-display.php';
 */
 function wpcf_admin_userprofile_init($user_id){
 	global $wpcf;
-	
+	if ( !is_object($user_id) ){
+		$user_id = new stdClass();
+		$user_id->ID = 0;
+	}
 	$user_role = isset($user_id->roles) ? array_shift($user_id->roles) : 'subscriber';
 	$groups = wpcf_admin_usermeta_get_groups_fields();
 	$wpcf_active = false;
@@ -187,9 +190,9 @@ function wpcf_usermeta_preview_profile( $user_id, $group, $echo = ''){
 		$content = $code = '';
 		// Sometimes if meta is empty - array(0 => '') is returned
         if ( (count( $meta ) == 1 ) ) {
-            $meta_id = key( $meta );
+            $meta_id = key( $meta ); 
             $_temp = array_shift( $meta );
-            if ( strval( $_temp ) == '' ) {
+            if (!is_array($_temp) && strval( $_temp ) == '' ) {
                
             } else {
                 $params['field_value'] = $_temp;

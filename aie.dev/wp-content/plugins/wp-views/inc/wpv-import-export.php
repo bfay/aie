@@ -43,8 +43,8 @@ function wpv_admin_menu_import_export() {
 		            <p>
 			            <?php _e('You only need to enter affiliate settings if you are a theme designer and want to receive affiliate commission.', 'wpv-views'); ?>
 			            <?php echo sprintf(__('Log into <a href="%s">your account</a> and go to <a href="%s">affiliate settings</a> for details.', 'wpv-views'),
-			                'http://wp-types.com',
-			                'http://wp-types.com/shop/account/?acct=affiliate');
+			                'http://wp-types.com?utm_source=viewsplugin&utm_campaign=views&utm_medium=import-export-login-to-wp-types-com&utm_term=your account',
+			                'http://wp-types.com/shop/account/?acct=affiliate&utm_source=viewsplugin&utm_campaign=views&utm_medium=import-export-get-affiliate-link&utm_term=affiliate settings');
 			            ?>
 		            </p>
 
@@ -185,8 +185,8 @@ function wpv_admin_export_data($download = true) {
 				if ( $attachments ) {
 					$data['views']['view-' . $post['ID']]['attachments'] = array();
 					foreach ( $attachments as $attachment ) {
-						preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
-						if ( isset( $matches ) && is_array( $matches ) && isset( $matches[0] ) ) {
+						$image_type = get_post_mime_type($attachment->ID);	
+						if ( $image_type && ($image_type == 'image/jpeg' || $image_type == 'image/png' || $image_type == 'image/gif') ){
 							$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID] = array();
 							$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['title'] = $attachment->post_title;
 							$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['content'] = $attachment->post_content;
@@ -195,6 +195,7 @@ function wpv_admin_export_data($download = true) {
 							$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['alt'] = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
 							$imdata = base64_encode( file_get_contents( $attachment->guid ) );
 							$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['data'] = $imdata;
+							preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
 							$data['views']['view-' . $post['ID']]['attachments']['attach_'.$attachment->ID]['filename'] = basename( $matches[0] );
 							$this_settings = get_post_meta($post['ID'], '_wpv_settings', true);
 							$this_layout_settings = get_post_meta($post['ID'], '_wpv_layout_settings', true);
@@ -406,8 +407,8 @@ function wpv_admin_export_data($download = true) {
 				if ( $attachments ) {
 					$post_data['attachments'] = array();
 					foreach ( $attachments as $attachment ) {
-						preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
-						if ( isset( $matches ) && is_array( $matches ) && isset( $matches[0] ) ) {
+						$image_type = get_post_mime_type($attachment->ID);	
+						if ( $image_type && ($image_type == 'image/jpeg' || $image_type == 'image/png' || $image_type == 'image/gif') ){
 							$post_data['attachments']['attach_'.$attachment->ID] = array();
 							$post_data['attachments']['attach_'.$attachment->ID]['title'] = $attachment->post_title;
 							$post_data['attachments']['attach_'.$attachment->ID]['content'] = $attachment->post_content;
@@ -416,6 +417,7 @@ function wpv_admin_export_data($download = true) {
 							$post_data['attachments']['attach_'.$attachment->ID]['alt'] = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
 							$imdata = base64_encode( file_get_contents( $attachment->guid ) );
 							$post_data['attachments']['attach_'.$attachment->ID]['data'] = $imdata;
+							preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment->guid, $matches );
 							$post_data['attachments']['attach_'.$attachment->ID]['filename'] = basename( $matches[0] );
 							$imthumbs = array();
 							foreach ( $attached_images_sizes as $ts ) {
@@ -486,6 +488,15 @@ function wpv_admin_export_data($download = true) {
 					$cis_option_value[$inner_shortcode] = $inner_shortcode;
 				}
 				$options[$option_name] = $cis_option_value;
+            }
+			// Custom conditional functions are stored in an indexed array, we need to make it associative
+            if ( $option_name == 'wpv_custom_conditional_functions' && is_array( $option_value ) ) {
+				$ccf_option_value = array();
+				foreach ( $option_value as $cond_func ) {
+					$sanitized_key = str_replace( '::', '-_paamayim_-', $cond_func );
+					$ccf_option_value[$sanitized_key] = $cond_func;
+				}
+				$options[$option_name] = $ccf_option_value;
             }
         }
         $data['settings'] = $options;

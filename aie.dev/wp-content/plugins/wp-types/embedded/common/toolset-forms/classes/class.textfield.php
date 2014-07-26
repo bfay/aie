@@ -1,10 +1,10 @@
 <?php
 /**
  *
- * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b3-CRED1.3b3/toolset-forms/classes/class.textfield.php $
- * $LastChangedDate: 2014-06-10 12:58:55 +0000 (Tue, 10 Jun 2014) $
- * $LastChangedRevision: 23430 $
- * $LastChangedBy: francesco $
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Types1.6b4-CRED1.3b4-Views1.6.2b2/toolset-forms/classes/class.textfield.php $
+ * $LastChangedDate: 2014-07-09 08:26:51 +0000 (Wed, 09 Jul 2014) $
+ * $LastChangedRevision: 24777 $
+ * $LastChangedBy: juan $
  *
  */
 require_once "class.field_factory.php";
@@ -20,8 +20,10 @@ require_once "class.field_factory.php";
  */
 class WPToolset_Field_Textfield extends FieldFactory
 {
+    public function metaform()
+    {
+        $attributes =  $this->getAttr();
 
-    public function metaform() {
         $metaform = array();
         $metaform[] = array(
             '#type' => 'textfield',
@@ -31,7 +33,7 @@ class WPToolset_Field_Textfield extends FieldFactory
             '#value' => $this->getValue(),
             '#validate' => $this->getValidationData(),
             '#repetitive' => $this->isRepetitive(),
-            '#attributes' => $this->getAttr()
+            '#attributes' => $attributes,
         );
         return $metaform;
     }

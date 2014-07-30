@@ -79,6 +79,7 @@ define('WPLANG', '');
  * in their development environments.
  */
 define('WP_DEBUG', false);define('FS_METHOD', 'direct');
+define( 'WP_MEMORY_LIMIT', '256M' );
 
 /* That's all, stop editing! Happy blogging. */
 

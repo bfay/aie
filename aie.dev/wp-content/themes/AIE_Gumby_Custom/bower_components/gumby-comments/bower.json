@@ -1,0 +1,5 @@
+{
+  "name": "gumby-comments",
+  "version": "1.0.0",
+  "main": ["./gumby.comments.js"]
+}

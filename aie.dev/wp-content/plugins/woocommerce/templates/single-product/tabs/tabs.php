@@ -20,22 +20,23 @@ $tabs = apply_filters( 'woocommerce_product_tabs', array() );
 if ( ! empty( $tabs ) ) : ?>
 
 	<div class="woocommerce-tabs">
-		<ul class="tabs">
-			<?php foreach ( $tabs as $key => $tab ) : ?>
+		<section class="tabs">
 
-				<li class="<?php echo $key ?>_tab">
-					<a href="#tab-<?php echo $key ?>"><?php echo apply_filters( 'woocommerce_product_' . $key . '_tab_title', $tab['title'], $key ) ?></a>
-				</li>
+    <ul class="tab-nav">
+        <li class="active"><a href="#">Description</a></li>
+        
+        <li><a href="#">Data Sheet</a></li>
+    </ul>
 
-			<?php endforeach; ?>
-		</ul>
-		<?php foreach ( $tabs as $key => $tab ) : ?>
+    <div class="tab-content active">
+        <p><?php echo do_shortcode('[wpv-post-body]'); ?></p>
+    </div>
+   
+    <div class="tab-content">
+        <?php echo do_shortcode('[wpv-post-field name="spec_sheet"]'); ?>
+    </div>
 
-			<div class="panel entry-content" id="tab-<?php echo $key ?>">
-				<?php call_user_func( $tab['callback'], $key, $tab ) ?>
-			</div>
-
-		<?php endforeach; ?>
-	</div>
+</section>	
+</div>
 
 <?php endif; ?>

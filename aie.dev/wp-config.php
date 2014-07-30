@@ -16,13 +16,13 @@
 
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define('DB_NAME', 'aieDBltk60');
+define('DB_NAME', 'aieDBxoz3i');
 
 /** MySQL database username */
-define('DB_USER', 'aieDBltk60');
+define('DB_USER', 'aieDBxoz3i');
 
 /** MySQL database password */
-define('DB_PASSWORD', '5jEPv5YmEP');
+define('DB_PASSWORD', '4Od4JoguLa');
 
 /** MySQL hostname */
 define('DB_HOST', 'localhost');
@@ -42,14 +42,14 @@ define('DB_COLLATE', '');
  *
  * @since 2.6.0
  */
-define('AUTH_KEY',         'O1dZp1S-[#Op5GCl|UQf<IrnyEf<.nyuAM.{Fg>73c$FBM,3cYjBMIr^mxu6L.;');
-define('SECURE_AUTH_KEY',  '|lKZ|8koJY,7jFfbr3U$y,Nc|!}kzB7J!}YUg7JFn@iuq2T+{<Pq2;Em<Peb.EXUj');
-define('LOGGED_IN_KEY',    '}!4Vk4JvVk0Fv,RUEq^Pf{q*Pf{m+Fv,Qf^br7Q${q]2x5O1S5OtSZ;T6DtWeH');
-define('NONCE_KEY',        'nz}IXy<Xm2HuTi;Ht.Qq^Mb{AmMb<6i+Wl1HhxDS_1dtS~:Pe]9mp5Lx]WlLx#k-');
-define('AUTH_SALT',        'zUv>U|4gzFV!|Rg0Fr!gAQ${bq6Mm$IX.6iyFrQf{Br^Mb${XqLa#l+HW#5ix1Ht');
-define('SECURE_AUTH_SALT', 'nQg62E+<TPb2EAiyPbX*;mxu<7u^$Ef{73b$EAMy3bXjGS~-|do51C-|!NZ1C8g!5');
-define('LOGGED_IN_SALT',   '+et9THx]Wpe;HiXm6P*u<Tm6{Eu<THa]E2w#Wpd:Cs|-KZ[C1h-K8Rp_SHa#9pexH');
-define('NONCE_SALT',       'V0Co@k_:Zp1Gs_OZ|5hOdy>Qf{7jyEU${XnUr!NY,4gr7Nz>Qg}<6iyAP+{Ti;Dm+');
+define('AUTH_KEY',         'iWH5#laeSD_x-pO9:1#lZdOC_w-pZ8:1|lZKOC!w-oZ8:0||zkocC04[zYNRF|vko');
+define('SECURE_AUTH_KEY',  '5lVKO8:sdRVK[-oshG48[@dRVGV4[}!sRFJ8@rcgU4>z@rQFJ7@ncgU3,z$rQF7$');
+define('LOGGED_IN_KEY',    'N[@oZG0!scNJ4|scN84|vcN8>,vgQ7>zjgQB>zjUFB}$jUFB{$nUE{$nXI3^qbXI');
+define('NONCE_KEY',        'V|oZN8[oZN8[zYJ4|zkUF,vgUF0^gQB}^rcB}$nbM7>nXI3I3.uTE*qbPA{qbL6<');
+define('AUTH_SALT',        'b3,^qXufMI{yifMI{yueLI;{+ieLH;*+ieL62*+iTP62*+ieP52~+ieO51~-hSO');
+define('SECURE_AUTH_SALT', '<iPA6.*mXTA6.*qXTA6.*pWT96_*pWS95_~pWSaWH:]wtdKG:[wtdKG:[-hdKG:~-');
+define('LOGGED_IN_SALT',   'p9:tdO9:~dO8[~oZK[-kVK4|kVG0!wgRC}scN8}@cN8>znYJ4,,vfUF^fQB{^rbM');
+define('NONCE_SALT',       'aH1_plSO9#_tZWC9#_sZVC8|wsZVC8|wsZVC:[wsdJG:[wgcJF}[zgcJF}@zgcJ40');
 
 /**#@-*/
 

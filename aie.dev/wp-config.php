@@ -16,13 +16,13 @@
 
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define('DB_NAME', 'aieDBxoz3i');
+define('DB_NAME', 'aieDBgsdx2');
 
 /** MySQL database username */
-define('DB_USER', 'aieDBxoz3i');
+define('DB_USER', 'aieDBgsdx2');
 
 /** MySQL database password */
-define('DB_PASSWORD', '4Od4JoguLa');
+define('DB_PASSWORD', 'WcQCbNBK6K');
 
 /** MySQL hostname */
 define('DB_HOST', 'localhost');
@@ -42,14 +42,14 @@ define('DB_COLLATE', '');
  *
  * @since 2.6.0
  */
-define('AUTH_KEY',         'iWH5#laeSD_x-pO9:1#lZdOC_w-pZ8:1|lZKOC!w-oZ8:0||zkocC04[zYNRF|vko');
-define('SECURE_AUTH_KEY',  '5lVKO8:sdRVK[-oshG48[@dRVGV4[}!sRFJ8@rcgU4>z@rQFJ7@ncgU3,z$rQF7$');
-define('LOGGED_IN_KEY',    'N[@oZG0!scNJ4|scN84|vcN8>,vgQ7>zjgQB>zjUFB}$jUFB{$nUE{$nXI3^qbXI');
-define('NONCE_KEY',        'V|oZN8[oZN8[zYJ4|zkUF,vgUF0^gQB}^rcB}$nbM7>nXI3I3.uTE*qbPA{qbL6<');
-define('AUTH_SALT',        'b3,^qXufMI{yifMI{yueLI;{+ieLH;*+ieL62*+iTP62*+ieP52~+ieO51~-hSO');
-define('SECURE_AUTH_SALT', '<iPA6.*mXTA6.*qXTA6.*pWT96_*pWS95_~pWSaWH:]wtdKG:[wtdKG:[-hdKG:~-');
-define('LOGGED_IN_SALT',   'p9:tdO9:~dO8[~oZK[-kVK4|kVG0!wgRC}scN8}@cN8>znYJ4,,vfUF^fQB{^rbM');
-define('NONCE_SALT',       'aH1_plSO9#_tZWC9#_sZVC8|wsZVC8|wsZVC:[wsdJG:[wgcJF}[zgcJF}@zgcJ40');
+define('AUTH_KEY',         'fEQE3<y3<ynb<+qaPqePE2TI2<+6{+qeiWtiWL9WL9]+m:~l_eSD1SH5]-K8:~s:');
+define('SECURE_AUTH_KEY',  '^^j$jUBYF^M2.A{yi^mXIbM7ePA]E;*m.ubLiTElWD;H2_t#xe+mTDpWG:K5#9]-');
+define('LOGGED_IN_KEY',    '<iTuiTH6lWK9:O9;_x2_xla+laPDsdSG5WK9:~9:~th_thWK-kZNCdNC0|G1|-o[-');
+define('NONCE_KEY',        'x*qb$qfPEfQE3<WL9]*A;.ti*uiTHiXL6]aODD1#xl#xlWLmaL9lVK8[G1#w1#wlW');
+define('AUTH_SALT',        '6xi.yiXL+laODaPD2#H2#+p#+qaP~tdSGhWG5[K9]~t;~thW!wkZNlZOC1SC1|-5[');
+define('SECURE_AUTH_SALT', '#;*peTteTDthWK9WK9:_9;_xh_xlaL-odRCdSG5[G5[~p[~tdS!wkVJkZJ8}NC0!w');
+define('LOGGED_IN_SALT',   'cJ3>J7}^v4>@rgU<$rfUvjbQE3UIB,y3}^vj2<$qfXymbPI6XME3<I7.yn6;.xm');
+define('NONCE_SALT',       'jEAP...eL1~2_p.pWtaH;ZG:G:-1~lSpWDoVCVG:-:-l~lVCkVCZG}@0@k@kR@jQk');
 
 /**#@-*/
 
@@ -79,7 +79,6 @@ define('WPLANG', '');
  * in their development environments.
  */
 define('WP_DEBUG', false);define('FS_METHOD', 'direct');
-define( 'WP_MEMORY_LIMIT', '256M' );
 
 /* That's all, stop editing! Happy blogging. */
 
